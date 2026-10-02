@@ -1522,6 +1522,19 @@
    "textFr": "Test : si vous voyez cette notification, les notifications fonctionnent.",
    "textDe": "Test: Wenn du diese Benachrichtigung siehst, funktionieren die Benachrichtigungen.",
    "textRu": "Тест: если вы видите это уведомление, уведомления работают."
+  },
+  "20261002-test2-capewatch-test": {
+   "at": "2026-10-02T16:00:46Z",
+   "type": "new",
+   "capeId": "capewatch-test",
+   "capeName": "CapeWatch Test Cape",
+   "textEn": "Test 2: click this notification to open the test cape.",
+   "textHe": "בדיקה 2: לחצו על ההתראה כדי לפתוח את גלימת הבדיקה.",
+   "textEs": "Prueba 2: haz clic en esta notificación para abrir la capa de prueba.",
+   "textPt": "Teste 2: clique nesta notificação para abrir a capa de teste.",
+   "textFr": "Test 2 : cliquez sur cette notification pour ouvrir la cape de test.",
+   "textDe": "Test 2: Klicke auf diese Benachrichtigung, um den Test-Umhang zu öffnen.",
+   "textRu": "Тест 2: нажмите на уведомление, чтобы открыть тестовый плащ."
   }
  }
 }
