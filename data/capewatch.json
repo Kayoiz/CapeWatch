@@ -234,7 +234,8 @@
    "releaseDate": "2010-12-24",
    "source": "baseline",
    "textureId": null,
-   "wikiTitle": "2010 holiday capes"
+   "wikiTitle": "2010 holiday capes",
+   "textureUrl": "https://minecraft.wiki/images/Christmas_2010_Cape_%28texture%29.png"
   },
   "classic-mojang": {
    "apiAlias": "Mojang-old",
@@ -994,7 +995,8 @@
    "releaseDate": "2010-12-31",
    "source": "baseline",
    "textureId": null,
-   "wikiTitle": "2010 holiday capes"
+   "wikiTitle": "2010 holiday capes",
+   "textureUrl": "https://minecraft.wiki/images/New_Years_2011_Cape_%28texture%29.png"
   },
   "oxeye": {
    "apiAlias": "Oxeye",
@@ -1100,7 +1102,8 @@
    "releaseDate": "2023-08-01",
    "source": "baseline",
    "textureId": null,
-   "wikiTitle": "Progress Pride Cape"
+   "wikiTitle": "Progress Pride Cape",
+   "textureUrl": "https://minecraft.wiki/images/Progress_Pride_Cape_%28texture%29_rv4.png"
   },
   "purple-heart": {
    "apiAlias": "Purple Heart",
