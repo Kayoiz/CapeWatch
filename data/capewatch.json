@@ -1459,6 +1459,17 @@
    "source": "baseline",
    "textureId": "a3f6e4f14801f3ea55e3d95b9b4ef3b5e8802d947f669de93d6ec4b9354a436b",
    "wikiTitle": "Zombie Horse Cape"
+  },
+  "capewatch-test": {
+   "name": "CapeWatch Test Cape",
+   "category": "Test",
+   "availability": "test",
+   "editions": [
+    "Java"
+   ],
+   "detectedAt": "2026-10-02T15:34:05Z",
+   "obtainEn": "Test entry for checking notifications. It will be removed shortly.",
+   "obtainHe": "רשומת בדיקה של ההתראות. היא תימחק בקרוב."
   }
  },
  "events": {
@@ -1498,6 +1509,19 @@
    "textPt": "Aurora Cape: a Twitch ficou sem códigos por enquanto, então use o TikTok (3 min) para pegá-la.",
    "textRu": "Aurora Cape: у Twitch пока закончились коды, поэтому получайте плащ через TikTok (3 мин).",
    "type": "changed"
+  },
+  "20261002-test-capewatch-test": {
+   "at": "2026-10-02T15:34:05Z",
+   "type": "new",
+   "capeId": "capewatch-test",
+   "capeName": "CapeWatch Test Cape",
+   "textEn": "Test: CapeWatch Test Cape. If you see this notification, notifications work.",
+   "textHe": "בדיקה: CapeWatch Test Cape. אם ההתראה הזו הופיעה, ההתראות עובדות.",
+   "textEs": "Prueba: si ves esta notificación, las notificaciones funcionan.",
+   "textPt": "Teste: se você vê esta notificação, as notificações funcionam.",
+   "textFr": "Test : si vous voyez cette notification, les notifications fonctionnent.",
+   "textDe": "Test: Wenn du diese Benachrichtigung siehst, funktionieren die Benachrichtigungen.",
+   "textRu": "Тест: если вы видите это уведомление, уведомления работают."
   }
  }
 }
