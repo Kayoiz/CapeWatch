@@ -1,0 +1,20 @@
+# Local screenshots contain Mojang cape art: never commit them
+_screenshots/
+
+# Any image except the app's own icons and the author's skin (see .github/workflows/no-images.yml)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+!app/src-tauri/icons/**
+!assets/skin/Kayskin.png
+
+# Local tools and builds
+.claude/
+node_modules/
+app/dist/
+app/src-tauri/target/
+app/src-tauri/gen/
+*.key

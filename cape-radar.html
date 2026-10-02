@@ -1,0 +1,1380 @@
+<title>CapeWatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Pixelify+Sans:wght@400;600&family=Secular+One&display=swap">
+<style>
+/* Layout: one column (LTR or RTL by language). Status strip → live promotions → radar log → full wardrobe grid of inventory slots. */
+:root {
+  --bg: #E6E8E1;          /* pale stone */
+  --panel: #F5F6F1;
+  --slot: #B4B7AE;        /* inventory slot, tinted toward moss */
+  --bevel-hi: #FFFFFF;
+  --bevel-lo: #5E625A;
+  --fg: #1C1F1A;
+  --muted: #585E54;
+  --line: #CDD0C6;
+  --accent: #3C8527;      /* Minecraft button green */
+  --accent-fg: #FFFFFF;
+  --live: #2F7A1F;
+  --live-bg: #DCEFD2;
+  --soon: #A3470B;
+  --soon-bg: #FBE3D2;
+  --announced: #8A5A00;
+  --announced-bg: #F6E8C4;
+  --ended: #5F645B;
+  --ended-bg: #DFE1DA;
+  --exclusive: #6B3FB8;   /* enchant purple */
+  --exclusive-bg: #E9E0F8;
+  --java: #B8641B;
+  --bedrock: #2D6FA8;
+  --font-display: "Secular One", "Assistant", "Arial Hebrew", system-ui, sans-serif;
+  --font-body: "Assistant", "Segoe UI", "Arial Hebrew", system-ui, sans-serif;
+  --font-pixel: "Pixelify Sans", "Assistant", ui-monospace, monospace;
+  --step--1: .8125rem;      /* small text inside cards, badges and buttons */
+  --text-sm: .875rem;       /* secondary text outside the cards (notes, labels, log times, footer) */
+  --measure: 70ch;          /* longest comfortable line for running text */
+  --step-0: 1rem;
+  --step-1: 1.25rem;
+  --step-2: 1.6rem;
+  --step-3: 2.2rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171916; --panel: #20231F; --slot: #2E322C; --bevel-hi: #4B5047; --bevel-lo: #0A0B09;
+    --fg: #E8EBE3; --muted: #A2A99C; --line: #343831; --accent: #6CC349; --accent-fg: #0F1A0B;
+    --live: #86D866; --live-bg: #1F3319; --soon: #FF9B5C; --soon-bg: #3A2415;
+    --announced: #E9C15C; --announced-bg: #332913; --ended: #9EA497; --ended-bg: #2A2D28;
+    --exclusive: #BC98FF; --exclusive-bg: #2C2140; --java: #F0A05A; --bedrock: #6FB3F0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171916; --panel: #20231F; --slot: #2E322C; --bevel-hi: #4B5047; --bevel-lo: #0A0B09;
+  --fg: #E8EBE3; --muted: #A2A99C; --line: #343831; --accent: #6CC349; --accent-fg: #0F1A0B;
+  --live: #86D866; --live-bg: #1F3319; --soon: #FF9B5C; --soon-bg: #3A2415;
+  --announced: #E9C15C; --announced-bg: #332913; --ended: #9EA497; --ended-bg: #2A2D28;
+  --exclusive: #BC98FF; --exclusive-bg: #2C2140; --java: #F0A05A; --bedrock: #6FB3F0;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: var(--step-0); line-height: 1.55; }
+.wrap { max-width: 1120px; margin-inline: auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; line-height: 1.2; margin: 0; text-wrap: balance; }
+h1 { font-size: var(--step-3); }
+h2 { font-size: var(--step-2); }
+h3 { font-size: var(--step-1); }
+p { margin: 0; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, .slot:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* Chrome keeps a menu's focus ring after a mouse pick, so menus show it only while the keyboard is in use */
+html[data-kbd] select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+select:focus { outline: none; }
+.latin { font-family: var(--font-pixel); unicode-bidi: isolate; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: var(--text-sm); color: var(--muted); max-width: var(--measure); }
+
+/* Header */
+header.top { display: grid; gap: 18px; }
+.brand { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+/* Logo: a static slot frame holding the one 3D view (my skin from behind, wearing a cloth cape) */
+/* Fixed width; the height stretches to the title block beside it (never taller than it).
+   The canvas is absolutely placed so it can't push the frame taller, and is resized from JS. */
+.logo { position: relative; width: 120px; min-height: 150px; align-self: stretch; flex: none; background: var(--slot); overflow: hidden; }
+/* Always on the physical right: last in left-to-right languages, first (= right) in Hebrew */
+[dir="ltr"] .brand .logo { order: 2; margin-left: auto; }   /* auto margin: stays right even if it wraps */
+.logo::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  box-shadow: inset 3px 3px 0 var(--bevel-lo), inset -3px -3px 0 var(--bevel-hi); }
+.logo canvas { position: absolute; inset: 0; display: block; }
+.brand-text { display: grid; gap: 4px; min-width: 0; flex: 1 1 160px; }   /* 160 + 16 + 120 fits a 375px phone */
+/* Title bar: the leaf-block title centered, the language picker beside it (right in LTR, left in RTL).
+   On phones the picker sits on its own row above the title. */
+.titlebar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 12px; }
+.leaf-title { grid-column: 2; margin: 0; line-height: 0; min-width: 0; position: relative; isolation: isolate; }
+/* Opening light effect: pixel rays drawn over everything; never part of the layout, gone after ~2.3 s */
+#leaf-title { position: relative; z-index: 1; }
+.title-fx { position: absolute; display: block; pointer-events: none; z-index: 2; image-rendering: pixelated; }
+#leaf-title { display: block; max-width: 100%; height: auto; image-rendering: pixelated; }
+.titlebar .lang-pick { grid-column: 3; justify-self: end; }
+@media (max-width: 720px) {
+  .titlebar { grid-template-columns: 1fr; }
+  .titlebar .lang-pick { grid-row: 1; grid-column: 1; }
+  .leaf-title { grid-column: 1; justify-self: center; }
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.lang-pick { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); color: var(--muted); }
+.lede { color: var(--muted); max-width: var(--measure); }
+/* Not-affiliated notice: always visible under the title */
+.unofficial { justify-self: start; font-size: var(--text-sm); font-weight: 600; color: var(--announced); background: var(--announced-bg);
+  padding: 4px 10px; box-shadow: inset 0 0 0 1.5px currentColor; }
+footer p { max-width: var(--measure); }
+/* Required notice (exact English line, translation under it); contact and donate sit next to it */
+.unofficial { display: grid; gap: 2px; }
+.mojang-en { letter-spacing: .01em; }
+.mojang-tr { font-weight: 400; }
+.mojang-tr:empty { display: none; }
+.notice-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 10px; }
+.notice-row .unofficial { max-width: var(--measure); }
+.foot-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.foot-actions .btn { font-size: var(--text-sm); }
+footer .legal { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+/* Status strip: equal columns, 6 in a row; 3 + 3 on tablets, 2 × 3 on phones (wide enough for "29 hours ago") */
+.status { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px 16px; padding-block: 14px; border-block: 2px solid var(--line); }
+@media (max-width: 720px) { .status { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .status { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat { display: grid; gap: 0; min-width: 0; }
+.stat b { font-family: var(--font-pixel); font-size: var(--step-1); font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat span { font-size: var(--text-sm); color: var(--muted); line-height: 1.35; }
+
+/* Section heads */
+section { display: grid; gap: 16px; min-width: 0; }
+/* Heading with its short note directly underneath (not pushed to the far side of the page) */
+.sec-head { display: grid; gap: 4px; justify-items: start; }
+
+/* Live promotions */
+.live-list { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 720px) { .live-list { grid-template-columns: 1fr; } }
+.live-card { display: grid; grid-template-columns: 112px 1fr; gap: 16px; padding: 16px; background: var(--panel);
+  box-shadow: inset 3px 3px 0 var(--bevel-hi), inset -3px -3px 0 var(--bevel-lo); min-width: 0; }
+.live-card .slot { cursor: pointer; align-self: start; }
+.live-body { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.live-name { font-family: var(--font-pixel); font-size: var(--step-1); font-weight: 600; unicode-bidi: isolate; }
+.countdown { font-family: var(--font-pixel); font-size: var(--step-1); color: var(--live); font-variant-numeric: tabular-nums; }
+.countdown.urgent { color: var(--soon); }
+.countdown .est { font: 400 var(--step--1)/1 var(--font-body); color: var(--muted); margin-inline-start: 8px; }
+/* Key facts inside how-to text (**bold** in the data) */
+.rich strong { font-weight: 700; color: var(--fg); background: var(--live-bg); padding-inline: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.short { font-size: var(--step-0); line-height: 1.5; }
+.live-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font: 600 var(--step--1)/1.2 var(--font-body);
+  background: var(--accent); color: var(--accent-fg); text-decoration: none; border: 0; cursor: pointer;
+  box-shadow: inset 2px 2px 0 rgba(255,255,255,.28), inset -2px -2px 0 rgba(0,0,0,.3); }
+.btn.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 2px var(--line); }
+.empty { padding: 18px; color: var(--muted); background: var(--panel); border: 2px dashed var(--line); }
+
+/* Radar log */
+.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.log li { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 16px; padding-block: 10px; border-bottom: 1px solid var(--line); min-width: 0; }
+.log time { color: var(--muted); font-size: var(--text-sm); font-variant-numeric: tabular-nums; padding-top: 2px; white-space: nowrap; }
+.log li > span { max-width: var(--measure); }
+.log .kind { font-weight: 700; }
+@media (max-width: 600px) { .log li { grid-template-columns: 1fr; gap: 2px; } }
+
+/* Filters */
+.filters { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-size: var(--text-sm); color: var(--muted); }
+.field input, .field select, .lang-pick select { font: inherit; font-size: var(--text-sm); padding: 7px 10px; background: var(--panel); color: var(--fg);
+  border: 0; box-shadow: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); min-width: 0; }
+.field input { width: 12rem; max-width: 100%; }
+/* Phones: an even 2-column grid of filters, search across the full width */
+@media (max-width: 600px) {
+  .filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filters .field:first-child { grid-column: 1 / -1; }
+  .field input, .field select { width: 100%; }
+}
+.count-line { font-size: var(--text-sm); color: var(--muted); margin-top: -4px; }
+
+/* Inventory grid */
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+@media (max-width: 420px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+.tile { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.slot { position: relative; aspect-ratio: 4 / 5; max-width: 100%; background: var(--slot); overflow: hidden; border: 0; padding: 0; width: 100%;
+  box-shadow: inset 4px 4px 0 var(--bevel-lo), inset -4px -4px 0 var(--bevel-hi); display: grid; place-items: center; }
+button.slot { cursor: pointer; }
+/* The wiki renders (280x636) show a grey player model from behind wearing the cape.
+   Crop to the cape itself: source x 0–200, y 250–500 fills the 4:5 slot exactly. */
+.slot img { position: absolute; left: 0; top: -100%; width: 140%; max-width: none; height: auto; image-rendering: pixelated; }
+/* The wiki elytra renders (438x705) show the same grey player wearing the elytra.
+   Crop to the wings: source x 0–427, y 160–694 fills the 4:5 slot exactly (all 49 renders fit inside). */
+.slot img.elytra { top: -30%; width: 102.5%; }
+/* Pictures the installed app draws itself are already framed for the 4:5 slot */
+.slot img.gen { top: 0; left: 0; width: 100%; height: 100%; }
+/* Elytra toggle sits right under the picture, as wide as it */
+.pic { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.ely-btn { justify-content: center; width: 100%; padding-inline: 6px; }
+.slot .ph { font-family: var(--font-pixel); color: var(--muted); font-size: var(--step--1); text-align: center; padding: 8px; }
+.slot .flag { position: absolute; z-index: 1; inset-block-start: 8px; inset-inline-start: 8px; font: 600 11px/1 var(--font-pixel); letter-spacing: .04em; padding: 4px 6px;
+  background: var(--accent); color: var(--accent-fg); }
+.tile-name { font-family: var(--font-pixel); font-weight: 600; font-size: .95rem; unicode-bidi: isolate; overflow-wrap: anywhere; line-height: 1.25; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.ed { font: 600 11px/1 var(--font-pixel); padding: 3px 5px; border: 1.5px solid currentColor; }
+.ed.java { color: var(--java); }
+.ed.bedrock { color: var(--bedrock); }
+.pill { font-size: 12px; font-weight: 700; padding: 2px 8px; line-height: 1.5; }
+.pill.available, .pill.permanent { color: var(--live); background: var(--live-bg); }
+.pill.announced { color: var(--announced); background: var(--announced-bg); }
+.pill.ended { color: var(--ended); background: var(--ended-bg); }
+.pill.exclusive { color: var(--exclusive); background: var(--exclusive-bg); }
+.pill.free { color: var(--live); box-shadow: inset 0 0 0 1.5px currentColor; }
+.tile .date { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Detail dialog */
+dialog { border: 0; padding: 0; max-width: min(560px, calc(100vw - 32px)); width: 100%; background: var(--panel); color: var(--fg);
+  box-shadow: inset 3px 3px 0 var(--bevel-hi), inset -3px -3px 0 var(--bevel-lo), 0 20px 60px rgba(0,0,0,.35); }
+dialog::backdrop { background: rgba(10, 12, 9, .55); }
+.dlg { display: grid; grid-template-columns: 140px 1fr; gap: 18px; padding: 20px; }
+@media (max-width: 480px) { .dlg { grid-template-columns: 1fr; } .dlg .slot { max-width: 160px; } }
+.dlg-body { display: grid; gap: 10px; align-content: start; min-width: 0; padding-inline-end: 28px; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: var(--step--1); margin: 0; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+.dlg-close { position: absolute; inset-block-start: 10px; inset-inline-end: 10px; }
+
+footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid var(--line); padding-top: 16px; display: grid; gap: 4px; }
+</style>
+
+<div class="wrap" id="wrap" dir="ltr" lang="en">
+  <header class="top">
+    <div class="titlebar" id="titlebar">
+      <h1 class="leaf-title"><span class="sr" data-i18n="title">CapeWatch</span><canvas id="leaf-title" aria-hidden="true"></canvas></h1>
+      <label class="lang-pick" id="lang-pick"><span data-i18n="langLbl">Language</span>
+        <select id="f-lang"></select></label>
+    </div>
+    <div class="brand">
+      <div class="logo" id="logo" aria-hidden="true"><canvas id="cape3d"></canvas></div>
+      <div class="brand-text">
+        <p class="lede" data-i18n="lede"></p>
+        <p class="unofficial"><span class="mojang-en">NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</span><span class="mojang-tr" data-i18n="unofficialTr"></span></p>
+      </div>
+    </div>
+    <div class="status" id="status">
+      <div class="stat"><b id="st-last" class="num">…</b><span data-i18n="stLast"></span></div>
+      <div class="stat"><b id="st-live" class="num">…</b><span data-i18n="stLive"></span></div>
+      <div class="stat"><b id="st-free" class="num">…</b><span data-i18n="stFree"></span></div>
+      <div class="stat"><b id="st-total" class="num">…</b><span data-i18n="stTotal"></span></div>
+      <div class="stat"><b id="st-java" class="num">…</b><span data-i18n="stJava"></span></div>
+      <div class="stat"><b id="st-bedrock" class="num">…</b><span data-i18n="stBedrock"></span></div>
+    </div>
+  </header>
+
+  <section aria-labelledby="h-live">
+    <div class="sec-head">
+      <h2 id="h-live" data-i18n="hLive"></h2>
+      <span class="eyebrow" data-i18n="liveNote"></span>
+    </div>
+    <div class="live-list" id="live"></div>
+  </section>
+
+  <section aria-labelledby="h-ann" id="sec-ann" hidden>
+    <div class="sec-head"><h2 id="h-ann" data-i18n="hAnn"></h2></div>
+    <div class="live-list" id="announced"></div>
+  </section>
+
+  <section aria-labelledby="h-log">
+    <div class="sec-head">
+      <h2 id="h-log" data-i18n="hLog"></h2>
+      <span class="eyebrow" data-i18n="logNote"></span>
+    </div>
+    <ul class="log" id="log"></ul>
+  </section>
+
+  <section aria-labelledby="h-all">
+    <div class="sec-head">
+      <h2 id="h-all" data-i18n="hAll"></h2>
+    </div>
+    <div class="filters">
+      <div class="field"><label for="f-q" data-i18n="fq"></label><input id="f-q" type="search" data-i18n-ph="fqPh" autocomplete="off"></div>
+      <div class="field"><label for="f-ed" data-i18n="fEd"></label>
+        <select id="f-ed">
+          <option value="all" data-i18n="edAll"></option>
+          <option value="java" data-i18n="stJava"></option>
+          <option value="bedrock" data-i18n="stBedrock"></option>
+          <option value="both" data-i18n="edBoth"></option>
+          <option value="java-only" data-i18n="edJavaOnly"></option>
+          <option value="bedrock-only" data-i18n="edBedrockOnly"></option>
+        </select></div>
+      <div class="field"><label for="f-st" data-i18n="fSt"></label>
+        <select id="f-st">
+          <option value="all" data-i18n="stAll"></option>
+          <option value="get" data-i18n="stGet"></option>
+          <option value="announced" data-i18n="stAnnounced"></option>
+          <option value="ended" data-i18n="stEnded"></option>
+          <option value="exclusive" data-i18n="stExclusive"></option>
+        </select></div>
+      <div class="field"><label for="f-cost" data-i18n="fCost"></label>
+        <select id="f-cost">
+          <option value="all" data-i18n="costAll"></option>
+          <option value="free" data-i18n="free"></option>
+          <option value="paid" data-i18n="paid"></option>
+        </select></div>
+      <div class="field"><label for="f-cat" data-i18n="fCat"></label><select id="f-cat"></select></div>
+      <div class="field"><label for="f-sort" data-i18n="fSort"></label>
+        <select id="f-sort">
+          <option value="new" data-i18n="sortNew"></option>
+          <option value="old" data-i18n="sortOld"></option>
+          <option value="name" data-i18n="sortName"></option>
+        </select></div>
+    </div>
+    <p class="count-line" id="count-line" aria-live="polite"></p>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <footer>
+    <p id="foot1"></p>
+    <p id="foot2"></p>
+    <div class="notice-row">
+      <p class="unofficial"><span class="mojang-en">NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</span><span class="mojang-tr" data-i18n="unofficialTr"></span></p>
+      <div class="foot-actions">
+        <a class="btn" id="donate" href="https://paypal.me/Kayoiz" target="_blank" rel="noopener" data-i18n="support">Support CapeWatch</a>
+        <span><span data-i18n="contact">Contact</span>: <a href="mailto:kayoiz.dev@gmail.com">kayoiz.dev@gmail.com</a></span>
+      </div>
+    </div>
+    <p class="legal" data-i18n="legal"></p>
+  </footer>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <div class="dlg" id="dlg-inner" dir="ltr" lang="en">
+    <div class="slot" id="dlg-slot"></div>
+    <div class="dlg-body">
+      <h3 id="dlg-title" class="latin"></h3>
+      <div class="meta" id="dlg-meta"></div>
+      <p id="dlg-how" class="rich"></p>
+      <dl class="facts" id="dlg-facts"></dl>
+      <div class="live-actions" id="dlg-actions"></div>
+    </div>
+  </div>
+  <button class="btn ghost dlg-close" id="dlg-close" type="button" data-i18n-aria="close">✕</button>
+</dialog>
+
+<script src="vendor/skinview3d/skinview3d.bundle.js"></script>
+<script>
+(() => {
+  // ---------- i18n ----------
+  // English is the fallback. The starting language follows the viewer's browser languages;
+  // a manual choice is remembered per viewer. Cape descriptions exist in English and Hebrew
+  // (obtainEn / obtainHe); other languages show the English description.
+  const LANGS = {
+    en: { name: 'English', dir: 'ltr' }, he: { name: 'עברית', dir: 'rtl' }, es: { name: 'Español', dir: 'ltr' },
+    pt: { name: 'Português', dir: 'ltr' }, fr: { name: 'Français', dir: 'ltr' }, de: { name: 'Deutsch', dir: 'ltr' },
+    ru: { name: 'Русский', dir: 'ltr' }
+  };
+  const T = {
+    en: {
+      title: 'CapeWatch',
+      unofficial: 'Unofficial. I built this app myself, and I have no connection to Mojang or Microsoft.',
+      legal: 'I built CapeWatch myself as an independent app. It is not an official Minecraft product, and I am not affiliated with, endorsed by or connected to Mojang Studios or Microsoft. Minecraft is a trademark of Microsoft. Cape info comes from public sources and may contain mistakes.',
+      lede: 'Tracks every Minecraft cape released for Java and Bedrock. CapeWatch checks twice a day for new capes, newly opened promotions and promotions about to end, and sends you a notification.',
+      langLbl: 'Language', stLast: 'Last check', stLive: 'Obtainable now', stTotal: 'Capes tracked', stJava: 'On Java', stBedrock: 'On Bedrock',
+      hLive: 'Get it now', liveNote: 'Limited-time promotions. Miss them and they are gone.', hAnn: 'Announced, not yet available',
+      hLog: 'CapeWatch log', logNote: 'What CapeWatch found in recent checks', hAll: 'All capes',
+      fq: 'Search by name', fqPh: 'e.g. Pan, MINECON', fEd: 'Edition', edAll: 'Java and Bedrock', edBoth: 'Both editions', edJavaOnly: 'Java only', edBedrockOnly: 'Bedrock only',
+      fSt: 'Status', stAll: 'All statuses', stGet: 'Obtainable', stAnnounced: 'Announced', stEnded: 'Promotion ended', stExclusive: 'Exclusive',
+      fCat: 'Type', catAll: 'All types', fSort: 'Sort', sortNew: 'Newest first', sortOld: 'Oldest first', sortName: 'By name',
+      foot1: 'Data and images from {wiki} (CC BY-NC-SA 3.0) and official Mojang announcements. Not an official Minecraft site.',
+      foot2: 'Promo codes are redeemed at {url}.', close: 'Close',
+      loading: 'Loading capes…', loadingShort: 'Loading…', dbMissing: 'The cape database can’t load in this view. Open the page while signed in to Claude.',
+      noLive: 'No cape promotion is open right now. CapeWatch will notify you as soon as one opens.', logEmpty: 'No log entries yet.', notChecked: 'Not checked yet',
+      count: 'Showing {n} of {t}', gridMissing: 'The database isn’t available in this view.', gridEmpty: 'No capes match these filters.',
+      opens: 'Opens {d}', redeemBy: 'Redeem the code by {d}', redeemBtn: 'Redeem code', wiki: 'Wiki', wikiPage: 'Open wiki page', details: 'Details: {n}',
+      fReleased: 'Released', fWindow: 'Promotion window', fRemaining: 'Time left', fRedeem: 'Redeem by', fApi: 'API name', fDetected: 'Detected by CapeWatch',
+      left: '{x} left', lessHour: 'Less than an hour left',
+      noExact: 'No exact date. Estimate: {x}', fFrom: 'Starts', fUntil: 'Ends', est: 'estimate', more: 'Details', showElytra: 'Show elytra', showCape: 'Show cape', unofficialTr: '', support: 'Support CapeWatch', contact: 'Contact', foot1App: 'Cape facts from {wiki} and official Mojang announcements. Pictures are drawn by CapeWatch from Minecraft textures.',
+      free: 'Completely free', paid: 'Requires a purchase', freeTip: 'Only a Minecraft account is needed. Nothing else to buy.',
+      fCost: 'Cost', costAll: 'Any cost', stFree: 'Free right now',
+      CAT: { ownership: 'Game ownership', staff: 'Mojang / Microsoft staff', 'event-physical': 'In-person event', 'event-virtual': 'Online event',
+        personal: 'Personal cape', competition: 'Competition', volunteer: 'Volunteers', temporary: 'Temporary', other: 'Other' },
+      AV: { available: 'Available now', permanent: 'Free for everyone', announced: 'Announced', ended: 'Promotion ended', exclusive: 'Exclusive' },
+      EV: { new: 'New cape', announced: 'Announced', available: 'Promotion opened', ending: 'Ending soon', ended: 'Promotion ended', changed: 'Update', baseline: 'CapeWatch started' }
+    },
+    he: {
+      title: 'CapeWatch',
+      unofficial: 'לא רשמי. בניתי את האפליקציה בעצמי, ואין לי שום קשר ל-Mojang או ל-Microsoft.',
+      legal: 'בניתי את CapeWatch בעצמי, כאפליקציה עצמאית. היא לא מוצר רשמי של Minecraft, ואין לי שום קשר ל-Mojang Studios או ל-Microsoft. הן לא אישרו את האפליקציה ולא תומכות בה. Minecraft הוא סימן מסחרי של Microsoft. המידע על הגלימות נאסף ממקורות ציבוריים ועלול להכיל טעויות.',
+      lede: 'מעקב אחרי כל הגלימות שיצאו ל-Minecraft ב-Java וב-Bedrock. CapeWatch בודק פעמיים ביום אם נוספה גלימה חדשה, אם נפתח מבצע או אם מבצע עומד להיגמר, ושולח לך התראה.',
+      langLbl: 'שפה', stLast: 'בדיקה אחרונה', stLive: 'זמינות להשגה עכשיו', stTotal: 'גלימות במעקב', stJava: 'ב-Java', stBedrock: 'ב-Bedrock',
+      hLive: 'אפשר להשיג עכשיו', liveNote: 'מבצעים מוגבלים בזמן. מי שמפספס, לא יקבל אותן אחר כך.', hAnn: 'הוכרזו ועוד לא זמינות',
+      hLog: 'יומן CapeWatch', logNote: 'מה CapeWatch מצא בבדיקות האחרונות', hAll: 'כל הגלימות',
+      fq: 'חיפוש לפי שם', fqPh: 'למשל Pan, MINECON', fEd: 'גרסה', edAll: 'Java ו-Bedrock', edBoth: 'בשתי הגרסאות', edJavaOnly: 'רק Java', edBedrockOnly: 'רק Bedrock',
+      fSt: 'מצב', stAll: 'כל המצבים', stGet: 'אפשר להשיג', stAnnounced: 'הוכרזו', stEnded: 'המבצע הסתיים', stExclusive: 'בלעדיות',
+      fCat: 'סוג', catAll: 'כל הסוגים', fSort: 'מיון', sortNew: 'מהחדשה לישנה', sortOld: 'מהישנה לחדשה', sortName: 'לפי שם',
+      foot1: 'הנתונים והתמונות מ-{wiki} (CC BY-NC-SA 3.0) ומהודעות רשמיות של Mojang. זה לא אתר רשמי של Minecraft.',
+      foot2: 'קודים למבצעים ממומשים ב-{url}.', close: 'סגירה',
+      loading: 'טוען את רשימת הגלימות…', loadingShort: 'טוען…', dbMissing: 'לא ניתן לטעון את מאגר הגלימות בתצוגה הזו. פתחו את הדף כשאתם מחוברים ל-Claude.',
+      noLive: 'כרגע אין מבצע פתוח לגלימה. CapeWatch ישלח התראה ברגע שייפתח אחד.', logEmpty: 'עדיין אין רשומות ביומן.', notChecked: 'עוד לא נבדק',
+      count: 'מוצגות {n} מתוך {t}', gridMissing: 'המאגר לא זמין בתצוגה הזו.', gridEmpty: 'אין גלימות שמתאימות לסינון הזה.',
+      opens: 'נפתח ב-{d}', redeemBy: 'לממש את הקוד עד {d}', redeemBtn: 'מימוש קוד', wiki: 'בוויקי', wikiPage: 'לדף בוויקי', details: 'פרטים על {n}',
+      fReleased: 'יצאה', fWindow: 'חלון המבצע', fRemaining: 'זמן שנשאר', fRedeem: 'מימוש קוד עד', fApi: 'שם ב-API', fDetected: 'CapeWatch זיהה',
+      left: 'נותרו {x}', lessHour: 'נותרה פחות משעה',
+      noExact: 'אין תאריך מדויק. הערכה: {x}', fFrom: 'מתחיל', fUntil: 'מסתיים', est: 'הערכה', more: 'פירוט מלא', showElytra: 'הצג אליטרה', showCape: 'הצג גלימה', unofficialTr: 'זה לא מוצר רשמי של Minecraft. לא אושר על ידי Mojang או Microsoft ואין לו קשר אליהן.', support: 'תמיכה ב-CapeWatch', contact: 'יצירת קשר', foot1App: 'העובדות על הגלימות מ-{wiki} ומהודעות רשמיות של Mojang. התמונות מצוירות על ידי CapeWatch מהטקסטורות של Minecraft.',
+      free: 'חינמי לחלוטין', paid: 'דורש רכישה', freeTip: 'צריך רק חשבון Minecraft, בלי לקנות שום דבר נוסף.',
+      fCost: 'עלות', costAll: 'כל העלויות', stFree: 'חינמיות עכשיו',
+      CAT: { ownership: 'בעלות על המשחק', staff: 'צוות Mojang / Microsoft', 'event-physical': 'אירוע פיזי', 'event-virtual': 'אירוע מקוון',
+        personal: 'גלימה אישית', competition: 'תחרות', volunteer: 'מתנדבים', temporary: 'זמנית', other: 'אחר' },
+      AV: { available: 'זמינה עכשיו', permanent: 'ניתנת לכולם', announced: 'הוכרזה', ended: 'המבצע הסתיים', exclusive: 'בלעדית' },
+      EV: { new: 'גלימה חדשה', announced: 'הוכרזה', available: 'המבצע נפתח', ending: 'עומד להיגמר', ended: 'המבצע הסתיים', changed: 'עדכון', baseline: 'CapeWatch הופעל' }
+    },
+    es: {
+      title: 'CapeWatch',
+      unofficial: 'No oficial. Creé esta app por mi cuenta y no tengo ninguna relación con Mojang ni con Microsoft.',
+      legal: 'Creé CapeWatch por mi cuenta, como una app independiente. No es un producto oficial de Minecraft, y no tengo ninguna relación con Mojang Studios ni con Microsoft, que no la respaldan. Minecraft es una marca registrada de Microsoft. La información sobre las capas proviene de fuentes públicas y puede contener errores.',
+      lede: 'Sigue todas las capas de Minecraft lanzadas para Java y Bedrock. CapeWatch revisa dos veces al día si hay capas nuevas, promociones que se abren o que están por terminar, y te avisa.',
+      langLbl: 'Idioma', stLast: 'Última revisión', stLive: 'Disponibles ahora', stTotal: 'Capas registradas', stJava: 'En Java', stBedrock: 'En Bedrock',
+      hLive: 'Consíguela ahora', liveNote: 'Promociones por tiempo limitado. Si te las pierdes, no vuelven.', hAnn: 'Anunciadas, aún no disponibles',
+      hLog: 'Registro de CapeWatch', logNote: 'Lo que encontró CapeWatch en las últimas revisiones', hAll: 'Todas las capas',
+      fq: 'Buscar por nombre', fqPh: 'p. ej. Pan, MINECON', fEd: 'Edición', edAll: 'Java y Bedrock', edBoth: 'Ambas ediciones', edJavaOnly: 'Solo Java', edBedrockOnly: 'Solo Bedrock',
+      fSt: 'Estado', stAll: 'Todos los estados', stGet: 'Se puede conseguir', stAnnounced: 'Anunciadas', stEnded: 'Promoción terminada', stExclusive: 'Exclusivas',
+      fCat: 'Tipo', catAll: 'Todos los tipos', fSort: 'Ordenar', sortNew: 'Más nuevas primero', sortOld: 'Más antiguas primero', sortName: 'Por nombre',
+      foot1: 'Datos e imágenes de {wiki} (CC BY-NC-SA 3.0) y de anuncios oficiales de Mojang. No es un sitio oficial de Minecraft.',
+      foot2: 'Los códigos se canjean en {url}.', close: 'Cerrar',
+      loading: 'Cargando capas…', loadingShort: 'Cargando…', dbMissing: 'La base de datos de capas no se puede cargar en esta vista. Abre la página con tu sesión de Claude iniciada.',
+      noLive: 'Ahora no hay ninguna promoción de capas abierta. CapeWatch te avisará en cuanto se abra una.', logEmpty: 'Aún no hay entradas.', notChecked: 'Sin revisar aún',
+      count: 'Mostrando {n} de {t}', gridMissing: 'La base de datos no está disponible en esta vista.', gridEmpty: 'Ninguna capa coincide con estos filtros.',
+      opens: 'Abre el {d}', redeemBy: 'Canjea el código antes del {d}', redeemBtn: 'Canjear código', wiki: 'Wiki', wikiPage: 'Abrir en la wiki', details: 'Detalles: {n}',
+      fReleased: 'Lanzada', fWindow: 'Periodo de la promoción', fRemaining: 'Tiempo restante', fRedeem: 'Canjear antes de', fApi: 'Nombre en la API', fDetected: 'Detectada por CapeWatch',
+      left: 'Quedan {x}', lessHour: 'Queda menos de una hora',
+      noExact: 'Sin fecha exacta. Estimación: {x}', fFrom: 'Empieza', fUntil: 'Termina', est: 'estimación', more: 'Detalles', showElytra: 'Ver élitros', showCape: 'Ver capa', unofficialTr: 'No es un producto oficial de Minecraft. No está aprobado por Mojang ni Microsoft ni asociado con ellas.', support: 'Apoyar a CapeWatch', contact: 'Contacto', foot1App: 'Datos de las capas de {wiki} y de anuncios oficiales de Mojang. CapeWatch dibuja las imágenes a partir de las texturas de Minecraft.',
+      free: 'Totalmente gratis', paid: 'Requiere una compra', freeTip: 'Solo necesitas una cuenta de Minecraft. Nada más que comprar.',
+      fCost: 'Coste', costAll: 'Cualquier coste', stFree: 'Gratis ahora',
+      CAT: { ownership: 'Propiedad del juego', staff: 'Personal de Mojang / Microsoft', 'event-physical': 'Evento presencial', 'event-virtual': 'Evento en línea',
+        personal: 'Capa personal', competition: 'Competición', volunteer: 'Voluntarios', temporary: 'Temporal', other: 'Otro' },
+      AV: { available: 'Disponible ahora', permanent: 'Gratis para todos', announced: 'Anunciada', ended: 'Promoción terminada', exclusive: 'Exclusiva' },
+      EV: { new: 'Capa nueva', announced: 'Anunciada', available: 'Promoción abierta', ending: 'Termina pronto', ended: 'Promoción terminada', changed: 'Actualización', baseline: 'CapeWatch activado' }
+    },
+    pt: {
+      title: 'CapeWatch',
+      unofficial: 'Não oficial. Criei este app por conta própria e não tenho nenhuma ligação com a Mojang ou a Microsoft.',
+      legal: 'Criei o CapeWatch por conta própria, como um app independente. Não é um produto oficial do Minecraft, e não tenho nenhuma ligação com a Mojang Studios ou a Microsoft, que não o endossam. Minecraft é uma marca registrada da Microsoft. As informações sobre as capas vêm de fontes públicas e podem conter erros.',
+      lede: 'Acompanha todas as capas do Minecraft lançadas para Java e Bedrock. O CapeWatch verifica duas vezes por dia se há capas novas, promoções abertas ou prestes a acabar, e te avisa.',
+      langLbl: 'Idioma', stLast: 'Última verificação', stLive: 'Disponíveis agora', stTotal: 'Capas monitoradas', stJava: 'No Java', stBedrock: 'No Bedrock',
+      hLive: 'Pegue agora', liveNote: 'Promoções por tempo limitado. Perdeu, não volta.', hAnn: 'Anunciadas, ainda indisponíveis',
+      hLog: 'Registro do CapeWatch', logNote: 'O que o CapeWatch encontrou nas últimas verificações', hAll: 'Todas as capas',
+      fq: 'Buscar por nome', fqPh: 'ex.: Pan, MINECON', fEd: 'Edição', edAll: 'Java e Bedrock', edBoth: 'Ambas as edições', edJavaOnly: 'Só Java', edBedrockOnly: 'Só Bedrock',
+      fSt: 'Status', stAll: 'Todos os status', stGet: 'Dá para pegar', stAnnounced: 'Anunciadas', stEnded: 'Promoção encerrada', stExclusive: 'Exclusivas',
+      fCat: 'Tipo', catAll: 'Todos os tipos', fSort: 'Ordenar', sortNew: 'Mais novas primeiro', sortOld: 'Mais antigas primeiro', sortName: 'Por nome',
+      foot1: 'Dados e imagens de {wiki} (CC BY-NC-SA 3.0) e de anúncios oficiais da Mojang. Não é um site oficial do Minecraft.',
+      foot2: 'Os códigos são resgatados em {url}.', close: 'Fechar',
+      loading: 'Carregando capas…', loadingShort: 'Carregando…', dbMissing: 'O banco de capas não carrega nesta visualização. Abra a página com login no Claude.',
+      noLive: 'Nenhuma promoção de capa aberta agora. O CapeWatch avisa assim que abrir uma.', logEmpty: 'Ainda não há registros.', notChecked: 'Ainda não verificado',
+      count: 'Mostrando {n} de {t}', gridMissing: 'O banco de dados não está disponível nesta visualização.', gridEmpty: 'Nenhuma capa corresponde aos filtros.',
+      opens: 'Abre em {d}', redeemBy: 'Resgate o código até {d}', redeemBtn: 'Resgatar código', wiki: 'Wiki', wikiPage: 'Abrir na wiki', details: 'Detalhes: {n}',
+      fReleased: 'Lançada', fWindow: 'Período da promoção', fRemaining: 'Tempo restante', fRedeem: 'Resgatar até', fApi: 'Nome na API', fDetected: 'Detectada pelo CapeWatch',
+      left: 'Faltam {x}', lessHour: 'Falta menos de uma hora',
+      noExact: 'Sem data exata. Estimativa: {x}', fFrom: 'Começa', fUntil: 'Termina', est: 'estimativa', more: 'Detalhes', showElytra: 'Ver élitros', showCape: 'Ver capa', unofficialTr: 'Não é um produto oficial do Minecraft. Não é aprovado nem associado à Mojang ou à Microsoft.', support: 'Apoiar o CapeWatch', contact: 'Contato', foot1App: 'Dados das capas de {wiki} e de anúncios oficiais da Mojang. O CapeWatch desenha as imagens a partir das texturas do Minecraft.',
+      free: 'Totalmente grátis', paid: 'Requer uma compra', freeTip: 'Só precisa de uma conta Minecraft. Nada mais para comprar.',
+      fCost: 'Custo', costAll: 'Qualquer custo', stFree: 'Grátis agora',
+      CAT: { ownership: 'Posse do jogo', staff: 'Equipe Mojang / Microsoft', 'event-physical': 'Evento presencial', 'event-virtual': 'Evento online',
+        personal: 'Capa pessoal', competition: 'Competição', volunteer: 'Voluntários', temporary: 'Temporária', other: 'Outro' },
+      AV: { available: 'Disponível agora', permanent: 'Grátis para todos', announced: 'Anunciada', ended: 'Promoção encerrada', exclusive: 'Exclusiva' },
+      EV: { new: 'Capa nova', announced: 'Anunciada', available: 'Promoção aberta', ending: 'Acaba em breve', ended: 'Promoção encerrada', changed: 'Atualização', baseline: 'CapeWatch ativado' }
+    },
+    fr: {
+      title: 'CapeWatch',
+      unofficial: 'Non officiel. J’ai créé cette application moi-même et je n’ai aucun lien avec Mojang ni Microsoft.',
+      legal: 'J’ai créé CapeWatch moi-même, comme application indépendante. Ce n’est pas un produit officiel Minecraft, et je n’ai aucun lien avec Mojang Studios ni Microsoft, qui ne l’approuvent pas. Minecraft est une marque de Microsoft. Les informations sur les capes proviennent de sources publiques et peuvent contenir des erreurs.',
+      lede: 'Suit toutes les capes Minecraft sorties pour Java et Bedrock. CapeWatch vérifie deux fois par jour les nouvelles capes, les promotions qui ouvrent ou qui vont se terminer, et vous prévient.',
+      langLbl: 'Langue', stLast: 'Dernière vérification', stLive: 'Disponibles maintenant', stTotal: 'Capes suivies', stJava: 'Sur Java', stBedrock: 'Sur Bedrock',
+      hLive: 'À obtenir maintenant', liveNote: 'Promotions à durée limitée. Une fois passées, c’est fini.', hAnn: 'Annoncées, pas encore disponibles',
+      hLog: 'Journal de CapeWatch', logNote: 'Ce que CapeWatch a trouvé lors des dernières vérifications', hAll: 'Toutes les capes',
+      fq: 'Rechercher par nom', fqPh: 'ex. Pan, MINECON', fEd: 'Édition', edAll: 'Java et Bedrock', edBoth: 'Les deux éditions', edJavaOnly: 'Java uniquement', edBedrockOnly: 'Bedrock uniquement',
+      fSt: 'Statut', stAll: 'Tous les statuts', stGet: 'Obtenable', stAnnounced: 'Annoncées', stEnded: 'Promotion terminée', stExclusive: 'Exclusives',
+      fCat: 'Type', catAll: 'Tous les types', fSort: 'Trier', sortNew: 'Plus récentes d’abord', sortOld: 'Plus anciennes d’abord', sortName: 'Par nom',
+      foot1: 'Données et images issues de {wiki} (CC BY-NC-SA 3.0) et des annonces officielles de Mojang. Ce n’est pas un site officiel de Minecraft.',
+      foot2: 'Les codes s’échangent sur {url}.', close: 'Fermer',
+      loading: 'Chargement des capes…', loadingShort: 'Chargement…', dbMissing: 'La base des capes ne peut pas se charger dans cette vue. Ouvrez la page en étant connecté à Claude.',
+      noLive: 'Aucune promotion de cape n’est ouverte pour l’instant. CapeWatch vous préviendra dès qu’une ouvrira.', logEmpty: 'Aucune entrée pour l’instant.', notChecked: 'Pas encore vérifié',
+      count: '{n} sur {t} affichées', gridMissing: 'La base n’est pas disponible dans cette vue.', gridEmpty: 'Aucune cape ne correspond à ces filtres.',
+      opens: 'Ouvre le {d}', redeemBy: 'Échangez le code avant le {d}', redeemBtn: 'Échanger le code', wiki: 'Wiki', wikiPage: 'Ouvrir le wiki', details: 'Détails : {n}',
+      fReleased: 'Sortie', fWindow: 'Période de la promotion', fRemaining: 'Temps restant', fRedeem: 'Échanger avant', fApi: 'Nom dans l’API', fDetected: 'Détectée par CapeWatch',
+      left: 'Encore {x}', lessHour: 'Moins d’une heure restante',
+      noExact: 'Pas de date exacte. Estimation : {x}', fFrom: 'Début', fUntil: 'Fin', est: 'estimation', more: 'Détails', showElytra: 'Voir les élytres', showCape: 'Voir la cape', unofficialTr: 'Ce n’est pas un produit officiel Minecraft. Il n’est ni approuvé par Mojang ou Microsoft, ni associé à eux.', support: 'Soutenir CapeWatch', contact: 'Contact', foot1App: 'Infos sur les capes : {wiki} et annonces officielles de Mojang. Les images sont dessinées par CapeWatch à partir des textures de Minecraft.',
+      free: 'Entièrement gratuite', paid: 'Achat nécessaire', freeTip: 'Un compte Minecraft suffit. Rien d’autre à acheter.',
+      fCost: 'Coût', costAll: 'Tous les coûts', stFree: 'Gratuites maintenant',
+      CAT: { ownership: 'Possession du jeu', staff: 'Équipe Mojang / Microsoft', 'event-physical': 'Événement physique', 'event-virtual': 'Événement en ligne',
+        personal: 'Cape personnelle', competition: 'Compétition', volunteer: 'Bénévoles', temporary: 'Temporaire', other: 'Autre' },
+      AV: { available: 'Disponible', permanent: 'Offerte à tous', announced: 'Annoncée', ended: 'Promotion terminée', exclusive: 'Exclusive' },
+      EV: { new: 'Nouvelle cape', announced: 'Annoncée', available: 'Promotion ouverte', ending: 'Bientôt terminée', ended: 'Promotion terminée', changed: 'Mise à jour', baseline: 'CapeWatch activé' }
+    },
+    de: {
+      title: 'CapeWatch',
+      unofficial: 'Inoffiziell. Ich habe diese App selbst gebaut und stehe in keiner Verbindung zu Mojang oder Microsoft.',
+      legal: 'Ich habe CapeWatch selbst als unabhängige App gebaut. Sie ist kein offizielles Minecraft-Produkt, und ich stehe in keiner Verbindung zu Mojang Studios oder Microsoft, die sie weder unterstützen noch empfehlen. Minecraft ist eine Marke von Microsoft. Die Infos zu den Umhängen stammen aus öffentlichen Quellen und können Fehler enthalten.',
+      lede: 'Verfolgt alle Minecraft-Umhänge, die für Java und Bedrock erschienen sind. CapeWatch prüft zweimal täglich auf neue Umhänge, neu gestartete und bald endende Aktionen und benachrichtigt dich.',
+      langLbl: 'Sprache', stLast: 'Letzte Prüfung', stLive: 'Jetzt erhältlich', stTotal: 'Erfasste Umhänge', stJava: 'Auf Java', stBedrock: 'Auf Bedrock',
+      hLive: 'Jetzt holen', liveNote: 'Zeitlich begrenzte Aktionen. Verpasst ist verpasst.', hAnn: 'Angekündigt, noch nicht verfügbar',
+      hLog: 'CapeWatch-Protokoll', logNote: 'Was CapeWatch zuletzt gefunden hat', hAll: 'Alle Umhänge',
+      fq: 'Nach Name suchen', fqPh: 'z. B. Pan, MINECON', fEd: 'Edition', edAll: 'Java und Bedrock', edBoth: 'Beide Editionen', edJavaOnly: 'Nur Java', edBedrockOnly: 'Nur Bedrock',
+      fSt: 'Status', stAll: 'Alle Status', stGet: 'Erhältlich', stAnnounced: 'Angekündigt', stEnded: 'Aktion beendet', stExclusive: 'Exklusiv',
+      fCat: 'Art', catAll: 'Alle Arten', fSort: 'Sortieren', sortNew: 'Neueste zuerst', sortOld: 'Älteste zuerst', sortName: 'Nach Name',
+      foot1: 'Daten und Bilder von {wiki} (CC BY-NC-SA 3.0) und aus offiziellen Mojang-Ankündigungen. Keine offizielle Minecraft-Seite.',
+      foot2: 'Codes werden auf {url} eingelöst.', close: 'Schließen',
+      loading: 'Umhänge werden geladen…', loadingShort: 'Lädt…', dbMissing: 'Die Umhang-Datenbank lässt sich hier nicht laden. Öffne die Seite, während du bei Claude angemeldet bist.',
+      noLive: 'Gerade läuft keine Umhang-Aktion. CapeWatch meldet sich, sobald eine startet.', logEmpty: 'Noch keine Einträge.', notChecked: 'Noch nicht geprüft',
+      count: '{n} von {t} angezeigt', gridMissing: 'Die Datenbank ist in dieser Ansicht nicht verfügbar.', gridEmpty: 'Keine Umhänge passen zu diesen Filtern.',
+      opens: 'Startet am {d}', redeemBy: 'Code bis {d} einlösen', redeemBtn: 'Code einlösen', wiki: 'Wiki', wikiPage: 'Im Wiki öffnen', details: 'Details: {n}',
+      fReleased: 'Erschienen', fWindow: 'Aktionszeitraum', fRemaining: 'Verbleibend', fRedeem: 'Einlösen bis', fApi: 'API-Name', fDetected: 'Von CapeWatch erkannt',
+      left: 'Noch {x}', lessHour: 'Weniger als eine Stunde',
+      noExact: 'Kein genaues Datum. Schätzung: {x}', fFrom: 'Beginn', fUntil: 'Ende', est: 'Schätzung', more: 'Details', showElytra: 'Elytren zeigen', showCape: 'Umhang zeigen', unofficialTr: 'Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt und nicht mit ihnen verbunden.', support: 'CapeWatch unterstützen', contact: 'Kontakt', foot1App: 'Fakten zu den Umhängen von {wiki} und aus offiziellen Mojang-Ankündigungen. Die Bilder zeichnet CapeWatch aus Minecraft-Texturen.',
+      free: 'Komplett kostenlos', paid: 'Kauf erforderlich', freeTip: 'Nur ein Minecraft-Konto nötig. Nichts extra zu kaufen.',
+      fCost: 'Kosten', costAll: 'Alle', stFree: 'Jetzt gratis',
+      CAT: { ownership: 'Spielbesitz', staff: 'Mojang-/Microsoft-Team', 'event-physical': 'Vor-Ort-Event', 'event-virtual': 'Online-Event',
+        personal: 'Persönlicher Umhang', competition: 'Wettbewerb', volunteer: 'Freiwillige', temporary: 'Temporär', other: 'Sonstiges' },
+      AV: { available: 'Jetzt verfügbar', permanent: 'Für alle', announced: 'Angekündigt', ended: 'Aktion beendet', exclusive: 'Exklusiv' },
+      EV: { new: 'Neuer Umhang', announced: 'Angekündigt', available: 'Aktion gestartet', ending: 'Endet bald', ended: 'Aktion beendet', changed: 'Update', baseline: 'CapeWatch gestartet' }
+    },
+    ru: {
+      title: 'CapeWatch',
+      unofficial: 'Неофициально. Это моё собственное приложение, и у меня нет никакой связи с Mojang или Microsoft.',
+      legal: 'CapeWatch — моё собственное независимое приложение. Это не официальный продукт Minecraft, и у меня нет никакой связи с Mojang Studios или Microsoft, которые его не одобряли. Minecraft — товарный знак Microsoft. Информация о плащах взята из открытых источников и может содержать ошибки.',
+      lede: 'Следит за всеми плащами Minecraft, вышедшими для Java и Bedrock. CapeWatch дважды в день проверяет новые плащи, начало и скорое окончание акций и присылает уведомление.',
+      langLbl: 'Язык', stLast: 'Последняя проверка', stLive: 'Доступны сейчас', stTotal: 'Плащей в базе', stJava: 'В Java', stBedrock: 'В Bedrock',
+      hLive: 'Можно получить сейчас', liveNote: 'Акции ограничены по времени. Пропустил — не получишь.', hAnn: 'Анонсированы, пока недоступны',
+      hLog: 'Журнал CapeWatch', logNote: 'Что CapeWatch нашёл при последних проверках', hAll: 'Все плащи',
+      fq: 'Поиск по названию', fqPh: 'напр. Pan, MINECON', fEd: 'Издание', edAll: 'Java и Bedrock', edBoth: 'Оба издания', edJavaOnly: 'Только Java', edBedrockOnly: 'Только Bedrock',
+      fSt: 'Статус', stAll: 'Все статусы', stGet: 'Можно получить', stAnnounced: 'Анонсированы', stEnded: 'Акция завершена', stExclusive: 'Эксклюзивные',
+      fCat: 'Тип', catAll: 'Все типы', fSort: 'Сортировка', sortNew: 'Сначала новые', sortOld: 'Сначала старые', sortName: 'По названию',
+      foot1: 'Данные и изображения — {wiki} (CC BY-NC-SA 3.0) и официальные анонсы Mojang. Это не официальный сайт Minecraft.',
+      foot2: 'Коды активируются на {url}.', close: 'Закрыть',
+      loading: 'Загрузка плащей…', loadingShort: 'Загрузка…', dbMissing: 'База плащей не загружается в этом режиме. Откройте страницу, войдя в Claude.',
+      noLive: 'Сейчас нет открытых акций. CapeWatch сообщит, как только появится новая.', logEmpty: 'Записей пока нет.', notChecked: 'Ещё не проверялось',
+      count: 'Показано {n} из {t}', gridMissing: 'База недоступна в этом режиме.', gridEmpty: 'Нет плащей по этим фильтрам.',
+      opens: 'Откроется {d}', redeemBy: 'Активируйте код до {d}', redeemBtn: 'Активировать код', wiki: 'Вики', wikiPage: 'Открыть в вики', details: 'Подробнее: {n}',
+      fReleased: 'Вышел', fWindow: 'Период акции', fRemaining: 'Осталось времени', fRedeem: 'Активировать до', fApi: 'Имя в API', fDetected: 'Обнаружен CapeWatch',
+      left: 'Осталось {x}', lessHour: 'Осталось меньше часа',
+      noExact: 'Точной даты нет. Оценка: {x}', fFrom: 'Начало', fUntil: 'Конец', est: 'оценка', more: 'Подробнее', showElytra: 'Показать элитры', showCape: 'Показать плащ', unofficialTr: 'Это не официальный продукт Minecraft. Не одобрен Mojang или Microsoft и не связан с ними.', support: 'Поддержать CapeWatch', contact: 'Связаться', foot1App: 'Сведения о плащах — {wiki} и официальные анонсы Mojang. Картинки рисует CapeWatch по текстурам Minecraft.',
+      free: 'Полностью бесплатно', paid: 'Нужна покупка', freeTip: 'Нужен только аккаунт Minecraft. Больше ничего покупать не надо.',
+      fCost: 'Стоимость', costAll: 'Любая', stFree: 'Бесплатно сейчас',
+      CAT: { ownership: 'Владение игрой', staff: 'Сотрудники Mojang / Microsoft', 'event-physical': 'Офлайн-событие', 'event-virtual': 'Онлайн-событие',
+        personal: 'Личный плащ', competition: 'Соревнование', volunteer: 'Волонтёры', temporary: 'Временный', other: 'Другое' },
+      AV: { available: 'Доступен сейчас', permanent: 'Бесплатно для всех', announced: 'Анонсирован', ended: 'Акция завершена', exclusive: 'Эксклюзивный' },
+      EV: { new: 'Новый плащ', announced: 'Анонс', available: 'Акция открыта', ending: 'Скоро закончится', ended: 'Акция завершена', changed: 'Обновление', baseline: 'CapeWatch запущен' }
+    }
+  };
+
+  const S = { capes: new Map(), imgs: new Map(), elyImgs: new Map(), elyLoaded: false, events: [], status: null, loaded: false, dbMissing: false };
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('caperadar:' + k); return v == null ? d : v; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('caperadar:' + k, v); } catch {} }
+  };
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v == null || v === false) continue;
+      if (k === 'class') el.className = v; else if (k === 'text') el.textContent = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v); else el.setAttribute(k, v === true ? '' : v);
+    }
+    for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+    return el;
+  }
+
+  function browserLangs() { try { return (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]).filter(Boolean); } catch { return []; } }
+  function detectLang() {
+    for (const l of browserLangs()) {
+      const base = l.toLowerCase().split('-')[0];
+      if (base === 'iw') return 'he';
+      if (LANGS[base]) return base;
+    }
+    return 'en';
+  }
+  let lang = 'en', locale = 'en', L = T.en;
+  let fmtFull, fmtDay, fmtMonth, fmtDT, rtf, fmtList;
+  const t = (k, vars) => {
+    let s = L[k] ?? T.en[k] ?? k;
+    if (vars) for (const [a, b] of Object.entries(vars)) s = s.replace('{' + a + '}', b);
+    return s;
+  };
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  // Localized text field with fallbacks: obtainHe / obtainEn / textHe / textEn …
+  const pick = (o, base) => o[base + cap(lang)] || o[base + 'En'] || o[base + 'He'] || '';
+
+  function setLang(next) {
+    lang = LANGS[next] ? next : 'en';
+    L = T[lang];
+    locale = browserLangs().find(l => l.toLowerCase().split('-')[0] === lang) || lang;
+    try { fmtFull = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' }); } catch { locale = lang; fmtFull = new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long', year: 'numeric' }); }
+    // Bare dates (YYYY-MM-DD, YYYY-MM) are calendar dates stored as UTC midnight: format them in UTC,
+    // or viewers west of UTC see the day (or month) before. Full timestamps stay in local time.
+    fmtDay = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    fmtMonth = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    fmtDT = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+    fmtList = Intl.ListFormat ? new Intl.ListFormat(locale, { type: 'conjunction' }) : { format: (a) => a.join(' ') };
+    const dir = LANGS[lang].dir;
+    for (const el of [$('wrap'), $('dlg'), $('dlg-inner')]) { el.dir = dir; el.lang = lang; }
+    document.documentElement.lang = lang;
+    document.title = t('title');
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+    const link = h('a', { href: 'https://minecraft.wiki/w/Cape', target: '_blank', rel: 'noopener', text: 'minecraft.wiki' });
+    const [f1a, f1b] = t(APP ? 'foot1App' : 'foot1').split('{wiki}');
+    $('foot1').replaceChildren(f1a, link, f1b ?? '');
+    const [f2a, f2b] = t('foot2').split('{url}');
+    $('foot2').replaceChildren(f2a, h('span', { class: 'latin', text: 'minecraft.net/redeem' }), f2b ?? '');
+    $('f-cat').replaceChildren();   // rebuilt with localized labels on next render
+    $('f-lang').value = lang;
+    titleView.draw();   // the picker's label just changed width; refit now rather than waiting for a resize event
+    render();
+  }
+
+  // ---------- dates ----------
+  function parseISO(s) { if (!s) return null; const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(s) ? s + 'T00:00:00Z' : s); return isNaN(d) ? null : d; }
+  function fmtDate(s) {
+    if (!s) return '—';
+    if (/^\d{4}$/.test(s)) return s;
+    if (/^\d{4}-\d{2}$/.test(s)) { const d = parseISO(s + '-01'); return d ? fmtMonth.format(d) : s; }
+    const d = parseISO(s); return d ? (/^\d{4}-\d{2}-\d{2}$/.test(s) ? fmtDay : fmtFull).format(d) : s;
+  }
+  // Date and time of a full timestamp, or a dash when it is missing or malformed (never "1 Jan 1970").
+  const fmtWhen = (iso) => { const d = parseISO(iso); return d ? fmtDT.format(d) : '—'; };
+  // Uncertain dates: c.approx[field] = {en, he, …} holds the best estimate we have.
+  // Partial dates (YYYY or YYYY-MM) are estimates too.
+  const approxText = (c, f) => { const a = c.approx?.[f]; return a ? (a[lang] || a.en || a.he || '') : ''; };
+  const isPartial = (v) => /^\d{4}(-\d{2})?$/.test(v || '');
+  function dateOf(c, f) {
+    const a = approxText(c, f);
+    if (a) return t('noExact', { x: a });
+    if (isPartial(c[f])) return t('noExact', { x: fmtDate(c[f]) });
+    return fmtDate(c[f]);
+  }
+  const hasDate = (c, f) => !!(c[f] || approxText(c, f));
+  function ago(iso) {
+    const d = parseISO(iso); if (!d) return '—';
+    const mins = Math.round((d - Date.now()) / 60000);
+    if (Math.abs(mins) < 60) return rtf.format(mins, 'minute');
+    const hrs = Math.round(mins / 60); if (Math.abs(hrs) < 48) return rtf.format(hrs, 'hour');
+    return rtf.format(Math.round(hrs / 24), 'day');
+  }
+  function endOf(c) {
+    // availableUntil given as a bare date means "through the end of that day" (UTC)
+    const s = c.availableUntil; if (!s) return null;
+    // A month or year alone means "until the end of that month/year" (UTC)
+    if (/^\d{4}$/.test(s)) return new Date(Date.UTC(+s + 1, 0, 1) - 1000);
+    if (/^\d{4}-\d{2}$/.test(s)) { const [y, m] = s.split('-').map(Number); return new Date(Date.UTC(y, m, 1) - 1000); }
+    const d = parseISO(s); if (!d) return null;
+    return /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(d.getTime() + 86399000) : d;
+  }
+  const unit = (n, u) => { try { return new Intl.NumberFormat(locale, { style: 'unit', unit: u, unitDisplay: 'long' }).format(n); } catch { return n + ' ' + u + (n === 1 ? '' : 's'); } };
+  function remaining(c) {
+    const end = endOf(c); if (!end) return null;
+    const ms = end - Date.now(); if (ms <= 0) return { text: L.AV.ended, urgent: true, ms };
+    const days = Math.floor(ms / 86400000), hours = Math.floor((ms % 86400000) / 3600000);
+    let text;
+    if (days >= 1) text = t('left', { x: hours ? fmtList.format([unit(days, 'day'), unit(hours, 'hour')]) : unit(days, 'day') });
+    else if (hours >= 1) text = t('left', { x: unit(hours, 'hour') });
+    else text = t('lessHour');
+    return { text, urgent: ms < 3 * 86400000, ms };
+  }
+  const isLive = (c) => c.availability === 'available' || c.availability === 'permanent';
+  function isNew(c) {
+    const ref = parseISO(c.source === 'radar' ? c.detectedAt : c.releaseDate);
+    return !!ref && (Date.now() - ref) < 14 * 86400000 && (Date.now() - ref) > -86400000;
+  }
+
+  // Texture source: Mojang's texture server by textureId; capes that never had one there
+  // (temporary 2010 capes, Bedrock-only capes) carry a textureUrl to the wiki's 64×32 texture file.
+  const texUrl = (id) => {
+    const c = S.capes.get(id);
+    // The installed app never loads wiki files (non-commercial licence; the app has a donate button).
+    return c?.textureId ? 'https://textures.minecraft.net/texture/' + c.textureId : (APP ? null : c?.textureUrl || null);
+  };
+
+  // ---------- installed app ----------
+  // The Windows app sets window.__CAPEWATCH_APP__ before this script and provides window.capeArt, which
+  // draws the card pictures from the textures at runtime. art() returns a picture or null (and asks for it).
+  const APP = !!window.__CAPEWATCH_APP__;
+  const art = (id, kind) => (window.capeArt ? window.capeArt.get(id, kind, texUrl(id)) : null);
+
+  // ---------- elytra view in the cards ----------
+  // Elytra pictures are the minecraft.wiki renders of each cape's elytra, stored in the elytraImages
+  // collection exactly like the cape renders in capeImages. A cape with no elytra render gets no button.
+  const showEly = new Set();      // capes whose cards currently show the elytra
+  const noElyLogged = new Set();
+  function logMissingElytra() {
+    if (APP || !S.loaded || !S.elyLoaded) return;   // the app draws its own pictures
+    for (const id of S.capes.keys()) if (!S.elyImgs.has(id) && !noElyLogged.has(id)) {
+      noElyLogged.add(id);
+      console.info('[Cards] elytra: no wiki elytra image, no button for', id);
+    }
+  }
+  // Toggle button under the picture. Swaps the picture in place on every card of that cape.
+  function elytraBtn(id, c) {
+    if (!S.elyImgs.has(id) && !art(id, 'elytra')) return null;
+    return h('button', { class: 'btn ghost ely-btn', type: 'button', 'data-ely': id, text: t(showEly.has(id) ? 'showCape' : 'showElytra'),
+      onclick: () => {
+        if (showEly.has(id)) showEly.delete(id); else showEly.add(id);
+        document.querySelectorAll('[data-cape="' + CSS.escape(id) + '"]').forEach((card) => {
+          const old = card.querySelector('.slot');
+          old.replaceWith(slot(id, c, old.tagName === 'BUTTON'));
+        });
+        document.querySelectorAll('[data-ely="' + CSS.escape(id) + '"]').forEach((b) => { b.textContent = t(showEly.has(id) ? 'showCape' : 'showElytra'); });
+      } });
+  }
+
+  // ---------- pieces ----------
+  function slot(id, c, interactive) {
+    const ely = showEly.has(id) ? (S.elyImgs.get(id) || art(id, 'elytra')) : null;
+    const gen = !S.imgs.get(id) && art(id, 'cape');
+    const src = S.imgs.get(id) || gen;
+    const genEly = ely && !S.elyImgs.get(id);
+    const kids = [ely ? h('img', { src: ely, alt: '', class: genEly ? 'gen' : 'elytra', decoding: 'async' })
+      : src ? h('img', { src, alt: '', class: gen ? 'gen' : null, loading: 'lazy', decoding: 'async' }) : h('span', { class: 'ph', text: c.name })];
+    if (isNew(c)) kids.push(h('span', { class: 'flag', text: 'NEW' }));
+    if (!interactive) return h('div', { class: 'slot' }, kids);
+    return h('button', { class: 'slot', type: 'button', 'aria-label': t('details', { n: c.name }), onclick: () => openDetail(id) }, kids);
+  }
+  function editions(c) {
+    const e = c.editions || [];
+    return [e.includes('java') ? h('span', { class: 'ed java', title: 'Java Edition', text: 'JAVA' }) : null,
+            e.includes('bedrock') ? h('span', { class: 'ed bedrock', title: 'Bedrock Edition', text: 'BEDROCK' }) : null];
+  }
+  const pill = (c) => h('span', { class: 'pill ' + c.availability, text: L.AV[c.availability] || c.availability });
+  // cost: 'free' = only a Minecraft account needed; 'paid' = needs a ticket, another game or a pre-order; unset for staff/personal capes.
+  const freePill = (c) => c.cost === 'free' ? h('span', { class: 'pill free', title: t('freeTip'), text: t('free') }) : null;
+  function wikiUrl(c) { return 'https://minecraft.wiki/w/' + encodeURIComponent((c.wikiTitle || c.name).replace(/ /g, '_')).replace(/%23/, '#'); }
+
+  // "**x**" in data text marks a key fact; rendered as <strong>, everything else stays plain text.
+  const rich = (s) => String(s || '').split(/\*\*(.+?)\*\*/).map((part, i) => i % 2 ? h('strong', { text: part }) : part);
+  // Card text: the short summary (shortEn/shortHe), else the first sentence of the full how-to.
+  const shortOf = (c) => pick(c, 'short') || (pick(c, 'obtain').match(/^.+?[.!?](?=\s|$)/) || [pick(c, 'obtain')])[0];
+
+  // Compact card: name, badges, one countdown, one short line. Everything else lives in the detail dialog.
+  function liveCard(id, c) {
+    const rem = c.availability === 'available' ? remaining(c) : null;
+    const est = (f) => approxText(c, f) ? h('span', { class: 'est', text: '(' + t('est') + ')' }) : null;
+    let clock = null;
+    if (rem) clock = h('div', { class: 'countdown' + (rem.urgent ? ' urgent' : ''), 'data-count': id }, rem.text, est('availableUntil'));
+    else if (c.availability === 'announced' && c.availableFrom) clock = h('div', { class: 'countdown' }, t('opens', { d: fmtDate(c.availableFrom) }), est('availableFrom'));
+    return h('article', { class: 'live-card', 'data-cape': id },
+      h('div', { class: 'pic' }, slot(id, c, true), elytraBtn(id, c)),
+      h('div', { class: 'live-body' },
+        h('div', { class: 'live-name', text: c.name }),
+        h('div', { class: 'meta' }, editions(c), pill(c), freePill(c)),
+        clock,
+        h('p', { class: 'short rich' }, rich(shortOf(c))),
+        h('div', { class: 'live-actions' },
+          c.availability === 'available' && hasDate(c, 'redeemBy') ? h('a', { class: 'btn', href: 'https://www.minecraft.net/redeem', target: '_blank', rel: 'noopener', text: t('redeemBtn') }) : null,
+          h('button', { class: 'btn ghost', type: 'button', onclick: () => openDetail(id), text: t('more') }))));
+  }
+
+  // ---------- render ----------
+  function render() {
+    if (!fmtFull) return;
+    const all = [...S.capes.entries()];
+    // status strip
+    $('st-last').textContent = S.status?.lastCheckAt ? ago(S.status.lastCheckAt) : (S.loaded ? t('notChecked') : '…');
+    if (S.status?.lastCheckAt) $('st-last').title = fmtWhen(S.status.lastCheckAt);
+    if (S.loaded) {
+      $('st-live').textContent = all.filter(([, c]) => isLive(c)).length;   // same set as "Get it now"; "free" is a subset
+      $('st-free').textContent = all.filter(([, c]) => isLive(c) && c.cost === 'free').length;
+      $('st-total').textContent = all.length;
+      $('st-java').textContent = all.filter(([, c]) => (c.editions || []).includes('java')).length;
+      $('st-bedrock').textContent = all.filter(([, c]) => (c.editions || []).includes('bedrock')).length;
+    }
+
+    // live now
+    const live = $('live'); live.replaceChildren();
+    if (S.dbMissing) live.append(h('div', { class: 'empty', text: t('dbMissing') }));
+    else if (!S.loaded) live.append(h('div', { class: 'empty', text: t('loading') }));
+    else {
+      const now = all.filter(([, c]) => c.availability === 'available')
+        .sort((a, b) => (endOf(a[1])?.getTime() ?? Infinity) - (endOf(b[1])?.getTime() ?? Infinity));
+      if (!now.length) live.append(h('div', { class: 'empty', text: t('noLive') }));
+      now.forEach(([id, c]) => live.append(liveCard(id, c)));
+      all.filter(([, c]) => c.availability === 'permanent').forEach(([id, c]) => live.append(liveCard(id, c)));
+    }
+
+    // announced
+    const ann = all.filter(([, c]) => c.availability === 'announced');
+    $('sec-ann').hidden = !ann.length;
+    $('announced').replaceChildren(...ann.map(([id, c]) => liveCard(id, c)));
+
+    // log
+    const log = $('log'); log.replaceChildren();
+    if (!S.events.length) log.append(h('li', {}, h('time', { text: '—' }), h('span', { class: 'muted', text: S.loaded ? t('logEmpty') : t('loadingShort') })));
+    for (const e of S.events.slice(0, 10)) {
+      log.append(h('li', {}, h('time', { datetime: e.at || '', text: fmtWhen(e.at) }),
+        h('span', {}, h('span', { class: 'kind', text: (L.EV[e.type] || L.EV.changed) + ': ' }), pick(e, 'text') || e.capeName || '')));
+    }
+
+    renderGrid();
+  }
+
+  function renderGrid() {
+    const q = $('f-q').value.trim().toLowerCase(), ed = $('f-ed').value, st = $('f-st').value, cost = $('f-cost').value, sort = $('f-sort').value;
+    // category options from data, labelled in the current language
+    const cats = [...new Set([...S.capes.values()].map(c => c.category).filter(Boolean))];
+    const catSel = $('f-cat');
+    if (catSel.options.length - 1 !== cats.length) {
+      const cur = catSel.value || store.get('cat', 'all');
+      catSel.replaceChildren(h('option', { value: 'all', text: t('catAll') }), ...Object.keys(T.en.CAT).filter(k => cats.includes(k)).map(k => h('option', { value: k, text: L.CAT[k] })));
+      catSel.value = [...catSel.options].some(o => o.value === cur) ? cur : 'all';
+    }
+    const cat = catSel.value;
+    let rows = [...S.capes.entries()].filter(([, c]) => {
+      const e = c.editions || [], J = e.includes('java'), B = e.includes('bedrock');
+      if (ed === 'java' && !J) return false; if (ed === 'bedrock' && !B) return false;
+      if (ed === 'both' && !(J && B)) return false; if (ed === 'java-only' && !(J && !B)) return false; if (ed === 'bedrock-only' && !(B && !J)) return false;
+      if (st === 'get' && !isLive(c)) return false; if (st !== 'all' && st !== 'get' && c.availability !== st) return false;
+      if (cat !== 'all' && c.category !== cat) return false;
+      if (cost !== 'all' && c.cost !== cost) return false;
+      if (q && !(c.name || '').toLowerCase().includes(q)) return false;
+      return true;
+    });
+    const key = (c) => c.releaseDate || '0000';
+    rows.sort(sort === 'name' ? (a, b) => a[1].name.localeCompare(b[1].name) : sort === 'old' ? (a, b) => key(a[1]).localeCompare(key(b[1])) : (a, b) => key(b[1]).localeCompare(key(a[1])));
+    $('count-line').textContent = S.loaded ? t('count', { n: rows.length, t: S.capes.size }) : '';
+    const grid = $('grid');
+    if (!S.loaded) { grid.replaceChildren(h('div', { class: 'empty', text: S.dbMissing ? t('gridMissing') : t('loadingShort') })); return; }
+    if (!rows.length) { grid.replaceChildren(h('div', { class: 'empty', text: t('gridEmpty') })); return; }
+    grid.replaceChildren(...rows.map(([id, c]) => h('div', { class: 'tile', 'data-cape': id },
+      slot(id, c, true),
+      elytraBtn(id, c),
+      h('div', { class: 'tile-name', text: c.name }),
+      h('div', { class: 'meta' }, editions(c), pill(c), freePill(c)),
+      h('div', { class: 'date', text: dateOf(c, 'releaseDate') }))));
+  }
+
+  // ---------- header title ----------
+  // "CapeWatch" in my own 5×7 pixel letters (own drawing, no game texture or font). Every letter pixel is a
+  // block of dark-green leaf noise; letters are bold (each column smeared half a block to the right) and
+  // carry a small dark shadow. Drawn at a whole-number scale of device pixels so the blocks stay crisp,
+  // and redrawn when the bar's width changes.
+  const titleView = (() => {
+    const GLYPHS = {
+      C: ['.###.', '#...#', '#....', '#....', '#....', '#...#', '.###.', '.....', '.....'],
+      a: ['.....', '.....', '.###.', '....#', '.####', '#...#', '.####', '.....', '.....'],
+      p: ['.....', '.....', '####.', '#...#', '#...#', '#...#', '####.', '#....', '#....'],
+      e: ['.....', '.....', '.###.', '#...#', '#####', '#....', '.####', '.....', '.....'],
+      W: ['#...#', '#...#', '#...#', '#.#.#', '#.#.#', '##.##', '#...#', '.....', '.....'],
+      t: ['....', '.#..', '####', '.#..', '.#..', '.#..', '..##', '....', '....'],
+      c: ['.....', '.....', '.###.', '#...#', '#....', '#...#', '.###.', '.....', '.....'],
+      h: ['#....', '#....', '#.##.', '##..#', '#...#', '#...#', '#...#', '.....', '.....']
+    };
+    const WORD = 'CapeWatch', SUB = 4, ROWS = 9, MAX_W = 640;
+    const BOLD = 2, SHADOW_OFF = 2;                    // in texture pixels (a block is SUB × SUB)
+    const LEAVES = ['#17470E', '#1E5A12', '#256B17', '#2C7A1C', '#348A22'];
+    const HOLE = '#0D2A09', SHADOW = '#081806';
+    // Lit texture pixels: every letter cell, widened by BOLD; letters one empty column apart.
+    const lit = new Map();
+    let cols = 0, wStart = 0;
+    for (const ch of WORD) {
+      const g = GLYPHS[ch];
+      if (ch === 'W') wStart = cols;
+      g.forEach((line, r) => [...line].forEach((px, c) => {
+        if (px !== '#') return;
+        for (let dy = 0; dy < SUB; dy++) for (let dx = 0; dx < SUB + BOLD; dx++) {
+          const x = (cols + c) * SUB + dx, y = r * SUB + dy;
+          lit.set(x + ',' + y, [x, y]);
+        }
+      }));
+      cols += g[0].length + 1;
+    }
+    cols -= 1;
+    const W = cols * SUB + BOLD + SHADOW_OFF, H = ROWS * SUB + SHADOW_OFF;
+    // Seeded noise, so the leaves look the same on every load.
+    let seed = 20261001;
+    const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const pixels = [...lit.values()].sort((a, b) => a[1] - b[1] || a[0] - b[0])
+      .map(([x, y]) => [x, y, rnd() < 0.08 ? HOLE : LEAVES[Math.floor(rnd() * LEAVES.length)]]);
+    const canvas = $('leaf-title'), bar = $('titlebar'), langPick = $('lang-pick');
+    let lastScale = 0;
+    function draw() {
+      const dpr = window.devicePixelRatio || 1;
+      const narrow = matchMedia('(max-width: 720px)').matches;
+      const avail = narrow ? bar.clientWidth : bar.clientWidth - 2 * (langPick.offsetWidth + 12);
+      const s = Math.max(1, Math.floor(Math.min(MAX_W, avail) * dpr / W));
+      if (s === lastScale) return;
+      lastScale = s;
+      canvas.width = W * s; canvas.height = H * s;
+      canvas.style.width = (W * s / dpr) + 'px';   // height follows from the canvas's own aspect ratio
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = SHADOW;
+      for (const [x, y] of pixels) ctx.fillRect((x + SHADOW_OFF) * s, (y + SHADOW_OFF) * s, s, s);
+      for (const [x, y, color] of pixels) { ctx.fillStyle = color; ctx.fillRect(x * s, y * s, s, s); }
+    }
+    // The free width depends on the bar and on the picker (its label changes with the language).
+    const ro = new ResizeObserver(draw);
+    ro.observe(bar); ro.observe(langPick);
+    draw();
+
+    // ---------- opening effect ----------
+    // The letters are the light. A wave starts between "e" and "W" and runs to both ends (slow, fast, slow);
+    // every leaf pixel it reaches lights up bright green (brightest in the band at the wave's front) and, in
+    // each pixel row, a ray of light leaves the outermost lit pixel outward: left from "Cap", right from "atch",
+    // fanning a little up and down. Everything is drawn in squares of the title's own pixel size, in five fixed
+    // greens that step darker and more transparent with distance; bands of light flow outward along the rays.
+    // Dark holes never light up or shine, so the word stays readable. Then a hold and a fade. Only an overlay
+    // is drawn on top; the title canvas is never touched, so it ends exactly in its normal state.
+    const FX = { wave: 1.3, hold: 0.2, fade: 0.8, spread: 0.3, bandEvery: 9, bandHalf: 2, flow: 26, grow: 0.18, frontWidth: 0.12, lightUp: 0.05 };
+    // Smooth motion, stepped look: every square keeps one of the five fixed shades; only the opacity of the
+    // squares at a moving edge (the growing tip of a ray, a flowing band, a pixel lighting up) changes gradually.
+    const clamp01 = (v) => Math.max(0, Math.min(1, v));
+    const TOTAL = FX.wave + FX.hold + FX.fade;
+    const STEPS = [['#A3DC83', 0.95], ['#7CC45E', 0.8], ['#5FAE47', 0.62], ['#4F9A3C', 0.45], ['#3F8A32', 0.28]];
+    const LIT = '#7CC45E', FRONT = '#A3DC83';
+    const lightX = (wStart - 1) * SUB + (SUB + BOLD) / 2, lightY = 3.5 * SUB;   // texture px
+    const emit = pixels.filter((p) => p[2] !== HOLE);                           // holes never shine
+    const reachL = lightX - Math.min(...emit.map((p) => p[0])), reachR = Math.max(...emit.map((p) => p[0] + 1)) - lightX;
+    const TH = ROWS * SUB;                                                        // title height in texture px
+    const rayLen = Array.from({ length: H }, () => [TH * (1 + rnd()), TH * (1 + rnd())]);   // 1×–2× per row and side
+    const ease = (u) => u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+    let fx = null;
+    function fxFrame(t) {
+      const dpr = window.devicePixelRatio || 1, tw = canvas.clientWidth;
+      if (!tw) return;
+      const s = canvas.width / W, k = s / dpr;                 // device / css px per title pixel
+      const maxRay = Math.ceil(2 * TH), room = Math.max(0, (bar.clientWidth - tw) / 2);
+      const ex = Math.min(maxRay, Math.floor(room / k)), ey = Math.ceil(maxRay * FX.spread * 0.5) + 2;   // margins in title px
+      if (!fx) { fx = document.createElement('canvas'); fx.className = 'title-fx'; fx.setAttribute('aria-hidden', 'true'); canvas.after(fx); }
+      const cwPx = W + 2 * ex, chPx = H + 2 * ey;
+      if (fx.width !== cwPx * s || fx.height !== chPx * s) { fx.width = cwPx * s; fx.height = chPx * s; }
+      fx.style.cssText = `left:${-ex * k}px;top:${-ey * k}px;width:${cwPx * k}px;height:${chPx * k}px`;
+      const ctx = fx.getContext('2d');
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, fx.width, fx.height);
+      const f = ease(Math.min(1, t / FX.wave));
+      const fade = t <= FX.wave + FX.hold ? 1 : Math.max(0, 1 - (t - FX.wave - FX.hold) / FX.fade);
+      if (fade <= 0) return;
+      ctx.setTransform(s, 0, 0, s, ex * s, ey * s);             // 1 unit = 1 title pixel, crisp squares
+      // lit letter pixels, and per row the outermost lit pixel on each side with how long it has been lit
+      const outer = Array.from({ length: H }, () => [null, null]);
+      for (const [x, y] of emit) {
+        const right = x + 0.5 >= lightX, side = right ? 1 : 0, reachSide = right ? reachR : reachL;
+        const d = Math.abs(x + 0.5 - lightX), reach = f * reachSide;
+        if (d > reach) continue;
+        const on = clamp01((reach - d) / (FX.lightUp * reachSide));          // lights up over a short moment
+        ctx.globalAlpha = fade * on; ctx.fillStyle = LIT; ctx.fillRect(x, y, 1, 1);
+        // the wave's bright front: strongest at the edge, blending back into LIT, gone gently as the wave ends
+        const front = (1 - clamp01((reach - d) / (FX.frontWidth * reachSide))) * clamp01((1 - f) / 0.08);
+        if (front > 0) { ctx.globalAlpha = fade * on * front; ctx.fillStyle = FRONT; ctx.fillRect(x, y, 1, 1); }
+        const o = outer[y][side];
+        // how long this pixel has shone, in wave lengths; keeps counting after the wave ends, so rays of the
+        // last letters keep growing smoothly instead of all snapping to full length when the wave arrives
+        const shone = (reach - d) / reachSide + Math.max(0, t - FX.wave);
+        if (!o || (right ? x > o.x : x < o.x)) outer[y][side] = { x, lit: shone };
+      }
+      // rays: squares stepping outward, five fixed shades by distance, a light band flowing outward
+      const shift = t * FX.flow;
+      for (let y = 0; y < H; y++) for (let side = 0; side < 2; side++) {
+        const o = outer[y][side];
+        if (!o) continue;
+        const dir = side ? 1 : -1, full = rayLen[y][side];
+        const len = full * Math.min(1, o.lit / FX.grow);   // rays grow in as the wave passes
+        const slope = (y + 0.5 - lightY) / TH * FX.spread;
+        for (let j = 1; j <= Math.ceil(len); j++) {
+          const rx = o.x + dir * j, ry = y + Math.round(j * slope);
+          if (lit.has(rx + ',' + ry)) continue;               // never paint over a letter: rays pass behind other letters
+          const tip = Math.min(1, len - (j - 1));              // the growing tip fades in instead of popping
+          const step = Math.min(STEPS.length - 1, Math.floor(j / full * STEPS.length));
+          ctx.globalAlpha = fade * STEPS[step][1] * tip;
+          ctx.fillStyle = STEPS[step][0];
+          ctx.fillRect(rx, ry, 1, 1);
+          // a band of light sliding outward: the next brighter shade laid over, weighted by distance to the band
+          if (step > 0) {
+            const p = ((j - shift) % FX.bandEvery + FX.bandEvery) % FX.bandEvery;
+            const band = Math.max(0, 1 - Math.abs(p - FX.bandEvery / 2) / FX.bandHalf);
+            if (band > 0) { ctx.globalAlpha = fade * STEPS[step - 1][1] * tip * band; ctx.fillStyle = STEPS[step - 1][0]; ctx.fillRect(rx, ry, 1, 1); }
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    function fxEnd() { if (fx) { fx.remove(); fx = null; } }
+    let live = true;   // false once introAt() takes over (stills), so the running intro stops touching the overlay
+    // Plays once, from the first frame the page is actually shown. "Reduce motion": the title just appears.
+    (function intro() {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) { console.info('[Title] intro: skipped (reduced motion)'); return; }
+      let t0 = 0, last = 0, frames = 0, worst = 0;
+      const tick = (now) => {
+        if (!live) return;
+        if (!t0) t0 = last = now;
+        worst = Math.max(worst, now - last); last = now; frames++;
+        const t = (now - t0) / 1000;
+        if (t >= TOTAL) {
+          fxEnd();
+          const ms = now - t0;
+          console.info('[Title] intro: ' + frames + ' frames in ' + Math.round(ms) + 'ms, ' + (frames * 1000 / ms).toFixed(1) + ' fps, slowest frame ' + Math.round(worst) + 'ms');
+          return;
+        }
+        fxFrame(t);
+        requestAnimationFrame(tick);
+      };
+      console.info('[Title] intro: start');
+      requestAnimationFrame(tick);
+    })();
+    // introAt(t) draws one moment of the effect (for checking stills); introAt(null) removes it.
+    return { draw, introAt: (t) => { live = false; if (t == null) fxEnd(); else fxFrame(t); } };
+  })();
+
+  // ---------- header 3D view (skinview3d, vendored in vendor/skinview3d/) ----------
+  // One WebGL view only (browsers cap live WebGL contexts): my skin, seen from straight behind,
+  // static, wearing a cloth cape. Cape textures are fetched at runtime from textures.minecraft.net
+  // and kept in memory only; they are never written to the project.
+
+  const cape3d = (() => {
+    const TAG = '[Cape3D]';
+    const SKIN_URL = 'assets/skin/Kayskin.png';
+    const SWAP_MS = 5000;                 // every 5 s: a cape, then its elytra, then the next cape, looping through all
+    const STRIPS = 8, STRIP_H = 2;         // 8 strips × 2 px = the cape's 16 px height, folds fall between pixels
+    // Wind: each hinge adds its own angle, so lower strips lean further. Degrees / seconds / radians per strip.
+    const WIND = { base: 2.2, amp: 1.6, period: 1.8, delay: 0.5, grow: 0.12 };
+    // Camera: straight behind (never from the side), raised 15° and looking down a little like the game's
+    // F5 view, with game-like perspective so the cape's thickness, its gap from the back and the lifting hem
+    // show. The distance is fitted to the drawn model, so head to feet and the whole cape always fit.
+    const CAM = { fov: 50, elevation: 15, fill: 0.94 };
+    // Elytra: after each cape, its elytra for one turn (drawn from the elytra part of the same texture).
+    // Both wings open and close together, slowly and only a little (z rotation only). Degrees / seconds.
+    // The right wing sits slightly further from the camera: at equal depth the overlap flickers (z-fighting).
+    const ELYTRA = { base: 15, amp: 4, period: 3.2, behind: 0.2 };
+    const log = (...a) => console.info(TAG, ...a);
+    const err = (...a) => console.error(TAG, ...a);
+    const since = (t0) => Math.round(performance.now() - t0) + 'ms';
+    let viewer = null, started = false, frames = 0;
+    let pos = -1, current = null, busy = false, mode = 'cape';
+    const skipped = new Set();
+    const hasElytra = new Map();   // cape id -> whether its texture has an elytra part
+    const hinges = [];
+
+    // Same face layout as skinview3d's setCapeUVs (64×32 texture), but for one 2 px band of rows.
+    // The cape's real top/bottom edge rows go on the first strip's top and the last strip's bottom.
+    // Inner seam faces peek out when a strip tilts, so they take the outside row next to them
+    // (mirrored in x, because the -z face runs right-to-left), which keeps the seams invisible.
+    function stripUVs(geom, i) {
+      const W = 64, H = 32, w = 10, h = STRIP_H, d = 1, v = i * STRIP_H;
+      const f = (x1, y1, x2, y2) => [[x1 / W, 1 - y2 / H], [x2 / W, 1 - y2 / H], [x2 / W, 1 - y1 / H], [x1 / W, 1 - y1 / H]];
+      const outsideRow = (y) => f(w * 2 + d * 2, y, w + d * 2, y + 1);
+      const faces = [
+        [f(w + d, v + d, w + d * 2, v + h + d), [3, 2, 0, 1]],          // right
+        [f(0, v + d, d, v + d + h), [3, 2, 0, 1]],                      // left
+        [i === 0 ? f(d, 0, w + d, d) : outsideRow(v + d), [3, 2, 0, 1]],                          // top
+        [i === STRIPS - 1 ? f(w + d, 0, w * 2 + d, d) : outsideRow(v + d + h - 1), [0, 1, 3, 2]], // bottom
+        [f(d, v + d, w + d, v + d + h), [3, 2, 0, 1]],                  // front (+z, inside of the cape)
+        [f(w + d * 2, v + d, w * 2 + d * 2, v + h + d), [3, 2, 0, 1]]   // back (-z, outside of the cape)
+      ];
+      const uv = [];
+      for (const [face, order] of faces) for (const k of order) uv.push(...face[k]);
+      geom.attributes.uv.set(new Float32Array(uv));
+      geom.attributes.uv.needsUpdate = true;
+    }
+
+    // Swap the rigid cape box for a chain of strips. Each hinge sits on the top edge of its strip and is
+    // a child of the one above, so the angles add up and the cloth folds. The built-in cape group keeps
+    // its place on the back and its rest angle, and supplies the shared material (and so the texture).
+    function buildCloth() {
+      const capeGroup = viewer.playerObject.cape;
+      const rigid = capeGroup.cape;
+      const Mesh = rigid.constructor, Box = rigid.geometry.constructor;
+      const Group = Object.getPrototypeOf(skinview3d.CapeObject);   // CapeObject extends THREE.Group
+      rigid.visible = false;
+      let parent = capeGroup;
+      for (let i = 0; i < STRIPS; i++) {
+        const hinge = new Group();
+        hinge.position.y = i === 0 ? 0 : -STRIP_H;
+        const geom = new Box(10, STRIP_H, 1);
+        stripUVs(geom, i);
+        const strip = new Mesh(geom, capeGroup.material);
+        strip.position.set(0, -STRIP_H / 2, 0.5);
+        hinge.add(strip);
+        parent.add(hinge);
+        hinges.push(hinge);
+        parent = hinge;
+      }
+    }
+
+    // Constant wind: a sine that reaches each strip a little later than the one above it.
+    // The lean never changes sign, so the cape only moves back and forth, never into the body or sideways.
+    // Negative x = away from the back: the cape group is turned 180° about y, which flips its local x axis.
+    function wind(t) {
+      const w = 2 * Math.PI / WIND.period, rad = Math.PI / 180;
+      for (let i = 0; i < hinges.length; i++) {
+        hinges[i].rotation.x = -(1 + WIND.grow * i) * (WIND.base + WIND.amp * Math.sin(w * t - i * WIND.delay)) * rad;
+      }
+    }
+
+    // Minecraft-style entity light: a dim ambient plus two lights from above (one behind, one in front),
+    // so every cape strip shades by its angle and the folds read as depth. Far point lights with no
+    // falloff act as the game's directional lights. Intensities are the game's 0.4 / 0.6 in three.js units.
+    function gameLight() {
+      const Light = viewer.cameraLight.constructor;
+      viewer.globalLight.intensity = 0.4 * Math.PI;
+      viewer.cameraLight.intensity = 0;
+      for (const [x, y, z] of [[0.2, 1, -0.7], [-0.2, 1, 0.7]]) {
+        const l = new Light(0xffffff, 0.6 * Math.PI, 0, 0);
+        l.position.set(x * 1000, y * 1000, z * 1000);
+        viewer.scene.add(l);
+      }
+    }
+
+    // Screen extents (-1..1) of every visible part of the player as the camera sees it now.
+    function extents() {
+      const cam = viewer.camera, b = { x0: 1, x1: -1, y0: 1, y1: -1 };
+      viewer.scene.updateMatrixWorld(true);
+      cam.updateMatrixWorld();
+      viewer.playerObject.traverseVisible((o) => {
+        if (!o.isMesh) return;
+        const pos = o.geometry.attributes.position, p = o.position.clone();
+        for (let i = 0; i < pos.count; i++) {
+          p.fromBufferAttribute(pos, i); o.localToWorld(p); p.project(cam);
+          b.x0 = Math.min(b.x0, p.x); b.x1 = Math.max(b.x1, p.x); b.y0 = Math.min(b.y0, p.y); b.y1 = Math.max(b.y1, p.y);
+        }
+      });
+      return b;
+    }
+
+    // Straight behind and 15° up; pull back and re-center until the whole drawn player fills the view.
+    // One camera for both turns: the fit covers the cape and the elytra at its widest opening together,
+    // so nothing is cut and the view never jumps between a cape and its elytra.
+    function placeCamera() {
+      const p = viewer.playerObject, was = [p.cape.visible, p.elytra.visible];
+      p.cape.visible = p.elytra.visible = true;
+      setWings(ELYTRA.base + ELYTRA.amp);
+      fitCamera();
+      [p.cape.visible, p.elytra.visible] = was;
+    }
+    function fitCamera() {
+      const cam = viewer.camera, tan = Math.tan((cam.fov / 2) * Math.PI / 180), e = CAM.elevation * Math.PI / 180;
+      cam.updateProjectionMatrix();
+      let dist = 17 / tan, y = 0;
+      for (let k = 0; k < 6; k++) {
+        cam.position.set(0, y + dist * Math.sin(e), -dist * Math.cos(e));
+        cam.lookAt(0, y, 0);
+        const b = extents();
+        dist *= Math.max(b.x1 - b.x0, b.y1 - b.y0) / 2 / CAM.fill;
+        y += (b.y1 + b.y0) / 2 * tan * dist * 0.9;
+      }
+      cam.position.set(0, y + dist * Math.sin(e), -dist * Math.cos(e));
+      cam.lookAt(0, y, 0);
+      viewer.controls.target.set(0, y, 0);
+    }
+
+    async function loadSkin() {
+      const t0 = performance.now();
+      log('skin: loading', SKIN_URL);
+      try {
+        await viewer.loadSkin(SKIN_URL, { model: 'auto-detect' });
+        log('skin: loaded in', since(t0), 'model=' + viewer.playerObject.skin.modelType);
+        placeCamera();   // slim and classic arms differ in width
+      } catch (e) { err('skin: failed', SKIN_URL, e?.message || e?.type || e); }
+    }
+
+    // Rotation order: obtainable capes first, then newest release first. Capes without any texture are
+    // skipped and logged once each. Rebuilt every swap, so capes the radar adds later join the cycle.
+    function capeOrder() {
+      const all = [...S.capes.entries()];
+      for (const [id] of all) if (!texUrl(id) && !skipped.has(id)) { skipped.add(id); log('cape: no texture, skipped', id); }
+      return all.filter(([id]) => texUrl(id))
+        .sort(([, a], [, b]) => (isLive(b) - isLive(a)) || String(b.releaseDate || '').localeCompare(String(a.releaseDate || '')))
+        .map(([id]) => id);
+    }
+
+    // Warm the browser's memory cache with the next texture so the swap itself is instant.
+    function preload(id) { const img = new Image(); img.crossOrigin = 'anonymous'; img.src = texUrl(id); }
+
+    // Both wings at the same angle in the same frame; the library mirrors the right wing from the left.
+    function setWings(deg) {
+      const el = viewer.playerObject.elytra;
+      el.leftWing.rotation.z = deg * Math.PI / 180;
+      el.updateRightWing();
+    }
+    function wings(t) {
+      if (viewer.playerObject.elytra.visible) setWings(ELYTRA.base + ELYTRA.amp * Math.sin(2 * Math.PI * t / ELYTRA.period));
+    }
+
+    // The elytra part of a cape texture is x 22–45, y 0–21 (64×32 layout). Read it from the library's own
+    // copy of the loaded texture: any visible pixel there means the cape has an elytra.
+    function elytraIn(id) {
+      if (hasElytra.has(id)) return hasElytra.get(id);
+      let found = false;
+      try {
+        const cv = viewer.capeCanvas, k = cv.width / 64;
+        const px = cv.getContext('2d', { willReadFrequently: true }).getImageData(22 * k, 0, 24 * k, 22 * k).data;
+        for (let i = 3; i < px.length; i += 4) if (px[i] > 0) { found = true; break; }
+      } catch (e) { err('elytra: could not read texture', id, e?.message || e); }
+      hasElytra.set(id, found);
+      if (!found) log('elytra: no elytra part in texture, skipped', id);
+      return found;
+    }
+
+    async function next() {
+      if (busy) { log('swap: previous load still running, tick skipped'); return; }
+      busy = true;
+      try {
+        // Second turn of a cape: its elytra, same texture, nothing to load.
+        if (mode === 'cape' && current && hasElytra.get(current)) {
+          viewer.playerObject.backEquipment = 'elytra';
+          mode = 'elytra';
+          log('swap:', current + ' cape -> ' + current + ' elytra');
+          return;
+        }
+        const order = capeOrder();
+        if (!order.length) { err('swap: no capes with a texture'); return; }
+        // Continue after the cape on screen even if the list changed (a cape added, a status changed).
+        // If that cape left the list, the ones after it moved up by one.
+        const at = current ? order.indexOf(current) : -1;
+        if (at >= 0) pos = at; else if (current) pos -= 1;
+        for (let tries = 0; tries < order.length; tries++) {
+          pos = (pos + 1 + order.length) % order.length;
+          const id = order[pos];
+          if (await loadCape(id)) {
+            log('swap:', (current ? current + ' ' + mode : '-') + ' -> ' + id + ' cape', '(' + (pos + 1) + '/' + order.length + ')');
+            current = id;
+            mode = 'cape';
+            elytraIn(id);
+            preload(order[(pos + 1) % order.length]);
+            return;
+          }
+        }
+        err('swap: every cape failed to load');
+      } finally { busy = false; }
+    }
+
+    async function loadCape(id) {
+      const url = texUrl(id);
+      if (!url) { log('cape: no texture, skipped', id); return false; }
+      const t0 = performance.now();
+      log('cape: loading', id, url);
+      try {
+        await viewer.loadCape(url, { makeVisible: false });
+        viewer.playerObject.backEquipment = 'cape';
+        log('cape: loaded', id, 'in', since(t0));
+        return true;
+      } catch (e) { err('cape: failed', id, url, e?.message || e?.type || e); return false; }
+    }
+
+    function init() {
+      if (!window.skinview3d) { err('library missing: vendor/skinview3d/skinview3d.bundle.js did not load'); return; }
+      const box = $('logo');
+      try {
+        // Supersample: at screen resolution the hem only travels ~3 px, so it hops between whole pixel rows
+        // and looks jerky. Drawing at 4× and letting the browser scale it down blends the in-between positions.
+        viewer = new skinview3d.SkinViewer({ canvas: $('cape3d'), width: box.clientWidth, height: box.clientHeight,
+          enableControls: false, fov: CAM.fov, pixelRatio: 4 });
+      } catch (e) { err('view: WebGL could not start', e?.message || e); return; }
+      $('cape3d').addEventListener('webglcontextlost', () => err('view: WebGL context lost'));
+      $('cape3d').addEventListener('webglcontextrestored', () => log('view: WebGL context restored'));
+      buildCloth();
+      gameLight();
+      viewer.playerObject.elytra.rightWing.position.z = ELYTRA.behind;   // never updated by updateRightWing
+      placeCamera();
+      // The frame's height follows the title block (language, window width), so keep the view matched to it.
+      new ResizeObserver(() => {
+        const w = box.clientWidth, h = box.clientHeight;
+        if (!w || !h || (w === viewer.width && h === viewer.height)) return;
+        viewer.width = w; viewer.height = h;
+        placeCamera();
+        log('view: resized', w + 'x' + h);
+      }).observe(box);
+      // Hook the library's own render call: advance the wind, count frames.
+      const render = viewer.render.bind(viewer);
+      viewer.render = () => { const t = performance.now() / 1000; wind(t); wings(t); frames++; render(); };
+      setInterval(() => { log('fps', (frames / 5).toFixed(1)); frames = 0; }, 5000);
+      log('view: ready', viewer.width + 'x' + viewer.height, 'pixelRatio=' + viewer.renderer.getPixelRatio(),
+        'webgl2=' + viewer.renderer.capabilities.isWebGL2, 'strips=' + STRIPS);
+      loadSkin();
+    }
+
+    window.addEventListener('error', (e) => { if (String(e.filename || '').includes('skinview3d')) err('script error', e.message); });
+    init();
+    return {
+      // Called on every capes snapshot; the rotation starts once and then reads the latest list each swap.
+      onCapes() {
+        if (!viewer || started) return;
+        started = true;
+        next();
+        setInterval(next, SWAP_MS);
+        log('swap: rotation started, every', SWAP_MS / 1000 + 's');
+      },
+      get viewer() { return viewer; },
+      // Swap the figure's skin (the app's "my skin" setting); back to the default skin when url is empty.
+      async setSkin(url) {
+        try { await viewer.loadSkin(url || SKIN_URL, { model: 'auto-detect' }); placeCamera(); log('skin: set', url || SKIN_URL); return true; }
+        catch (e) { err('skin: failed', url, e?.message || e); return false; }
+      }
+    };
+  })();
+
+  // ---------- detail ----------
+  function openDetail(id) {
+    const c = S.capes.get(id); if (!c) return;
+    const dlg = $('dlg');
+    $('dlg-slot').replaceChildren(...slot(id, c, false).childNodes);
+    $('dlg-title').textContent = c.name;
+    // replaceChildren() prints a null as the text "null", so drop the empty badges (e.g. no "free" badge on a paid cape)
+    $('dlg-meta').replaceChildren(...[...editions(c), pill(c), freePill(c),
+      c.category ? h('span', { class: 'pill ended', text: L.CAT[c.category] || c.category }) : null].filter(Boolean));
+    $('dlg-how').replaceChildren(...rich(pick(c, 'obtain')));
+    const facts = [[t('fReleased'), dateOf(c, 'releaseDate')]];
+    if (hasDate(c, 'availableFrom')) facts.push([t('fFrom'), dateOf(c, 'availableFrom')]);
+    if (hasDate(c, 'availableUntil')) facts.push([t('fUntil'), dateOf(c, 'availableUntil')]);
+    const rem = c.availability === 'available' ? remaining(c) : null;
+    if (rem) facts.push([t('fRemaining'), rem.text]);
+    if (hasDate(c, 'redeemBy')) facts.push([t('fRedeem'), dateOf(c, 'redeemBy')]);
+    if (c.cost) facts.push([t('fCost'), c.cost === 'free' ? t('freeTip') : t('paid')]);
+    if (c.apiAlias) facts.push([t('fApi'), c.apiAlias]);
+    if (c.source === 'radar' && c.detectedAt) facts.push([t('fDetected'), fmtWhen(c.detectedAt)]);
+    $('dlg-facts').replaceChildren(...facts.flatMap(([k, v]) => [h('dt', { text: k }), h('dd', { text: v })]));
+    $('dlg-actions').replaceChildren(h('a', { class: 'btn', href: wikiUrl(c), target: '_blank', rel: 'noopener', text: t('wikiPage') }));
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+  }
+  $('dlg-close').addEventListener('click', () => $('dlg').close?.() ?? $('dlg').removeAttribute('open'));
+  $('dlg').addEventListener('click', (e) => { if (e.target === $('dlg')) $('dlg').close(); });
+
+  // ---------- filters & language ----------
+  for (const [id, key] of [['f-ed', 'ed'], ['f-st', 'st'], ['f-cost', 'cost'], ['f-sort', 'sort'], ['f-cat', 'cat']]) {
+    const el = $(id); const saved = store.get(key, null);
+    if (saved && [...el.options].some(o => o.value === saved)) el.value = saved;
+    el.addEventListener('change', () => { store.set(key, el.value); renderGrid(); });
+  }
+  $('f-q').addEventListener('input', renderGrid);
+  // Keyboard vs mouse, for the menus' focus ring (see the CSS above).
+  addEventListener('keydown', () => { document.documentElement.dataset.kbd = ''; }, true);
+  addEventListener('pointerdown', () => { delete document.documentElement.dataset.kbd; }, true);
+  const langSel = $('f-lang');
+  langSel.replaceChildren(...Object.entries(LANGS).map(([k, v]) => h('option', { value: k, lang: k, text: v.name })));
+  langSel.addEventListener('change', () => { store.set('lang', langSel.value); setLang(langSel.value); });
+
+  // Countdowns and "last check" tick locally, no writes. Only those texts change, in place: rebuilding the
+  // cards every minute would drop keyboard focus and re-decode every picture.
+  function tick() {
+    if (!S.loaded) return;
+    if (S.status?.lastCheckAt) $('st-last').textContent = ago(S.status.lastCheckAt);
+    document.querySelectorAll('[data-count]').forEach((el) => {
+      const c = S.capes.get(el.dataset.count), rem = c && remaining(c);
+      if (!rem) return;
+      el.firstChild.nodeValue = rem.text;
+      el.classList.toggle('urgent', rem.urgent);
+    });
+  }
+  setInterval(tick, 60000);
+
+  const savedLang = store.get('lang', null);
+  setLang(savedLang && LANGS[savedLang] ? savedLang : detectLang());
+
+  // ---------- data ----------
+  // Several collections answer within the same moment on load; render once for all of them.
+  let renderTimer = 0;
+  const requestRender = () => { if (!renderTimer) renderTimer = setTimeout(() => { renderTimer = 0; render(); }, 16); };
+  addEventListener('capeart', requestRender);   // a drawn picture is ready
+  window.CapeWatchPage = { cape3d, lang: () => lang, t };
+  (async () => {
+    let db = null;
+    try { db = await window.claude?.use?.('db'); } catch { db = null; }
+    if (!db) { S.dbMissing = true; render(); return; }
+    const onErr = () => { S.dbMissing = !S.loaded; render(); };
+    db.collection('capes').limit(1000).onSnapshot((snap) => {
+      S.capes = new Map(snap.docs.map(d => [d.id, d.data()]).filter(([, c]) => c && c.name));
+      S.loaded = true; requestRender();
+      logMissingElytra();
+      cape3d.onCapes();
+    }, onErr);
+    db.collection('capeImages').limit(1000).onSnapshot((snap) => {
+      S.imgs = new Map(snap.docs.map(d => [d.id, d.data()?.src]).filter(([, s]) => typeof s === 'string' && s.startsWith('data:image/')));
+      requestRender();
+    }, () => {});
+    db.collection('elytraImages').limit(1000).onSnapshot((snap) => {
+      S.elyImgs = new Map(snap.docs.map(d => [d.id, d.data()?.src]).filter(([, s]) => typeof s === 'string' && s.startsWith('data:image/')));
+      S.elyLoaded = true;
+      requestRender();
+      logMissingElytra();
+    }, () => {});
+    db.collection('events').orderBy('at', 'desc').limit(20).onSnapshot((snap) => {
+      S.events = snap.docs.map(d => d.data()).filter(Boolean); requestRender();
+    }, () => {});
+    db.doc('radar/status').onSnapshot((snap) => { S.status = snap.exists ? snap.data() : null; requestRender(); }, () => {});
+  })();
+})();
+</script>

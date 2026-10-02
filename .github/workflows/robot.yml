@@ -1,0 +1,36 @@
+name: CapeWatch robot
+
+on:
+  schedule:
+    - cron: '0 6,18 * * *'   # twice a day (UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write   # commit data/capewatch.json
+  models: read      # GitHub Models (free tier) for the 7-language texts
+
+concurrency:
+  group: robot
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run the robot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node robot/robot.mjs
+      - name: Commit the data file
+        run: |
+          git config user.name "capewatch-robot"
+          git config user.email "capewatch-robot@users.noreply.github.com"
+          git add data/capewatch.json
+          if git diff --cached --quiet; then echo "no change"; exit 0; fi
+          git commit -m "data: robot check $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push

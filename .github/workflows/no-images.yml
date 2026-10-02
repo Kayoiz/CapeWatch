@@ -1,0 +1,17 @@
+name: No game or wiki images
+
+# Mojang and minecraft.wiki images must never enter this repository. The only images allowed are
+# the app's own icons and the author's own skin.
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Look for image files outside the allowed places
+        run: |
+          bad=$(git ls-files | grep -iE '\.(png|jpe?g|gif|webp|bmp|tga)$' \
+            | grep -vE '^app/src-tauri/icons/|^assets/skin/Kayskin\.png$' || true)
+          if [ -n "$bad" ]; then echo "Images not allowed in the repo:"; echo "$bad"; exit 1; fi
+          echo "ok: no game or wiki images"
