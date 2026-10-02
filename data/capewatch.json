@@ -1535,6 +1535,19 @@
    "textFr": "Test 2 : cliquez sur cette notification pour ouvrir la cape de test.",
    "textDe": "Test 2: Klicke auf diese Benachrichtigung, um den Test-Umhang zu öffnen.",
    "textRu": "Тест 2: нажмите на уведомление, чтобы открыть тестовый плащ."
+  },
+  "20261002-test3-capewatch-test": {
+   "at": "2026-10-02T16:17:32Z",
+   "type": "new",
+   "capeId": "capewatch-test",
+   "capeName": "CapeWatch Test Cape",
+   "textEn": "Test 3: click this notification. CapeWatch should come to the front.",
+   "textHe": "בדיקה 3: לחצו על ההתראה. CapeWatch אמור לקפוץ לחזית.",
+   "textEs": "Prueba 3: haz clic en esta notificación. CapeWatch debería pasar al frente.",
+   "textPt": "Teste 3: clique nesta notificação. O CapeWatch deve vir para a frente.",
+   "textFr": "Test 3 : cliquez sur cette notification. CapeWatch doit passer au premier plan.",
+   "textDe": "Test 3: Klicke auf diese Benachrichtigung. CapeWatch sollte nach vorne kommen.",
+   "textRu": "Тест 3: нажмите на уведомление. CapeWatch должен выйти на передний план."
   }
  }
 }
