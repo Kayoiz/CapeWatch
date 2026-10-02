@@ -3,7 +3,7 @@
  "status": {
   "lastCheckAt": "2026-10-02T15:36:16Z",
   "lastResult": "0 new, 0 changed",
-  "capeCount": 53
+  "capeCount": 52
  },
  "capes": {
   "15th-anniversary": {
@@ -173,17 +173,6 @@
    "source": "baseline",
    "textureId": "2c579968c64c1719740fd8c2a451461879b238002574fce48f7d1a7c36a1c7d4",
    "wikiTitle": "Builder Cape"
-  },
-  "capewatch-test": {
-   "name": "CapeWatch Test Cape",
-   "category": "Test",
-   "availability": "test",
-   "editions": [
-    "Java"
-   ],
-   "detectedAt": "2026-10-02T15:34:05Z",
-   "obtainEn": "Test entry for checking notifications. It will be removed shortly.",
-   "obtainHe": "רשומת בדיקה של ההתראות. היא תימחק בקרוב."
   },
   "cheapsh0ts": {
    "apiAlias": "cheapsh0t",
@@ -1509,45 +1498,6 @@
    "textPt": "Aurora Cape: a Twitch ficou sem códigos por enquanto, então use o TikTok (3 min) para pegá-la.",
    "textRu": "Aurora Cape: у Twitch пока закончились коды, поэтому получайте плащ через TikTok (3 мин).",
    "type": "changed"
-  },
-  "20261002-test-capewatch-test": {
-   "at": "2026-10-02T15:34:05Z",
-   "type": "new",
-   "capeId": "capewatch-test",
-   "capeName": "CapeWatch Test Cape",
-   "textEn": "Test: CapeWatch Test Cape. If you see this notification, notifications work.",
-   "textHe": "בדיקה: CapeWatch Test Cape. אם ההתראה הזו הופיעה, ההתראות עובדות.",
-   "textEs": "Prueba: si ves esta notificación, las notificaciones funcionan.",
-   "textPt": "Teste: se você vê esta notificação, as notificações funcionam.",
-   "textFr": "Test : si vous voyez cette notification, les notifications fonctionnent.",
-   "textDe": "Test: Wenn du diese Benachrichtigung siehst, funktionieren die Benachrichtigungen.",
-   "textRu": "Тест: если вы видите это уведомление, уведомления работают."
-  },
-  "20261002-test2-capewatch-test": {
-   "at": "2026-10-02T16:00:46Z",
-   "type": "new",
-   "capeId": "capewatch-test",
-   "capeName": "CapeWatch Test Cape",
-   "textEn": "Test 2: click this notification to open the test cape.",
-   "textHe": "בדיקה 2: לחצו על ההתראה כדי לפתוח את גלימת הבדיקה.",
-   "textEs": "Prueba 2: haz clic en esta notificación para abrir la capa de prueba.",
-   "textPt": "Teste 2: clique nesta notificação para abrir a capa de teste.",
-   "textFr": "Test 2 : cliquez sur cette notification pour ouvrir la cape de test.",
-   "textDe": "Test 2: Klicke auf diese Benachrichtigung, um den Test-Umhang zu öffnen.",
-   "textRu": "Тест 2: нажмите на уведомление, чтобы открыть тестовый плащ."
-  },
-  "20261002-test3-capewatch-test": {
-   "at": "2026-10-02T16:17:32Z",
-   "type": "new",
-   "capeId": "capewatch-test",
-   "capeName": "CapeWatch Test Cape",
-   "textEn": "Test 3: click this notification. CapeWatch should come to the front.",
-   "textHe": "בדיקה 3: לחצו על ההתראה. CapeWatch אמור לקפוץ לחזית.",
-   "textEs": "Prueba 3: haz clic en esta notificación. CapeWatch debería pasar al frente.",
-   "textPt": "Teste 3: clique nesta notificação. O CapeWatch deve vir para a frente.",
-   "textFr": "Test 3 : cliquez sur cette notification. CapeWatch doit passer au premier plan.",
-   "textDe": "Test 3: Klicke auf diese Benachrichtigung. CapeWatch sollte nach vorne kommen.",
-   "textRu": "Тест 3: нажмите на уведомление. CapeWatch должен выйти на передний план."
   }
  }
 }
