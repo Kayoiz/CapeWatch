@@ -10,6 +10,7 @@ _screenshots/
 *.bmp
 !app/src-tauri/icons/**
 !assets/skin/Kayskin.png
+!assets/own-capes/**
 
 # Local tools and builds
 .claude/

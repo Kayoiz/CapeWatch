@@ -1,7 +1,7 @@
 name: No game or wiki images
 
 # Mojang and minecraft.wiki images must never enter this repository. The only images allowed are
-# the app's own icons and the author's own skin.
+# the app's own icons, the author's own skin, and cape textures CapeWatch draws itself (assets/own-capes/).
 on: [push, pull_request]
 
 jobs:
@@ -12,6 +12,6 @@ jobs:
       - name: Look for image files outside the allowed places
         run: |
           bad=$(git ls-files | grep -iE '\.(png|jpe?g|gif|webp|bmp|tga)$' \
-            | grep -vE '^app/src-tauri/icons/|^assets/skin/Kayskin\.png$' || true)
+            | grep -vE '^app/src-tauri/icons/|^assets/skin/Kayskin\.png$|^assets/own-capes/' || true)
           if [ -n "$bad" ]; then echo "Images not allowed in the repo:"; echo "$bad"; exit 1; fi
           echo "ok: no game or wiki images"

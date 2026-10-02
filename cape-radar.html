@@ -672,7 +672,9 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
   const texUrl = (id) => {
     const c = S.capes.get(id);
     // The installed app never loads wiki files (non-commercial licence; the app has a donate button).
-    return c?.textureId ? 'https://textures.minecraft.net/texture/' + c.textureId : (APP ? null : c?.textureUrl || null);
+    // Textures drawn by CapeWatch itself live in this repo (assets/own-capes/); the app accepts only those.
+    const own = typeof c?.textureUrl === 'string' && c.textureUrl.startsWith('https://raw.githubusercontent.com/Kayoiz/CapeWatch/main/assets/own-capes/');
+    return c?.textureId ? 'https://textures.minecraft.net/texture/' + c.textureId : (APP && !own ? null : c?.textureUrl || null);
   };
 
   // ---------- installed app ----------
