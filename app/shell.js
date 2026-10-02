@@ -278,6 +278,7 @@ window.__CAPEWATCH_APP__ = true;
   });
   T?.event?.listen?.('check-now', () => refresh('tray'));
   T?.event?.listen?.('open-settings', () => settingsDialog());
+  log('info', 'start: apis', { notification: !!T?.notification, http: !!T?.http?.fetch, autostart: !!T?.autostart, event: !!T?.event });
   log('info', 'start: app shell ready, saved data ' + (data ? 'from ' + (data.status?.lastCheckAt || '?') : 'none'));
   refresh('start');
   setInterval(() => refresh('every 30 min'), POLL_MS);
