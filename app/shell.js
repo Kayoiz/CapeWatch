@@ -7,6 +7,9 @@
 // - Settings: notifications, start with Windows, and the figure's skin by Minecraft username.
 window.__CAPEWATCH_APP__ = true;
 (() => {
+  // The GitHub API returns the current file. raw.githubusercontent.com is only the fallback: it caches files for
+  // up to 5 minutes, so "Check now" could get an old copy from there (the API allows 60 calls an hour).
+  const API_URL = 'https://api.github.com/repos/Kayoiz/CapeWatch/contents/data/capewatch.json?ref=main';
   const DATA_URL = 'https://raw.githubusercontent.com/Kayoiz/CapeWatch/main/data/capewatch.json';
   const POLL_MS = 30 * 60 * 1000;
   const T = window.__TAURI__ || null;
@@ -53,12 +56,19 @@ window.__CAPEWATCH_APP__ = true;
 
   async function refresh(reason) {
     try {
-      const r = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const next = await r.json();
+      let r, via = 'api';
+      try {
+        r = await fetch(API_URL, { cache: 'no-store', headers: { Accept: 'application/vnd.github.raw+json' } });
+        if (!r.ok) throw new Error('HTTP ' + r.status + (r.headers.get('x-ratelimit-remaining') === '0' ? ' (hourly limit reached)' : ''));
+      } catch (e) {
+        log('warn', 'data: API not used (' + (e.message || e) + '), using the cached copy server');
+        via = 'raw'; r = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+      }
+      const next = await r.json(); next.__via = via;
       if (!next || !next.capes) throw new Error('bad data file');
       data = next; store.set('data', next);
-      log('info', 'data: loaded (' + reason + '),', Object.keys(next.capes).length + ' capes, robot checked ' + (next.status?.lastCheckAt || '?'));
+      log('info', 'data: loaded (' + reason + ', via ' + next.__via + '),', Object.keys(next.capes).length + ' capes, robot checked ' + (next.status?.lastCheckAt || '?'));
       emit();
       notify(next);
     } catch (e) {
