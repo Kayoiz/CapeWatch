@@ -9,9 +9,67 @@ use tauri_plugin_updater::UpdaterExt;
 
 fn show_main(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
-        let _ = w.unminimize();
         let _ = w.show();
-        let _ = w.set_focus();
+        let _ = w.unminimize();
+        // Queued after show/unminimize, so the window is visible by the time it is pulled to the front.
+        let win = w.clone();
+        let _ = app.run_on_main_thread(move || {
+            #[cfg(windows)]
+            if let Ok(h) = win.hwnd() {
+                let front = unsafe { win32::bring_to_front(h.0 as isize) };
+                log::info!("window: brought to front: {front}");
+            }
+            let _ = win.set_focus();
+        });
+    }
+}
+
+// Windows lets a program take the foreground only in some cases (for example not right after a click on
+// its notification, which belongs to the shell). These are the usual, documented-in-practice ways around it.
+#[cfg(windows)]
+mod win32 {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VK_MENU,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::{
+        BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId, IsIconic, SetForegroundWindow,
+        SetWindowPos, ShowWindow, HWND_NOTOPMOST, HWND_TOPMOST, SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW,
+        SW_RESTORE, SW_SHOW,
+    };
+
+    fn alt_tap() {
+        let key = |flags| INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 { ki: KEYBDINPUT { wVk: VK_MENU, wScan: 0, dwFlags: flags, time: 0, dwExtraInfo: 0 } },
+        };
+        let inputs = [key(Default::default()), key(KEYEVENTF_KEYUP)];
+        unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) };
+    }
+
+    /// Shows, restores and activates the window above all others. Returns true when it is the foreground window.
+    pub unsafe fn bring_to_front(raw: isize) -> bool {
+        let hwnd = HWND(raw as *mut _);
+        let _ = ShowWindow(hwnd, if IsIconic(hwnd).as_bool() { SW_RESTORE } else { SW_SHOW });
+        // 1) share input state with the current foreground window's thread, then activate
+        let fg = GetForegroundWindow();
+        let fg_thread = GetWindowThreadProcessId(fg, None);
+        let me = GetCurrentThreadId();
+        let attached = fg_thread != 0 && fg_thread != me && AttachThreadInput(me, fg_thread, true).as_bool();
+        let _ = BringWindowToTop(hwnd);
+        let mut ok = SetForegroundWindow(hwnd).as_bool();
+        if attached { let _ = AttachThreadInput(me, fg_thread, false); }
+        // 2) if Windows still said no: a synthetic Alt tap counts as input for this program, then try again
+        if !ok || GetForegroundWindow() != hwnd {
+            alt_tap();
+            ok = SetForegroundWindow(hwnd).as_bool();
+        }
+        // 3) in every case put it on top of the other windows (topmost on, then off again)
+        let flags = SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW;
+        let _ = SetWindowPos(hwnd, Some(HWND_TOPMOST), 0, 0, 0, 0, flags);
+        let _ = SetWindowPos(hwnd, Some(HWND_NOTOPMOST), 0, 0, 0, 0, flags);
+        ok && GetForegroundWindow() == hwnd
     }
 }
 
