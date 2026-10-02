@@ -16,6 +16,8 @@ const log = (...a) => console.log('[' + nowIso() + ']', ...a);
 
 // Pages in Category:Capes that are not one account cape (lists, other games, disambiguations).
 const SKIP_TITLES = new Set(['Cape', 'Movie Cape', 'Cape/Gallery']);
+// Capes the owner removed from CapeWatch: never add them back (they would come back as "new").
+const REMOVED_TITLES = new Set(["Cheapsh0t's Cape", 'Chinese Translator Cape', 'Translator Cape#Chinese Translator Cape']);
 
 async function wiki(params) {
   const url = WIKI + '?' + new URLSearchParams({ ...params, format: 'json', formatversion: '2' });
@@ -109,7 +111,7 @@ async function main() {
   try { titles = await categoryTitles(); log('wiki: ' + titles.length + ' pages in Category:Capes'); }
   catch (e) { problems.push('wiki category unreachable'); log('wiki: category failed:', e.message); }
   for (const title of titles) {
-    if (known.has(title) || SKIP_TITLES.has(title) || title.includes('/') || /duplicate/i.test(title)) continue;
+    if (known.has(title) || SKIP_TITLES.has(title) || REMOVED_TITLES.has(title) || title.includes('/') || /duplicate/i.test(title)) continue;
     let text = '';
     try { text = await pageText(title); } catch (e) { problems.push('page ' + title); log('wiki: page failed', title, e.message); continue; }
     const box = infobox(text);
