@@ -425,7 +425,7 @@ dependencies = [
 
 [[package]]
 name = "capewatch"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "log",
  "serde_json",
@@ -438,6 +438,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-single-instance",
  "tauri-plugin-updater",
+ "tauri-winrt-notification",
 ]
 
 [[package]]

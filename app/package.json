@@ -1,7 +1,7 @@
 {
   "name": "capewatch-app",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "web": "node build-web.mjs",
     "build": "node build-web.mjs && tauri build"

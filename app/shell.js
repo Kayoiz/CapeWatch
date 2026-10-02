@@ -102,10 +102,9 @@ window.__CAPEWATCH_APP__ = true;
     const title = 'CapeWatch: ' + (L.EV[e.type] || e.type);
     const body = e['text' + cap] || e.textEn || e.capeName || '';
     try {
-      const N = T?.notification;
-      if (!N) throw new Error('notification API missing');
-      if (!(await N.isPermissionGranted()) && (await N.requestPermission()) !== 'granted') throw new Error('permission denied');
-      await N.sendNotification({ title, body });
+      // The app's own command: clicking this notification opens the window on the cape (see main.rs).
+      await invoke('notify_cape', { title, body, capeId: e.capeId || '' });
+      store.set('lastNotified', { id: e.capeId, at: Date.now() });
       log('info', 'notify: sent', e.type, e.capeId);
     } catch (err) { log('error', 'notify: failed', e.capeId, err.message || err); }
   }
@@ -278,6 +277,20 @@ window.__CAPEWATCH_APP__ = true;
   });
   T?.event?.listen?.('check-now', () => refresh('tray'));
   T?.event?.listen?.('open-settings', () => settingsDialog());
+  // Notification clicked: show that cape. If the notification was clicked later in the notification centre,
+  // Windows starts the app again instead, so the running app opens the last notified cape (once, within a day).
+  function openCape(id, why) {
+    store.set('lastNotified', null);
+    const page = window.CapeWatchPage;
+    if (!id || !page?.openDetail) { log('warn', 'open cape: not possible', id, why); return; }
+    document.querySelectorAll('dialog[open]').forEach((d) => d.close());
+    page.openDetail(id); log('info', 'open cape: ' + id + ' (' + why + ')');
+  }
+  T?.event?.listen?.('open-cape', (ev) => openCape(ev.payload, 'notification click'));
+  T?.event?.listen?.('second-start', () => {
+    const last = store.get('lastNotified', null);
+    if (last && Date.now() - last.at < 24 * 3600 * 1000) openCape(last.id, 'notification centre');
+  });
   log('info', 'start: apis', { notification: !!T?.notification, http: !!T?.http?.fetch, autostart: !!T?.autostart, event: !!T?.event });
   log('info', 'start: app shell ready, saved data ' + (data ? 'from ' + (data.status?.lastCheckAt || '?') : 'none'));
   refresh('start');

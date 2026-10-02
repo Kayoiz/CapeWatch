@@ -17,4 +17,5 @@ writeFileSync(join(dist, 'index.html'), html);
 cpSync(join(here, 'shell.js'), join(dist, 'shell.js'));
 cpSync(join(root, 'vendor'), join(dist, 'vendor'), { recursive: true });
 cpSync(join(root, 'assets', 'skin'), join(dist, 'assets', 'skin'), { recursive: true });
+cpSync(join(root, 'assets', 'fonts'), join(dist, 'assets', 'fonts'), { recursive: true });
 console.log('dist ready:', dist);

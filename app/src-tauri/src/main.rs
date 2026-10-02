@@ -15,6 +15,36 @@ fn show_main(app: &AppHandle) {
     }
 }
 
+// A Windows notification about one cape. Clicking it opens the window on that cape's details.
+// (The notification plugin on Windows does not report clicks, so the app sends this one itself.)
+#[tauri::command]
+fn notify_cape(app: AppHandle, title: String, body: String, cape_id: String) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        use tauri_winrt_notification::Toast;
+        let handle = app.clone();
+        let id = cape_id.clone();
+        Toast::new(&app.config().identifier)
+            .title(&title)
+            .text1(&body)
+            .on_activated(move |_| {
+                log::info!("notification clicked: {id}");
+                show_main(&handle);
+                let _ = handle.emit("open-cape", id.clone());
+                Ok(())
+            })
+            .show()
+            .map_err(|e| e.to_string())?;
+        log::info!("notification shown: {cape_id}");
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (app, title, body, cape_id);
+        Err("not supported".into())
+    }
+}
+
 async fn check_update(app: AppHandle) {
     let updater = match app.updater() {
         Ok(u) => u,
@@ -35,7 +65,11 @@ async fn check_update(app: AppHandle) {
 
 fn main() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main(app)))
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // Also how Windows opens the app when a notification is clicked later in the notification centre.
+            show_main(app);
+            let _ = app.emit("second-start", ());
+        }))
         .plugin(
             tauri_plugin_log::Builder::new()
                 .clear_targets()
@@ -89,6 +123,7 @@ fn main() {
             tauri::async_runtime::spawn(async move { check_update(handle).await });
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![notify_cape])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();

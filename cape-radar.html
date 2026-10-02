@@ -29,7 +29,7 @@
   --bedrock: #2D6FA8;
   --font-display: "Secular One", "Assistant", "Arial Hebrew", system-ui, sans-serif;
   --font-body: "Assistant", "Segoe UI", "Arial Hebrew", system-ui, sans-serif;
-  --font-pixel: "Pixelify Sans", "Assistant", ui-monospace, monospace;
+  --font-pixel: "CapeWatch Pixel", "Pixelify Sans", "Assistant", ui-monospace, monospace;
   --step--1: .8125rem;      /* small text inside cards, badges and buttons */
   --text-sm: .875rem;       /* secondary text outside the cards (notes, labels, log times, footer) */
   --measure: 70ch;          /* longest comfortable line for running text */
@@ -58,6 +58,9 @@
 }
 
 * { box-sizing: border-box; }
+/* CapeWatch's own pixel font (tools/make-font.py): one drawn weight, so the browser never smears it into a
+   fake bold. 8 pixels per em: sizes that are multiples of 8px stay sharp. */
+@font-face { font-family: "CapeWatch Pixel"; src: url("assets/fonts/CapeWatchPixel.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
 body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: var(--step-0); line-height: 1.55; }
 .wrap { max-width: 1120px; margin-inline: auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; gap: 40px; }
 h1, h2, h3 { font-family: var(--font-display); font-weight: 400; line-height: 1.2; margin: 0; text-wrap: balance; }
@@ -197,7 +200,7 @@ button.slot { cursor: pointer; }
 .slot .ph { font-family: var(--font-pixel); color: var(--muted); font-size: var(--step--1); text-align: center; padding: 8px; }
 .slot .flag { position: absolute; z-index: 1; inset-block-start: 8px; inset-inline-start: 8px; font: 600 11px/1 var(--font-pixel); letter-spacing: .04em; padding: 4px 6px;
   background: var(--accent); color: var(--accent-fg); }
-.tile-name { font-family: var(--font-pixel); font-weight: 600; font-size: .95rem; unicode-bidi: isolate; overflow-wrap: anywhere; line-height: 1.25; }
+.tile-name { font-family: var(--font-pixel); font-weight: 600; font-size: 16px; unicode-bidi: isolate; overflow-wrap: anywhere; line-height: 1.25; }
 .meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .ed { font: 600 11px/1 var(--font-pixel); padding: 3px 5px; border: 1.5px solid currentColor; }
 .ed.java { color: var(--java); }
@@ -1349,7 +1352,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
   let renderTimer = 0;
   const requestRender = () => { if (!renderTimer) renderTimer = setTimeout(() => { renderTimer = 0; render(); }, 16); };
   addEventListener('capeart', requestRender);   // a drawn picture is ready
-  window.CapeWatchPage = { cape3d, lang: () => lang, t };
+  window.CapeWatchPage = { cape3d, lang: () => lang, t, openDetail: (id) => openDetail(id) };
   (async () => {
     let db = null;
     try { db = await window.claude?.use?.('db'); } catch { db = null; }
