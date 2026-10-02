@@ -1459,6 +1459,38 @@
    "source": "baseline",
    "textureId": "a3f6e4f14801f3ea55e3d95b9b4ef3b5e8802d947f669de93d6ec4b9354a436b",
    "wikiTitle": "Zombie Horse Cape"
+  },
+  "capewatch-test": {
+   "apiAlias": "CapeWatch Test",
+   "availability": "available",
+   "availableFrom": "2026-10-02T16:37:58Z",
+   "availableUntil": "2026-10-09T17:00:00Z",
+   "category": "event-virtual",
+   "cost": "free",
+   "detectedAt": "2026-10-02T16:37:58Z",
+   "editions": [
+    "java",
+    "bedrock"
+   ],
+   "name": "CapeWatch Test Cape",
+   "releaseDate": "2026-10-02",
+   "redeemBy": "2026-10-16",
+   "source": "test",
+   "textureUrl": "https://raw.githubusercontent.com/Kayoiz/CapeWatch/main/assets/own-capes/capewatch-test.png",
+   "obtainEn": "**This is a test cape, it does not exist in Minecraft.** It checks how CapeWatch shows a full cape: open the **CapeWatch** settings, keep **New cape** notifications on, and wait for the notification. The test runs **until 2026-10-09**; there is nothing to redeem.",
+   "obtainHe": "**זו גלימת בדיקה, היא לא קיימת ב-Minecraft.** היא בודקת איך CapeWatch מציג גלימה מלאה: פותחים את ההגדרות של **CapeWatch**, משאירים את התראות **גלימה חדשה** פעילות ומחכים להתראה. הבדיקה פעילה **עד 2026-10-09**, ואין מה לממש.",
+   "obtainEs": "**Esta es una capa de prueba, no existe en Minecraft.** Sirve para ver cómo CapeWatch muestra una capa completa: abre los ajustes de **CapeWatch**, deja activadas las notificaciones de **Capa nueva** y espera la notificación. La prueba dura **hasta el 2026-10-09**; no hay nada que canjear.",
+   "obtainPt": "**Esta é uma capa de teste, ela não existe no Minecraft.** Serve para ver como o CapeWatch mostra uma capa completa: abra as configurações do **CapeWatch**, deixe as notificações de **Capa nova** ligadas e espere a notificação. O teste vai **até 2026-10-09**; não há nada para resgatar.",
+   "obtainFr": "**Ceci est une cape de test, elle n’existe pas dans Minecraft.** Elle vérifie comment CapeWatch affiche une cape complète : ouvrez les réglages de **CapeWatch**, gardez les notifications **Nouvelle cape** activées et attendez la notification. Le test dure **jusqu’au 2026-10-09** ; il n’y a rien à utiliser.",
+   "obtainDe": "**Das ist ein Test-Umhang, es gibt ihn nicht in Minecraft.** Er prüft, wie CapeWatch einen vollständigen Umhang zeigt: Öffne die Einstellungen von **CapeWatch**, lass die Benachrichtigungen für **Neuer Umhang** an und warte auf die Benachrichtigung. Der Test läuft **bis 2026-10-09**; es gibt nichts einzulösen.",
+   "obtainRu": "**Это тестовый плащ, в Minecraft его нет.** Он проверяет, как CapeWatch показывает полный плащ: откройте настройки **CapeWatch**, оставьте уведомления **Новый плащ** включёнными и дождитесь уведомления. Тест идёт **до 2026-10-09**; активировать ничего не нужно.",
+   "shortEn": "**Test only:** not a real Minecraft cape.",
+   "shortHe": "**לבדיקה בלבד:** לא גלימה אמיתית של Minecraft.",
+   "shortEs": "**Solo prueba:** no es una capa real de Minecraft.",
+   "shortPt": "**Só teste:** não é uma capa real do Minecraft.",
+   "shortFr": "**Test uniquement :** pas une vraie cape Minecraft.",
+   "shortDe": "**Nur ein Test:** kein echter Minecraft-Umhang.",
+   "shortRu": "**Только тест:** это не настоящий плащ Minecraft."
   }
  },
  "events": {
@@ -1498,6 +1530,19 @@
    "textPt": "Aurora Cape: a Twitch ficou sem códigos por enquanto, então use o TikTok (3 min) para pegá-la.",
    "textRu": "Aurora Cape: у Twitch пока закончились коды, поэтому получайте плащ через TikTok (3 мин).",
    "type": "changed"
+  },
+  "20261002-test4-capewatch-test": {
+   "at": "2026-10-02T16:37:58Z",
+   "type": "new",
+   "capeId": "capewatch-test",
+   "capeName": "CapeWatch Test Cape",
+   "textEn": "Test 4: CapeWatch Test Cape, free for Java and Bedrock until 2026-10-09. A full test card with its own picture.",
+   "textHe": "בדיקה 4: CapeWatch Test Cape, בחינם ל-Java ול-Bedrock עד 2026-10-09. כרטיס בדיקה מלא עם תמונה משלו.",
+   "textEs": "Prueba 4: CapeWatch Test Cape, gratis para Java y Bedrock hasta el 2026-10-09. Una tarjeta de prueba completa con su propia imagen.",
+   "textPt": "Teste 4: CapeWatch Test Cape, grátis para Java e Bedrock até 2026-10-09. Um cartão de teste completo com imagem própria.",
+   "textFr": "Test 4 : CapeWatch Test Cape, gratuite sur Java et Bedrock jusqu’au 2026-10-09. Une carte de test complète avec sa propre image.",
+   "textDe": "Test 4: CapeWatch Test Cape, kostenlos für Java und Bedrock bis 2026-10-09. Eine vollständige Testkarte mit eigenem Bild.",
+   "textRu": "Тест 4: CapeWatch Test Cape, бесплатно для Java и Bedrock до 2026-10-09. Полная тестовая карточка с собственной картинкой."
   }
  }
 }
