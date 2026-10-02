@@ -81,7 +81,7 @@ window.__CAPEWATCH_APP__ = true;
   const ui = () => UI[lang()] || UI.en;
 
   // ---------- notifications ----------
-  const settings = Object.assign({ notifyNew: true, notifyOpen: false, notifyEnding: false, skinName: '' }, store.get('settings', {}));
+  const settings = Object.assign({ notifyNew: true, notifyOpen: false, notifyEnding: false, autostart: true, skinName: '' }, store.get('settings', {}));
   const saveSettings = () => store.set('settings', settings);
   const SETTING_FOR = { new: 'notifyNew', announced: 'notifyNew', available: 'notifyOpen', ending: 'notifyEnding' };
   function notify(d) {
@@ -240,6 +240,7 @@ window.__CAPEWATCH_APP__ = true;
         const f = d.querySelector('form');
         for (const k of ['notifyNew', 'notifyOpen', 'notifyEnding']) settings[k] = f[k].checked;
         const name = f.skinName.value.trim(); const changed = name !== settings.skinName; settings.skinName = name; saveSettings();
+        settings.autostart = f.autostart.checked; saveSettings();
         try { const A = T?.autostart; if (A) { const on = await A.isEnabled(); if (f.autostart.checked && !on) await A.enable(); if (!f.autostart.checked && on) await A.disable(); } } catch (e) { log('warn', 'autostart: ' + (e.message || e)); }
         log('info', 'settings: saved', { notifyNew: settings.notifyNew, notifyOpen: settings.notifyOpen, notifyEnding: settings.notifyEnding, autostart: f.autostart.checked, skin: name || 'default' });
         const msg = d.querySelector('.cw-msg'); msg.textContent = '';
@@ -292,6 +293,17 @@ window.__CAPEWATCH_APP__ = true;
     if (last && Date.now() - last.at < 24 * 3600 * 1000) openCape(last.id, 'notification centre');
   });
   log('info', 'start: apis', { notification: !!T?.notification, http: !!T?.http?.fetch, autostart: !!T?.autostart, event: !!T?.event });
+  // Start with Windows: the choice is kept in the app's settings and put back if Windows lost it
+  // (reinstalling the app removes the entry from Windows' startup list).
+  (async () => {
+    const A = T?.autostart; if (!A) return;
+    try {
+      const on = await A.isEnabled();
+      if (settings.autostart && !on) { await A.enable(); log('info', 'autostart: was missing, turned back on'); }
+      else if (!settings.autostart && on) { await A.disable(); log('info', 'autostart: turned off (setting is off)'); }
+      else log('info', 'autostart: ' + (on ? 'on' : 'off'));
+    } catch (e) { log('warn', 'autostart: ' + (e.message || e)); }
+  })();
   log('info', 'start: app shell ready, saved data ' + (data ? 'from ' + (data.status?.lastCheckAt || '?') : 'none'));
   refresh('start');
   setInterval(() => refresh('every 30 min'), POLL_MS);

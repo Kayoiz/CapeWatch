@@ -425,7 +425,7 @@ dependencies = [
 
 [[package]]
 name = "capewatch"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "log",
  "serde_json",
