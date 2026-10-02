@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write   # commit data/capewatch.json
   models: read      # GitHub Models (free tier) for the 7-language texts
+  actions: write    # keep this schedule switched on (see the last step)
 
 concurrency:
   group: robot
@@ -34,3 +35,11 @@ jobs:
           if git diff --cached --quiet; then echo "no change"; exit 0; fi
           git commit -m "data: robot check $(date -u +%Y-%m-%dT%H:%MZ)"
           git push
+      # GitHub switches off scheduled workflows in a public repo after 60 days without repository activity.
+      # Each run already commits the status line, and this step also re-enables the workflow through the API,
+      # so the schedule stays on even if a commit ever fails.
+      - name: Keep the schedule alive
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/robot.yml/enable" && echo "schedule kept on"
