@@ -11,6 +11,7 @@ _screenshots/
 !app/src-tauri/icons/**
 !assets/skin/Kayskin.png
 !assets/own-capes/**
+!assets/brand/**
 
 # Local tools and builds
 .claude/

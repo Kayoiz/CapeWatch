@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/brand/banner.jpg" alt="CapeWatch" width="100%"></p>
+
 # CapeWatch
 
 A Minecraft cape tracker for Windows. It lists every cape, shows new capes and promotions, and sends a Windows notification when something changes.
