@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="he" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CapeWatch: התראה לדיסקורד</title>
+<!-- Task 15 (Discord notifications through a webhook): proposal prototype. Nothing is sent anywhere: the
+     "send test" button only shows what would be sent. Nothing in the app changes.
+     Open through the local server (launch.json "title-tuner"): http://localhost:8766/tools/preview-discord.html -->
+<link rel="stylesheet" href="../assets/fonts/google/fonts.css">
+<style id="app-style"></style>
+<style>
+.proto { max-width: 1120px; margin-inline: auto; padding: 24px 16px 56px; display: grid; gap: 20px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px; align-items: start; }
+.box { background: var(--panel); padding: 20px; display: grid; gap: 14px; box-shadow: inset 3px 3px 0 var(--bevel-hi), inset -3px -3px 0 var(--bevel-lo); }
+.note { font-size: var(--text-sm); color: var(--muted); max-width: var(--measure); }
+.cw-skin { display: grid; gap: 4px; }
+.cw-skin input { font: inherit; padding: 7px 10px; background: var(--bg); color: var(--fg); border: 0; box-shadow: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); direction: ltr; }
+.ok { color: var(--live); } .bad { color: var(--soon); }
+/* a Discord message, drawn after Discord's dark theme */
+.dc { background: #313338; color: #dbdee1; font: 15px/1.375 "gg sans", "Segoe UI", Assistant, sans-serif; padding: 16px; direction: ltr; text-align: left; display: grid; grid-template-columns: 40px 1fr; gap: 0 16px; }
+.dc-av { width: 40px; height: 40px; border-radius: 50%; background: #1e1f22 url("../app/src-tauri/icons/32x32.png") center / 28px no-repeat; image-rendering: pixelated; }
+.dc-name { color: #f2f3f5; font-weight: 600; } .dc-bot { background: #5865f2; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-inline-start: 4px; vertical-align: 2px; }
+.dc-time { color: #949ba4; font-size: 12px; margin-inline-start: 6px; }
+.dc-embed { margin-top: 4px; max-width: 432px; background: #2b2d31; border-left: 4px solid #6cc349; border-radius: 4px; padding: 8px 16px 16px 12px; display: grid; gap: 8px; }
+.dc-embed a { color: #00a8fc; font-weight: 600; text-decoration: none; }
+.dc-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .dc-fields b { display: block; color: #f2f3f5; font-size: 14px; }
+.dc-foot { color: #b5bac1; font-size: 12px; }
+pre { margin: 0; padding: 12px; background: var(--bg); color: var(--fg); font: 12px/1.45 ui-monospace, Consolas, monospace; overflow: auto; direction: ltr; text-align: left; box-shadow: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); max-height: 420px; }
+</style>
+</head>
+<body>
+<div class="proto">
+  <header style="display:grid;gap:8px">
+    <h1>התראה לדיסקורד דרך Webhook (אב טיפוס)</h1>
+    <p class="note">אפשרות בהגדרות: מי שרוצה, מדביק כתובת Webhook של ערוץ בשרת הדיסקורד שלו, ו-CapeWatch שולח לשם את אותן התראות שהוא מציג ב-Windows. בתצוגה הזו שום דבר לא נשלח: "שליחת בדיקה" רק מראה מה היה נשלח.</p>
+  </header>
+  <div class="cols">
+    <div class="box">
+      <h3>הגדרות: דיסקורד</h3>
+      <label class="cw-skin"><span>כתובת Webhook של ערוץ בדיסקורד</span>
+        <input id="url" type="text" autocomplete="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/…">
+        <small class="note" id="url-msg">ריק = בלי דיסקורד. בדיסקורד: הגדרות הערוץ ← שילובים ← Webhooks ← העתקת הכתובת.</small></label>
+      <label class="cw-opt"><input type="checkbox" class="cw-box" id="same" checked> <span>אותן התראות כמו ב-Windows (גלימה חדשה, מבצע שנפתח, מבצע שעומד להיגמר)</span></label>
+      <label class="cw-opt"><input type="checkbox" class="cw-switch" role="switch" id="pic"> <span>לצרף את התמונה של הגלימה</span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="test">שליחת בדיקה</button><button class="btn ghost" type="button" id="next">אירוע אחר</button></div>
+      <p class="note" id="sent"></p>
+    </div>
+    <div style="display:grid;gap:10px">
+      <h3>כך זה ייראה בערוץ</h3>
+      <div class="dc" id="dc"></div>
+    </div>
+  </div>
+  <div class="box">
+    <h3>מה בדיוק נשלח לדיסקורד</h3>
+    <pre id="json"></pre>
+    <ul class="note" style="margin:0">
+      <li><b>בלי תיוגים:</b> <code>allowed_mentions: { parse: [] }</code>, כך ששם של גלימה או טקסט מהנתונים לא יכולים לתייג @everyone. סימני עיצוב של דיסקורד (כוכביות, קווים) בטקסט מנוטרלים.</li>
+      <li><b>הכתובת סודית:</b> נשמרת רק במחשב, ביומן מופיעה מקוצרת (<code>…/webhooks/1234/•••</code>), ונבדקת שהיא באמת כתובת Webhook של דיסקורד לפני כל שליחה.</li>
+      <li><b>מי שולח:</b> התוכנה (Rust), דרך תוסף ה-HTTP שמותר לו רק <code>https://discord.com/api/webhooks/*</code>. הדף עצמו לא יכול לפנות לדיסקורד (מדיניות האבטחה נשארת כמו שהיא).</li>
+      <li><b>תמונה:</b> כבויה כברירת מחדל. אם מפעילים, נשלחת התמונה ש-CapeWatch צייר (קובץ מצורף), לא קישור לטקסטורה.</li>
+      <li><b>תקלות:</b> שגיאה נכתבת ביומן, אין שליחה חוזרת אינסופית, ועד 5 הודעות בדקה (המגבלה של דיסקורד גבוהה יותר).</li>
+    </ul>
+  </div>
+</div>
+<script>
+(async () => {
+  const page = await (await fetch('../cape-radar.html')).text();
+  document.getElementById('app-style').textContent = page.slice(page.indexOf('<style>') + 7, page.indexOf('</style>')).replace(/url\("assets\//g, 'url("../assets/');
+  const data = await (await fetch('../data/capewatch.json')).json();
+  const $ = (id) => document.getElementById(id);
+  // what CapeWatch would send for one event (same texts as the Windows notification)
+  const TITLE = { new: 'New cape', available: 'Promotion opened', ending: 'Promotion ending soon' };
+  const COLOR = { new: 0x6cc349, available: 0x86d866, ending: 0xff9b5c };
+  const samples = Object.entries(data.capes).filter(([, c]) => c.availability === 'available' || c.availability === 'announced').slice(0, 4)
+    .map(([id, c], i) => ({ type: ['new', 'available', 'ending', 'new'][i], capeId: id, cape: c }));
+  let n = 0;
+  // Discord would format *, _, ~, `, |, > and # in our text: put a backslash in front of each
+  const escapeMd = (s) => String(s || '').replace(/([*_~`|>#\\])/g, '\\$1');
+  const wiki = (c) => 'https://minecraft.wiki/w/' + encodeURIComponent((c.wikiTitle || c.name).replace(/ /g, '_'));
+  function payload(e) {
+    const c = e.cape, text = String(c.shortEn || c.obtainEn || '').replace(/\*\*/g, '');
+    const fields = [];
+    if (c.availableUntil) fields.push({ name: 'Ends', value: c.availableUntil, inline: true });
+    if (c.cost) fields.push({ name: 'Cost', value: c.cost === 'free' ? 'Free' : 'Needs a purchase', inline: true });
+    return {
+      username: 'CapeWatch',
+      allowed_mentions: { parse: [] },
+      embeds: [{ title: TITLE[e.type] + ': ' + escapeMd(c.name), url: wiki(c), description: escapeMd(text), color: COLOR[e.type],
+        fields, footer: { text: 'CapeWatch · not an official Minecraft product' }, ...($('pic').checked ? { image: { url: 'attachment://' + e.capeId + '.png' } } : {}) }]
+    };
+  }
+  function show() {
+    const e = samples[n % samples.length], p = payload(e), em = p.embeds[0];
+    $('json').textContent = JSON.stringify(p, null, 2);
+    const dc = $('dc'); dc.replaceChildren();
+    const av = document.createElement('div'); av.className = 'dc-av';
+    const body = document.createElement('div');
+    body.innerHTML = '<div><span class="dc-name">CapeWatch</span><span class="dc-bot">APP</span><span class="dc-time">Today at 18:14</span></div><div class="dc-embed"><a></a><div class="dc-desc"></div><div class="dc-fields"></div><div class="dc-foot"></div></div>';
+    const a = body.querySelector('a'); a.textContent = em.title.replace(/\\(.)/g, '$1'); a.href = em.url; a.target = '_blank';
+    body.querySelector('.dc-embed').style.borderLeftColor = '#' + em.color.toString(16).padStart(6, '0');
+    body.querySelector('.dc-desc').textContent = em.description.replace(/\\(.)/g, '$1');
+    for (const f of em.fields) { const d = document.createElement('div'); const b = document.createElement('b'); b.textContent = f.name; d.append(b, f.value); body.querySelector('.dc-fields').append(d); }
+    body.querySelector('.dc-foot').textContent = em.footer.text;
+    if (em.image) { const ph = document.createElement('div'); ph.className = 'note'; ph.textContent = '[the cape picture CapeWatch drew]'; ph.style.cssText = 'height:120px;display:grid;place-items:center;background:#1e1f22;color:#949ba4'; body.querySelector('.dc-embed').append(ph); }
+    dc.append(av, body);
+  }
+  // The address must be a Discord webhook: https://discord.com/api/webhooks/<number>/<token>
+  const VALID = /^https:\/\/(?:(?:canary|ptb)\.)?discord(?:app)?\.com\/api\/webhooks\/\d{5,30}\/[\w-]{20,120}$/;
+  const short = (u) => u.replace(/(\/webhooks\/\d+)\/.*/, '$1/•••');
+  $('url').addEventListener('input', () => {
+    const v = $('url').value.trim(), m = $('url-msg');
+    if (!v) { m.className = 'note'; m.textContent = 'ריק = בלי דיסקורד.'; return; }
+    m.className = VALID.test(v) ? 'note ok' : 'note bad';
+    m.textContent = VALID.test(v) ? 'כתובת תקינה: ' + short(v) : 'זו לא כתובת Webhook של דיסקורד (צריכה להתחיל ב-https://discord.com/api/webhooks/).';
+  });
+  $('test').onclick = () => { const v = $('url').value.trim(); $('sent').textContent = VALID.test(v) ? 'בתוכנה: נשלחת הודעת הבדיקה שלמטה ל-' + short(v) + '. בתצוגה הזו: לא נשלח כלום.' : 'קודם כתובת Webhook תקינה.'; };
+  $('next').onclick = () => { n++; show(); };
+  $('pic').onchange = show;
+  show();
+  window.__discord = { VALID, payload: () => payload(samples[n % samples.length]), escapeMd };
+})();
+</script>
+</body>
+</html>
