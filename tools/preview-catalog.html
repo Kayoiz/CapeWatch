@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="he" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CapeWatch: חיפוש וסינון</title>
+<!-- Task 14 (catalog search and filters): a working prototype for the owner's decision. Nothing in the app changes.
+     Open through the local server (launch.json "title-tuner"): http://localhost:8766/tools/preview-catalog.html
+     It takes the app's own styles from cape-radar.html and the real data file (text only, no pictures). -->
+<link rel="stylesheet" href="../assets/fonts/google/fonts.css">
+<style id="app-style"></style>
+<style>
+.proto { max-width: 1120px; margin-inline: auto; padding: 24px 16px 56px; display: grid; gap: 20px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); --bs: inset 2px 2px 0 rgba(255,255,255,.28), inset -2px -2px 0 rgba(0,0,0,.3); }
+.found { font-size: 12px; color: var(--muted); }
+.found mark { background: var(--live-bg); color: var(--live); padding-inline: 2px; }
+.tile mark { background: var(--live-bg); color: inherit; }
+.note { font-size: var(--text-sm); color: var(--muted); max-width: var(--measure); }
+.kbd { font: 600 12px/1 var(--font-pixel); padding: 2px 5px; box-shadow: inset 0 0 0 1.5px var(--line); }
+.count-row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+</style>
+</head>
+<body>
+<div class="proto" id="wrap">
+  <header style="display:grid;gap:8px">
+    <h1>חיפוש וסינון בקטלוג (אב טיפוס)</h1>
+    <p class="note">כבר היום יש חיפוש לפי שם, גרסה, מצב, עלות, סוג ומיון. כאן מה שאני מציע להוסיף, עובד על הנתונים האמיתיים (בלי תמונות):</p>
+    <ul class="note" style="margin:0">
+      <li>החיפוש מוצא גם בתיאור (בשפה של המשתמש), בסוג, בשם ב-API ובשם בוויקי, ומראה איפה נמצאה ההתאמה. נסה: <b>TikTok</b>, <b>MINECON</b>, <b>Twitch</b>, <b>מתנדבים</b>.</li>
+      <li>כפתורי סינון מהיר: אפשר להשיג עכשיו, חינמיות, נגמרות בתוך שבוע, חדשות, הוכרזו.</li>
+      <li>סינון לפי שנה, וכפתור "ניקוי" שמופיע רק כשיש סינון פעיל.</li>
+      <li>מקלדת: <span class="kbd">/</span> קופץ לחיפוש, <span class="kbd">Esc</span> מנקה אותו.</li>
+    </ul>
+    <div class="chips"><button class="btn ghost" type="button" id="lang-he" aria-pressed="true">עברית</button><button class="btn ghost" type="button" id="lang-en" aria-pressed="false">English</button></div>
+  </header>
+
+  <div class="chips" id="chips"></div>
+  <div class="filters">
+    <div class="field"><label for="q">חיפוש</label><input id="q" type="search" autocomplete="off" placeholder="שם, תיאור, אירוע…"></div>
+    <div class="field"><label for="ed">גרסה</label><select id="ed"><option value="all">Java ו-Bedrock</option><option value="java">Java</option><option value="bedrock">Bedrock</option></select></div>
+    <div class="field"><label for="year">שנה</label><select id="year"><option value="all">כל השנים</option></select></div>
+  </div>
+  <div class="count-row"><p class="count-line" id="count" aria-live="polite" style="margin:0"></p><button class="btn ghost" type="button" id="clear" hidden>ניקוי הסינון</button></div>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+(async () => {
+  // the app's own look: its first <style> block, taken from the page itself
+  const page = await (await fetch('../cape-radar.html')).text();
+  document.getElementById('app-style').textContent = page.slice(page.indexOf('<style>') + 7, page.indexOf('</style>')).replace(/url\("assets\//g, 'url("../assets/');
+  const data = await (await fetch('../data/capewatch.json')).json();
+  const capes = Object.entries(data.capes).filter(([, c]) => c && c.name);
+  let lang = 'he';
+  const L = {
+    he: { AV: { available: 'זמינה עכשיו', permanent: 'ניתנת לכולם', announced: 'הוכרזה', ended: 'המבצע הסתיים', exclusive: 'בלעדית' }, count: 'מוצגות {n} מתוך {t}', none: 'אין גלימות שמתאימות לסינון הזה.',
+      chips: { now: 'אפשר להשיג עכשיו', free: 'חינמיות', soon: 'נגמרות בתוך שבוע', fresh: 'חדשות (14 יום)', announced: 'הוכרזו' }, where: { name: 'בשם', apiAlias: 'בשם ב-API', wikiTitle: 'בשם בוויקי', text: 'בתיאור', category: 'בסוג' }, found: 'נמצא ',
+      CAT: { ownership: 'בעלות על המשחק', staff: 'צוות Mojang / Microsoft', 'event-physical': 'אירוע פיזי', 'event-virtual': 'אירוע מקוון', personal: 'גלימה אישית', competition: 'תחרות', volunteer: 'מתנדבים', temporary: 'זמנית', other: 'אחר' } },
+    en: { AV: { available: 'Available now', permanent: 'Free for everyone', announced: 'Announced', ended: 'Promotion ended', exclusive: 'Exclusive' }, count: 'Showing {n} of {t}', none: 'No capes match these filters.',
+      chips: { now: 'Obtainable now', free: 'Free', soon: 'Ending within a week', fresh: 'New (14 days)', announced: 'Announced' }, where: { name: 'in the name', apiAlias: 'in the API name', wikiTitle: 'in the wiki title', text: 'in the description', category: 'in the type' }, found: 'Found ',
+      CAT: { ownership: 'Game ownership', staff: 'Mojang / Microsoft staff', 'event-physical': 'In-person event', 'event-virtual': 'Online event', personal: 'Personal cape', competition: 'Competition', volunteer: 'Volunteers', temporary: 'Temporary', other: 'Other' } }
+  };
+  const live = (c) => c.availability === 'available' || c.availability === 'permanent';
+  const endOf = (c) => { const s = c.availableUntil; if (!s || !/^\d{4}-\d{2}-\d{2}/.test(s)) return null; const d = new Date(s.length === 10 ? s + 'T23:59:59Z' : s); return isNaN(d) ? null : d; };
+  const CHIPS = {
+    now: (c) => live(c), free: (c) => live(c) && c.cost === 'free', announced: (c) => c.availability === 'announced',
+    soon: (c) => { const e = endOf(c); return c.availability === 'available' && e && e - Date.now() < 7 * 864e5 && e > Date.now(); },
+    fresh: (c) => { const r = Date.parse(c.detectedAt || c.releaseDate); return r && Date.now() - r < 14 * 864e5; }
+  };
+  const on = new Set();
+  const $ = (id) => document.getElementById(id);
+  const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  // search text: lower case, accents removed, so "pokemon" finds "Pokémon"
+  const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const cap = () => lang.charAt(0).toUpperCase() + lang.slice(1);
+  function match(c, q) {
+    if (!q) return { where: null };
+    for (const f of ['name', 'apiAlias', 'wikiTitle']) if (norm(c[f]).includes(q)) return { where: f, text: c[f] };
+    const catName = L[lang].CAT[c.category];
+    if (catName && norm(catName).includes(q)) return { where: 'category', text: catName };
+    for (const f of ['obtain' + cap(), 'short' + cap(), 'obtainEn']) {
+      const t = String(c[f] || '').replace(/\*\*/g, ''), i = norm(t).indexOf(q);
+      if (i >= 0) return { where: 'text', text: t, at: i, len: q.length };
+    }
+    return null;
+  }
+  const years = [...new Set(capes.map(([, c]) => String(c.releaseDate || '').slice(0, 4)).filter((y) => /^\d{4}$/.test(y)))].sort().reverse();
+  for (const y of years) $('year').append(new Option(y, y));
+
+  function chips() {
+    $('chips').replaceChildren(...Object.keys(CHIPS).map((k) => {
+      const b = h('button', 'btn ghost chip', L[lang].chips[k]); b.type = 'button'; b.setAttribute('aria-pressed', on.has(k));
+      b.onclick = () => { on.has(k) ? on.delete(k) : on.add(k); chips(); render(); }; return b;
+    }));
+  }
+  function render() {
+    const q = norm($('q').value.trim()), ed = $('ed').value, yr = $('year').value, T = L[lang];
+    const rows = [];
+    for (const [id, c] of capes) {
+      const e = c.editions || [];
+      if (ed !== 'all' && !e.includes(ed)) continue;
+      if (yr !== 'all' && String(c.releaseDate || '').slice(0, 4) !== yr) continue;
+      if ([...on].some((k) => !CHIPS[k](c))) continue;
+      const m = match(c, q); if (!m) continue;
+      rows.push([id, c, m]);
+    }
+    rows.sort((a, b) => String(b[1].releaseDate || '').localeCompare(String(a[1].releaseDate || '')));
+    $('count').textContent = T.count.replace('{n}', rows.length).replace('{t}', capes.length);
+    $('clear').hidden = !(q || ed !== 'all' || yr !== 'all' || on.size);
+    if (!rows.length) { $('grid').replaceChildren(h('div', 'empty', T.none)); return; }
+    $('grid').replaceChildren(...rows.map(([id, c, m]) => {
+      const t = h('div', 'tile');
+      const slot = h('div', 'slot'); slot.append(h('span', 'ph', c.name));
+      const meta = h('div', 'meta');
+      for (const ed of c.editions || []) meta.append(h('span', 'ed ' + ed, ed.toUpperCase()));
+      meta.append(h('span', 'pill ' + c.availability, T.AV[c.availability] || c.availability));
+      t.append(slot, h('div', 'tile-name', c.name), meta, h('div', 'date', c.releaseDate || ''));
+      if (m.where && m.where !== 'name') {
+        const f = h('div', 'found'); f.append(T.found + T.where[m.where] + ': ');
+        if (m.where === 'text') { const s = Math.max(0, m.at - 24); f.append((s ? '…' : '') + m.text.slice(s, m.at)); f.append(h('mark', null, m.text.substr(m.at, m.len))); f.append(m.text.slice(m.at + m.len, m.at + m.len + 24) + '…'); }
+        else f.append(h('mark', null, m.text));
+        t.append(f);
+      }
+      return t;
+    }));
+  }
+  for (const id of ['q', 'ed', 'year']) $(id).addEventListener(id === 'q' ? 'input' : 'change', render);
+  $('clear').onclick = () => { $('q').value = ''; $('ed').value = 'all'; $('year').value = 'all'; on.clear(); chips(); render(); };
+  addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement !== $('q')) { e.preventDefault(); $('q').focus(); }
+    if (e.key === 'Escape' && document.activeElement === $('q')) { $('q').value = ''; render(); }
+  });
+  const setLang = (l) => { lang = l; document.documentElement.lang = l; document.documentElement.dir = l === 'he' ? 'rtl' : 'ltr';
+    $('lang-he').setAttribute('aria-pressed', l === 'he'); $('lang-en').setAttribute('aria-pressed', l === 'en'); chips(); render(); };
+  $('lang-he').onclick = () => setLang('he'); $('lang-en').onclick = () => setLang('en');
+  setLang('he');
+  window.__catalog = { render, set: (v) => { $('q').value = v; render(); }, chip: (k) => { on.add(k); chips(); render(); } };   // for the checks
+})();
+</script>
+</body>
+</html>
