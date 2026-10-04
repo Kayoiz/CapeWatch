@@ -36,7 +36,39 @@ document.documentElement.classList.add('cw-title-wait');
   };
 
   // ---------- data ----------
-  let data = store.get('data', null);
+  // Every data file is checked before the page sees it or it is saved: entries that are not what the page
+  // expects are dropped (a cape with no name, an event that is not an object), values of the wrong kind are
+  // fixed or dropped, and a file with no usable cape at all is refused (the copy we have stays). This also
+  // cleans a bad copy saved by an older version, so it can never stop the start.
+  const TEXT_FIELDS = /^(name|wikiTitle|apiAlias|textureId|textureUrl|availability|availableFrom|availableUntil|redeemBy|releaseDate|category|cost|source|detectedAt|remindedAt|(obtain|short)[A-Z][a-z])$/;
+  const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+  function cleanCape(c) {
+    if (!isObj(c) || typeof c.name !== 'string' || !c.name.trim()) return null;
+    const out = {};
+    for (const [k, v] of Object.entries(c)) {
+      if (k === 'editions') { const e = (Array.isArray(v) ? v : [v]).filter((x) => typeof x === 'string'); if (e.length) out.editions = e; }
+      else if (k === 'approx') { if (isObj(v)) out.approx = v; }
+      else if (TEXT_FIELDS.test(k)) { if (typeof v === 'string' || typeof v === 'number') out[k] = String(v); }
+      else out[k] = v;
+    }
+    return out;
+  }
+  function cleanData(d) {
+    if (!isObj(d) || !isObj(d.capes)) throw new Error('bad data file (no cape list)');
+    const capes = {}, events = {};
+    for (const [id, c] of Object.entries(d.capes)) { const x = cleanCape(c); if (x) capes[id] = x; }
+    if (!Object.keys(capes).length) throw new Error('bad data file (no usable cape)');
+    for (const [id, e] of Object.entries(isObj(d.events) ? d.events : {})) {
+      if (!isObj(e)) continue;
+      const x = {};
+      for (const [k, v] of Object.entries(e)) if (typeof v === 'string' || typeof v === 'number') x[k] = String(v);
+      events[id] = x;
+    }
+    const dropped = Object.keys(d.capes).length - Object.keys(capes).length + (isObj(d.events) ? Object.keys(d.events).length - Object.keys(events).length : 0);
+    return { clean: { ...d, capes, events, status: isObj(d.status) ? d.status : {} }, dropped };
+  }
+  let data = null;
+  try { const s = store.get('data', null); if (s) data = cleanData(s).clean; } catch { data = null; }
   const subs = { capes: [], events: [], status: [] };
   const docs = (obj) => ({ docs: Object.entries(obj || {}).map(([id, d]) => ({ id, exists: true, data: () => d })) });
   function emit() {
@@ -66,6 +98,11 @@ document.documentElement.classList.add('cw-title-wait');
   const db = { collection, doc: () => ({ onSnapshot(cb) { subs.status.push(cb); if (data) setTimeout(emit, 0); return () => {}; } }) };
   window.claude = { use: async (name) => (name === 'db' ? db : null) };
 
+  // After a failed check (no internet, GitHub down) the next one comes sooner than the 30-minute round:
+  // 1, 2, 5, 10, then every 15 minutes, and at once when Windows says the connection is back.
+  let failures = 0, retryTimer = 0;
+  const RETRY_MIN = [1, 2, 5, 10, 15];
+  addEventListener('online', () => { if (failures) refresh('back online'); });
   async function refresh(reason) {
     try {
       let r, via = 'api';
@@ -77,8 +114,8 @@ document.documentElement.classList.add('cw-title-wait');
         via = 'raw'; r = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
         if (!r.ok) throw new Error('HTTP ' + r.status);
       }
-      const next = await r.json(); next.__via = via;
-      if (!next || !next.capes) throw new Error('bad data file');
+      const { clean: next, dropped } = cleanData(await r.json()); next.__via = via;
+      if (dropped) log('warn', 'data: ' + dropped + ' broken entries left out');
       // Same as what the page already shows (the saved copy at start, most 30-minute checks): nothing to redraw.
       // Redrawing the lists replaces every button, and a click that lands during it is lost.
       const plain = (d) => JSON.stringify({ ...d, __via: null });
@@ -86,9 +123,13 @@ document.documentElement.classList.add('cw-title-wait');
       data = next; store.set('data', next);
       log('info', 'data: loaded (' + reason + ', via ' + next.__via + '),', Object.keys(next.capes).length + ' capes, robot checked ' + (next.status?.lastCheckAt || '?') + (same ? ', unchanged' : ''));
       if (!same) emit();
+      failures = 0; clearTimeout(retryTimer);
       notify(next);
     } catch (e) {
       log('warn', 'data: fetch failed (' + reason + '): ' + (e.message || e) + (data ? ' - showing the saved copy' : ''));   // already on the page
+      const min = RETRY_MIN[Math.min(failures++, RETRY_MIN.length - 1)];
+      clearTimeout(retryTimer); retryTimer = setTimeout(() => refresh('retry after a failed check'), min * 60e3);
+      log('info', 'data: trying again in ' + min + ' min');
     }
   }
 

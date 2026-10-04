@@ -50,7 +50,7 @@ export function dataServer(state) {
 
 // Loads one copy of the shell. Returns what it did: notifications, log lines, what the page was given.
 export async function loadShell({ storage = makeStorage(), fetch, file = SHELL, source, autostart = false, page = true } = {}) {
-  const out = { notifications: [], logs: [], invokes: [], snapshots: { capes: [], events: [], status: [] }, intervals: [], errors: [] };
+  const out = { notifications: [], logs: [], invokes: [], snapshots: { capes: [], events: [], status: [] }, intervals: [], timeouts: [], errors: [] };
   const listeners = new Map();
   const target = new EventTarget();
   const tauriListeners = {};
@@ -64,7 +64,9 @@ export async function loadShell({ storage = makeStorage(), fetch, file = SHELL, 
     },
     localStorage: storage,
     fetch,
-    setTimeout, clearTimeout,
+    // Short timers run; long ones (retries, the picture hold) are only recorded, so a test never waits minutes.
+    setTimeout: (fn, ms) => (ms >= 1000 ? (out.timeouts.push({ fn, ms }), 0) : setTimeout(fn, ms)),
+    clearTimeout: (t) => { if (t) clearTimeout(t); },
     setInterval: (fn, ms) => { out.intervals.push({ fn, ms }); return out.intervals.length; },
     clearInterval: () => {},
     performance, atob, btoa, Date, Math, JSON, Promise, Map, Set, URL, Error, TypeError, Object, Array, String, Number, Boolean, RegExp, Symbol,
@@ -104,9 +106,10 @@ export async function loadShell({ storage = makeStorage(), fetch, file = SHELL, 
   // The page subscribes like cape-radar.html does.
   if (page) {
     const db = await ctx.claude.use('db');
-    db.collection('capes').limit(1000).onSnapshot((s) => out.snapshots.capes.push(s.docs.map((d) => [d.id, d.data()])));
-    db.collection('events').orderBy('at', 'desc').limit(20).onSnapshot((s) => out.snapshots.events.push(s.docs.map((d) => d.data())));
-    db.doc('radar/status').onSnapshot((s) => out.snapshots.status.push(s.data()));
+    const copy = (v) => JSON.parse(JSON.stringify(v ?? null));   // plain copies (made in the shell's own context)
+    db.collection('capes').limit(1000).onSnapshot((s) => out.snapshots.capes.push(copy(s.docs.map((d) => [d.id, d.data()]))));
+    db.collection('events').orderBy('at', 'desc').limit(20).onSnapshot((s) => out.snapshots.events.push(copy(s.docs.map((d) => d.data()))));
+    db.doc('radar/status').onSnapshot((s) => out.snapshots.status.push(copy(s.data())));
   }
   await settle();
   return {
