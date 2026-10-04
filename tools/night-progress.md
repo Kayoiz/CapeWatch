@@ -23,7 +23,7 @@ How to continue after a stop: read the table, pick the first task that is not "d
 | 13 | About window (preview only) | done | a8db0b9. tools/preview-about.html (he/en, dark/light). Also fixed a real bug found here: the English Mojang line showed its final period on the left in Hebrew. |
 | 14 | Catalog search and filters (proposal + preview) | done | 8066b79. Proposal in tools/ideas.md, prototype tools/preview-catalog.html (checked: TikTok 5, MINECON 7, volunteers 3, quick filters). |
 | 15 | Discord webhook (proposal + preview) | done | 92e05c0. Proposal in tools/ideas.md, prototype tools/preview-discord.html (nothing sent). Checked: address validation, mentions off, formatting escaped. |
-| 16 | Cape picture inside the Windows notification (proposal + preview) | not started | |
+| 16 | Cape picture inside the Windows notification (proposal + preview) | done | 9f21864. Proposal in tools/ideas.md, prototype tools/preview-toast.html (3 placements with the real drawn picture, toast XML). |
 | 17 | Countdown and add to calendar (proposal + preview) | not started | |
 | 18 | More ideas | not started | |
 | E | README, change list draft, morning summary | not started | |
@@ -57,3 +57,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 13 done (preview only) + 1 bug fix. Part B finished.
 - Task 14 done (proposal + prototype).
 - Task 15 done (proposal + prototype).
+- Task 16 done (proposal + prototype).
