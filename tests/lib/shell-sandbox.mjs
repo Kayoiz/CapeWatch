@@ -84,7 +84,7 @@ export async function loadShell({ storage = makeStorage(), fetch, file = SHELL, 
         invoke: async (cmd, args) => {
           out.invokes.push({ cmd, args });
           if (cmd === 'plugin:log|log') { out.logs.push(args.message); return; }
-          if (cmd === 'notify_cape') { out.notifications.push(args); return; }
+          if (cmd === 'notify_cape') { out.notifications.push(JSON.parse(JSON.stringify(args))); return; }   // plain copy (made in the shell's own context)
           if (cmd === 'take_greeting') return 'none';
           if (cmd === 'take_pending_cape') return null;
           return null;

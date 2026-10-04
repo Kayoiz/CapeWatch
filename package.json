@@ -1,0 +1,8 @@
+{
+  "name": "capewatch",
+  "private": true,
+  "description": "CapeWatch project tools. The app itself is built from app/ (see app/package.json).",
+  "scripts": {
+    "test": "node tests/run.mjs"
+  }
+}
