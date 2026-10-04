@@ -14,7 +14,7 @@ How to continue after a stop: read the table, pick the first task that is not "d
 | 4 | Resilience (offline, rate limit, bad data, textures) | done | 61957dd. Data files are checked before being shown or saved (a partial file used to be saved and could stop every later start). Faster retry after a failed check (1/2/5/10/15 min) and at once when back online. 20 tests (Node + Edge), including blocked textures. |
 | 5 | Long runs: memory, CPU, nothing drawn while hidden | code done, measuring | 5d1653f. Hidden window: no drawing (already) and now also no cape swaps / log lines. 2 Edge tests (fail on old code, pass now). Real-build measurement: pending (after the task 8 build). |
 | 6 | Logs: size limit, old logs deleted | code done, checking on install | 2671c42. Log rotation 1 MB x (current + 2 old), older deleted; routine lines no longer written. 2 unit tests. Rotation to be verified on the installed test build (task 8). |
-| 7 | Security: only needed addresses, data text cannot run code | not started | |
+| 7 | Security: only needed addresses, data text cannot run code | code done, checking on install | 7ee7695. CSP (only needed addresses), opener limited to wiki/minecraft.net/paypal/mailto, HTTP plugin limited to the two Mojang APIs, blocks logged. 4 Edge tests incl. HTML/script tricks in every data field. List: tools/security.md. Check on the installed build: task 8. |
 | 8 | Install, uninstall, upgrade | not started | |
 | 9 | Display: 125/150/200%, narrow window, 7 languages, glyphs | not started | |
 | 10 | Code cleanup and clear comments | not started | |
@@ -40,3 +40,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 4 done. All tests: 59/59 pass.
 - Task 5 code committed. Baseline sample running: installed 1.0.5 hidden uses up to ~1 core; combined update ~0.7% of a core.
 - Task 6 code committed (cargo check OK).
+- Task 7 code committed. All tests 67/67.
