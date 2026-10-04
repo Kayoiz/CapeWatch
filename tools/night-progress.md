@@ -62,3 +62,5 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 18 done. Part C finished.
 - End tasks done. Next: rebuild the test copy with everything, for the owner's check before the merge.
 - Test copy rebuilt with everything and installed over the old one (saved data, seen events and start with Windows kept, nothing blocked); running hidden. Waiting for the owner's check, then the merge into main.
+- Owner's choices for the fixed layout done (Hebrew: paragraphs right, short labels left; label above value; status labels on one line) and an outline for the three capes with no texture; 1 bug fixed (details window opened scrolled down). 89/89 tests.
+- Test copy rebuilt with everything (fixed layout included) and installed; running hidden. Waiting for the owner's check ("מאשר"), then the merge into main and 1.0.6.
