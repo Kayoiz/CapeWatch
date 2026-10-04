@@ -103,13 +103,13 @@ test('the policy is really on: an address the app does not use is blocked, and t
   await page.close();
 });
 
-test('the page only contacts its own files, the fonts and the texture server', { skip }, async () => {
+test('the page only contacts its own files and the texture server (no Google fonts)', { skip }, async () => {
   const d = sampleData();
   d.capes['test-alpha'].textureId = 'aaaa0000aaaa0000aaaa0000aaaa0000aaaa0000aaaa0000aaaa0000aaaa0000';
   const page = await open(d);
   await page.waitFor(`document.querySelectorAll('#grid .tile img.gen').length === 1`, 30000);
   const hosts = [...new Set(page.requests.map((u) => { try { const x = new URL(u); return x.protocol === 'data:' ? 'data:' : x.host; } catch { return u; } }))].sort();
-  const allowed = new Set([new URL(server.url).host, 'fonts.googleapis.com', 'fonts.gstatic.com', 'textures.minecraft.net', 'data:']);
+  const allowed = new Set([new URL(server.url).host, 'textures.minecraft.net', 'data:']);   // fonts ship with the app
   assert.deepEqual(hosts.filter((h) => !allowed.has(h)), [], 'unexpected: ' + hosts.join(', '));
   await page.close();
 });
