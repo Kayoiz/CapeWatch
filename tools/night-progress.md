@@ -9,7 +9,7 @@ How to continue after a stop: read the table, pick the first task that is not "d
 | # | Task | State | Commit / notes |
 |---|------|-------|----------------|
 | 1 | Safe update from 1.0.5 | done | ac8db47. Simulation: 1.0.5 shell then new shell on the same storage. Settings and seen events kept. Fixed: old unseen events (over 7 days, or a promotion already over) no longer become notifications. Real install-over test: see task 8. |
-| 2 | Automated tests, one command | not started | |
+| 2 | Automated tests, one command | done | 9630c6b. `node tests/run.mjs` (or `npm test`). 22 tests pass: notifications, first run, no duplicates, settings dialog in headless Edge. See tests/README.md. |
 | 3 | Robot tests with saved sample files | not started | |
 | 4 | Resilience (offline, rate limit, bad data, textures) | not started | |
 | 5 | Long runs: memory, CPU, nothing drawn while hidden | not started | |
@@ -35,3 +35,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 ## Log
 
 - Task 1 done. 7 simulation tests pass (`node --test tests/unit/update.test.mjs`).
+- Task 2 done. One command runs Node tests and headless-Edge tests; 22/22 pass.
