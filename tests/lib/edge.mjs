@@ -54,7 +54,7 @@ export async function launch({ headless = true } = {}) {
     const { targetId } = await send('Target.createTarget', { url: 'about:blank' });
     const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true });
     const s = (method, params) => send(method, params, sessionId);
-    const console = [], exceptions = [], routes = [];
+    const console = [], exceptions = [], routes = [], requests = [];
     handlers.add((msg) => {
       if (msg.sessionId !== sessionId) return;
       if (msg.method === 'Fetch.requestPaused') {
@@ -67,6 +67,7 @@ export async function launch({ headless = true } = {}) {
       }
       if (msg.method === 'Runtime.consoleAPICalled') console.push(msg.params.type + ' ' + msg.params.args.map((a) => a.value ?? a.description ?? '').join(' '));
       if (msg.method === 'Runtime.exceptionThrown') exceptions.push(msg.params.exceptionDetails.exception?.description || msg.params.exceptionDetails.text);
+      if (msg.method === 'Network.requestWillBeSent') requests.push(msg.params.request.url);
       if (msg.method === 'Log.entryAdded') console.push('log ' + msg.params.entry.level + ' ' + msg.params.entry.text);
     });
     await s('Page.enable'); await s('Runtime.enable'); await s('Network.enable'); await s('Log.enable'); await s('Performance.enable');
@@ -76,7 +77,7 @@ export async function launch({ headless = true } = {}) {
       handlers.add(h);
     });
     const page = {
-      console, exceptions,
+      console, exceptions, requests,
       send: s,
       // Script that runs before any of the page's own scripts, on every load.
       init: (source) => s('Page.addScriptToEvaluateOnNewDocument', { source }),

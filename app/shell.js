@@ -25,6 +25,9 @@ document.documentElement.classList.add('cw-title-wait');
     try { invoke('plugin:log|log', { level: LEVEL[level], message: msg })?.catch(() => {}); } catch {}
   }
   addEventListener('error', (e) => log('error', 'page error:', e.message, e.filename + ':' + e.lineno));
+  // The app's security policy (tauri.conf.json, "csp") lets the page reach only the addresses it needs. Anything
+  // it blocks is written to the log, so a blocked address shows up at once instead of as a silent gap.
+  addEventListener('securitypolicyviolation', (e) => log('warn', 'blocked by the security policy: ' + e.effectiveDirective + ' ' + (e.blockedURI || '(inline)')));
   // Mirror the page's own [Cape3D]/[Title]/[Cards]/[Sound] console lines into the log file too. The routine ones
   // (every cape swap, every texture load, the frame rate every 5 seconds) stay in the console only, so the log
   // file covers weeks instead of hours; a low frame rate (under 30) and every error still go to the file.
