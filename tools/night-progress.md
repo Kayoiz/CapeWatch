@@ -21,7 +21,7 @@ How to continue after a stop: read the table, pick the first task that is not "d
 | 11 | Design consistency review (preview only) | done | 1c691ce. 6 measured items, fixes only in tools/preview/fixes-11.css. Open http://localhost:8766/tools/design-review.html (launch.json title-tuner, after node app/build-web.mjs). |
 | 12 | Missing states: offline, failed check, first load (preview only) | done | 6f30e78. tools/preview-states.html: 5 states (first load, offline first start, offline with saved copy, GitHub failed, robot stopped), today vs proposal, he/en. Also fixed a real bug found here: empty 'Announced' heading (hidden attribute overridden). |
 | 13 | About window (preview only) | done | a8db0b9. tools/preview-about.html (he/en, dark/light). Also fixed a real bug found here: the English Mojang line showed its final period on the left in Hebrew. |
-| 14 | Catalog search and filters (proposal + preview) | not started | |
+| 14 | Catalog search and filters (proposal + preview) | done | 8066b79. Proposal in tools/ideas.md, prototype tools/preview-catalog.html (checked: TikTok 5, MINECON 7, volunteers 3, quick filters). |
 | 15 | Discord webhook (proposal + preview) | not started | |
 | 16 | Cape picture inside the Windows notification (proposal + preview) | not started | |
 | 17 | Countdown and add to calendar (proposal + preview) | not started | |
@@ -55,3 +55,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 11 done (preview only).
 - Task 12 done (preview only) + 1 bug fix (82/82 tests).
 - Task 13 done (preview only) + 1 bug fix. Part B finished.
+- Task 14 done (proposal + prototype).
