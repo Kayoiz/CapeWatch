@@ -50,7 +50,7 @@ export function dataServer(state) {
 
 // Loads one copy of the shell. Returns what it did: notifications, log lines, what the page was given.
 export async function loadShell({ storage = makeStorage(), fetch, file = SHELL, source, autostart = false, page = true } = {}) {
-  const out = { notifications: [], logs: [], invokes: [], snapshots: { capes: [], events: [], status: [] }, intervals: [], timeouts: [], errors: [] };
+  const out = { notifications: [], logs: [], invokes: [], snapshots: { capes: [], events: [], status: [] }, intervals: [], timeouts: [], errors: [], file: [] };
   const listeners = new Map();
   const target = new EventTarget();
   const tauriListeners = {};
@@ -85,7 +85,7 @@ export async function loadShell({ storage = makeStorage(), fetch, file = SHELL, 
       core: {
         invoke: async (cmd, args) => {
           out.invokes.push({ cmd, args });
-          if (cmd === 'plugin:log|log') { out.logs.push(args.message); return; }
+          if (cmd === 'plugin:log|log') { out.logs.push(args.message); out.file.push(args.message); return; }   // out.file: what reaches the log file
           if (cmd === 'notify_cape') { out.notifications.push(JSON.parse(JSON.stringify(args))); return; }   // plain copy (made in the shell's own context)
           if (cmd === 'take_greeting') return 'none';
           if (cmd === 'take_pending_cape') return null;

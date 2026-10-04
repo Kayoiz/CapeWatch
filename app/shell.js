@@ -25,10 +25,19 @@ document.documentElement.classList.add('cw-title-wait');
     try { invoke('plugin:log|log', { level: LEVEL[level], message: msg })?.catch(() => {}); } catch {}
   }
   addEventListener('error', (e) => log('error', 'page error:', e.message, e.filename + ':' + e.lineno));
-  // Mirror the page's own [Cape3D]/[Title]/[Cards] console lines into the log file too.
+  // Mirror the page's own [Cape3D]/[Title]/[Cards]/[Sound] console lines into the log file too. The routine ones
+  // (every cape swap, every texture load, the frame rate every 5 seconds) stay in the console only, so the log
+  // file covers weeks instead of hours; a low frame rate (under 30) and every error still go to the file.
+  const routine = (line) => /^\[Cape3D\] (swap:|cape: loading|cape: loaded)/.test(line) || +(line.match(/^\[Cape3D\] fps ([\d.]+)/) || [])[1] >= 30;
   for (const k of ['info', 'error']) {
     const orig = console[k].bind(console);
-    console[k] = (...a) => { orig(...a); if (typeof a[0] === 'string' && /^\[(Cape3D|Title|Cards|Sound)\]/.test(a[0])) { try { invoke('plugin:log|log', { level: LEVEL[k], message: a.map(String).join(' ') })?.catch(() => {}); } catch {} } };
+    console[k] = (...a) => {
+      orig(...a);
+      if (typeof a[0] !== 'string' || !/^\[(Cape3D|Title|Cards|Sound)\]/.test(a[0])) return;
+      const line = a.map(String).join(' ');
+      if (k === 'info' && routine(line)) return;
+      try { invoke('plugin:log|log', { level: LEVEL[k], message: line })?.catch(() => {}); } catch {}
+    };
   }
   const store = {
     get(k, d) { try { const v = localStorage.getItem('capewatch:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },

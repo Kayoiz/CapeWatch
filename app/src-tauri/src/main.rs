@@ -220,7 +220,11 @@ fn main() {
                 .level(log::LevelFilter::Info)
                 .target(tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir { file_name: Some("capewatch".into()) }))
                 .target(tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout))
-                .max_file_size(2_000_000)
+                // The log never grows past about 3 MB: at 1 MB the file is renamed with the date and a new one starts,
+                // and only the 2 newest old files are kept (older ones are deleted). Before, the whole log was deleted
+                // at 2 MB, so after a busy day nothing older than a few hours was left.
+                .max_file_size(1_000_000)
+                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(2))
                 .build(),
         )
         .plugin(tauri_plugin_autostart::init(
