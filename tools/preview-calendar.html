@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="he" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CapeWatch: ספירה לאחור ויומן</title>
+<!-- Task 17 (countdown to the end of a promotion, and "add to calendar"): proposal prototype. Nothing in the
+     app changes. Open through the local server (launch.json "title-tuner"): http://localhost:8766/tools/preview-calendar.html
+     Uses the app's own styles and the real data file. The .ics button downloads a calendar file in the browser. -->
+<link rel="stylesheet" href="../assets/fonts/google/fonts.css">
+<style id="app-style"></style>
+<style>
+.proto { max-width: 1120px; margin-inline: auto; padding: 24px 16px 56px; display: grid; gap: 20px; }
+.note { font-size: var(--text-sm); color: var(--muted); max-width: var(--measure); }
+.ends { font-size: var(--text-sm); color: var(--muted); }
+.cal { display: flex; flex-wrap: wrap; gap: 8px; }
+pre { margin: 0; padding: 12px; background: var(--bg); font: 12px/1.45 ui-monospace, Consolas, monospace; overflow: auto; direction: ltr; text-align: left; box-shadow: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); }
+.sim { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sim [aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+</style>
+</head>
+<body>
+<div class="proto">
+  <header style="display:grid;gap:8px">
+    <h1>ספירה לאחור למבצעים שנגמרים, והוספה ליומן (אב טיפוס)</h1>
+    <p class="note">הספירה לאחור כבר קיימת בכרטיסים (ימים ושעות). מה שאני מציע להוסיף:</p>
+    <ul class="note" style="margin:0">
+      <li>ביממה האחרונה: שעות ודקות ("נותרו 5 שעות ו-12 דקות"), ובשעה האחרונה: דקות. היום כתוב רק "נותרה פחות משעה".</li>
+      <li>מתחת לספירה: מתי בדיוק זה נגמר, בשעון של המחשב ("נגמר ביום חמישי, 15 באוקטובר, 09:59").</li>
+      <li>כפתור "הוספה ליומן" בכרטיס ובחלון הפרטים: אירוע בסוף המבצע עם תזכורת יום לפני, וגם אירוע למועד האחרון למימוש קוד, אם יש. אפשר כקובץ יומן (נפתח ב-Outlook או ביומן של Windows) או כקישור ל-Google Calendar.</li>
+    </ul>
+    <div class="sim"><span class="note">הדמיה: כמה זמן נשאר למבצעים</span>
+      <button class="btn ghost" type="button" data-sim="real" aria-pressed="true">כמו בנתונים</button>
+      <button class="btn ghost" type="button" data-sim="5h">5 שעות</button>
+      <button class="btn ghost" type="button" data-sim="40m">40 דקות</button></div>
+  </header>
+  <div class="live-list" id="list"></div>
+  <section style="display:grid;gap:8px"><h3>קובץ היומן (‎.ics) של המבצע הראשון</h3><pre id="ics"></pre></section>
+</div>
+<script>
+(async () => {
+  const page = await (await fetch('../cape-radar.html')).text();
+  document.getElementById('app-style').textContent = page.slice(page.indexOf('<style>') + 7, page.indexOf('</style>')).replace(/url\("assets\//g, 'url("../assets/');
+  const data = await (await fetch('../data/capewatch.json')).json();
+  const $ = (id) => document.getElementById(id);
+  const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  // the end of a promotion, the same rule as the app: a bare date runs through that whole day (UTC)
+  const endOf = (s) => { if (!s) return null; const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(s) ? s + 'T23:59:59Z' : s); return isNaN(d) ? null : d; };
+  const promos = Object.entries(data.capes).filter(([, c]) => c.availability === 'available' && endOf(c.availableUntil)).sort((a, b) => endOf(a[1].availableUntil) - endOf(b[1].availableUntil));
+  let sim = 'real';
+  const ends = (c) => sim === '5h' ? new Date(Date.now() + 5 * 36e5 + 12 * 6e4) : sim === '40m' ? new Date(Date.now() + 40 * 6e4) : endOf(c.availableUntil);
+  const unit = (n, u) => new Intl.NumberFormat('he', { style: 'unit', unit: u, unitDisplay: 'long' }).format(n);
+  const list = new Intl.ListFormat('he', { type: 'conjunction' });
+  // the proposed countdown: days + hours, then hours + minutes in the last day, then minutes in the last hour
+  function left(end) {
+    const ms = end - Date.now(); if (ms <= 0) return { text: 'המבצע הסתיים', urgent: true };
+    const d = Math.floor(ms / 864e5), hr = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
+    const text = d >= 1 ? 'נותרו ' + (hr ? list.format([unit(d, 'day'), unit(hr, 'hour')]) : unit(d, 'day'))
+      : hr >= 1 ? 'נותרו ' + (m ? list.format([unit(hr, 'hour'), unit(m, 'minute')]) : unit(hr, 'hour'))
+      : 'נותרו ' + unit(Math.max(1, m), 'minute');
+    return { text, urgent: ms < 3 * 864e5 };
+  }
+  const whenFmt = new Intl.DateTimeFormat('he', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+
+  // ---------- calendar file (RFC 5545) ----------
+  const icsDate = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const icsText = (s) => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  // lines longer than 75 bytes are folded: CRLF and one space, without cutting a letter in half
+  const fold = (line) => { const out = []; let cur = '', bytes = 0;
+    for (const ch of line) { const b = new TextEncoder().encode(ch).length; if (bytes + b > 75) { out.push(cur); cur = ' '; bytes = 1; } cur += ch; bytes += b; }
+    out.push(cur); return out.join('\r\n'); };
+  function ics(id, c) {
+    const end = ends(c), wiki = 'https://minecraft.wiki/w/' + encodeURIComponent((c.wikiTitle || c.name).replace(/ /g, '_'));
+    const ev = (uid, title, at, desc) => ['BEGIN:VEVENT', 'UID:' + uid + '@capewatch', 'DTSTAMP:' + icsDate(new Date()), 'DTSTART:' + icsDate(new Date(at - 30 * 6e4)), 'DTEND:' + icsDate(at),
+      'SUMMARY:' + icsText(title), 'DESCRIPTION:' + icsText(desc), 'URL:' + wiki, 'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsText(title), 'TRIGGER:-P1D', 'END:VALARM', 'END:VEVENT'];
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Kayoiz//CapeWatch//EN', 'CALSCALE:GREGORIAN',
+      ...ev(id + '-ends', c.name + ': the promotion ends', end, String(c.shortEn || '').replace(/\*\*/g, '')),
+      ...(c.redeemBy ? ev(id + '-redeem', c.name + ': last day to redeem the code', endOf(c.redeemBy), 'Redeem at minecraft.net/redeem') : []),
+      'END:VCALENDAR'];
+    return lines.map(fold).join('\r\n') + '\r\n';
+  }
+  const gcal = (c) => { const end = ends(c); return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(c.name + ': the promotion ends') +
+    '&dates=' + icsDate(new Date(end - 30 * 6e4)) + '/' + icsDate(end) + '&details=' + encodeURIComponent(String(c.shortEn || '').replace(/\*\*/g, '')); };
+
+  function render() {
+    $('list').replaceChildren(...promos.map(([id, c]) => {
+      const end = ends(c), l = left(end);
+      const card = h('article', 'live-card');
+      const slot = h('div', 'slot'); slot.append(h('span', 'ph', c.name));
+      const body = h('div', 'live-body');
+      body.append(h('div', 'live-name', c.name), h('div', 'countdown' + (l.urgent ? ' urgent' : ''), l.text), h('div', 'ends', 'נגמר ב' + whenFmt.format(end)));
+      const cal = h('div', 'cal');
+      const a = h('a', 'btn', '📅 הוספה ליומן'); a.download = id + '.ics'; a.href = URL.createObjectURL(new Blob([ics(id, c)], { type: 'text/calendar' }));
+      const g = h('a', 'btn ghost', 'Google Calendar'); g.href = gcal(c); g.target = '_blank'; g.rel = 'noopener';
+      cal.append(a, g); body.append(cal);
+      card.append(slot, body); return card;
+    }));
+    if (promos[0]) $('ics').textContent = ics(...promos[0]);
+  }
+  document.querySelectorAll('[data-sim]').forEach((b) => b.onclick = () => { sim = b.dataset.sim; document.querySelectorAll('[data-sim]').forEach((x) => x.setAttribute('aria-pressed', x === b)); render(); });
+  render(); setInterval(render, 30000);
+  window.__cal = { ics: () => ics(...promos[0]), left, promos: promos.length };
+})();
+</script>
+</body>
+</html>
