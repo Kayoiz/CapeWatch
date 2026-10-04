@@ -4,7 +4,10 @@
 // - Pictures: draws every card picture (cape and elytra) from the Minecraft texture at runtime. No game or
 //   wiki image is stored anywhere in the app or the repo.
 // - Notifications: Windows notifications for new events, filtered by the three settings checkboxes.
-// - Settings: notifications, start with Windows, and the figure's skin by Minecraft username.
+// - Settings: notifications, start with Windows, sound on open, reverse drag, and the figure's skin by
+//   Minecraft username.
+// - Opening effect and window state: main.rs says when the window is first seen (greet) and when it is
+//   hidden or shown (the page stops all work while hidden).
 window.__CAPEWATCH_APP__ = true;
 // The title stays hidden until the opening effect starts (or until it is clear there is none), so the window
 // never shows the plain title for a moment first. See cape-radar.html (.cw-title-wait).

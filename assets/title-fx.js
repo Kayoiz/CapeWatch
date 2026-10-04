@@ -61,23 +61,6 @@
       + ` drop-shadow(0 0 ${(10 * o.halo * scale * g).toFixed(1)}px rgba(${r}, ${gr}, ${b}, ${(0.85 * a).toFixed(3)}))`
       + ` drop-shadow(0 0 ${(26 * o.halo * scale * g).toFixed(1)}px rgba(${r2}, ${g2}, ${b2}, ${(0.55 * a).toFixed(3)}))`;
   }
-  // Plays the glow on an <img>; returns a stop() function. onDone(stats) when it ends by itself.
-  function runGlow(img, o = GLOW, onDone) {
-    let stopped = false, t0 = 0, last = 0, frames = 0, worst = 0;
-    const scale = () => (img.clientWidth || 640) / 640;
-    const tick = (now) => {
-      if (stopped) return;
-      if (!t0) t0 = last = now;
-      worst = Math.max(worst, now - last); last = now; frames++;
-      const t = (now - t0) / 1000;
-      if (t >= total(o)) { img.style.filter = ''; onDone && onDone({ frames, ms: now - t0, worst }); return; }
-      img.style.filter = filter(strength(t, o), scale(), o);
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-    return () => { stopped = true; img.style.filter = ''; };
-  }
-
   // ---------- sound ----------
   // A short "holy" chord, synthesised here: a soft choir "aah" (detuned saw voices through vowel formant filters,
   // with a slow vibrato), a high airy shimmer, and an echo from a generated reverb. No sound file is used.
@@ -650,5 +633,5 @@
   };
   applyValues(SCENE, TUNED);
 
-  window.CapeWatchFX = { GLOW, SOUND, CHORDS, SCENE, EASE, KF_REST, strength, filter, runGlow, holyChord, prepareSound, total, keyframeAt, createTitleFx, sceneEnd, applyValues, playSound };
+  window.CapeWatchFX = { GLOW, SOUND, CHORDS, SCENE, EASE, KF_REST, strength, filter, holyChord, prepareSound, total, keyframeAt, createTitleFx, sceneEnd, applyValues, playSound };
 })();

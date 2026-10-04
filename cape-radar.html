@@ -100,12 +100,13 @@ header.top { display: grid; gap: 18px; }
   display: grid; place-items: center; font: 600 15px/1 var(--font-body); color: var(--fg); background: color-mix(in srgb, var(--panel) 75%, transparent);
   border: 0; }   /* quiet (see-through) until hovered or focused: see "Controls" */
 .brand-text { display: grid; gap: 4px; min-width: 0; flex: 1 1 160px; }   /* 160 + 16 + 120 fits a 375px phone */
-/* Title bar: the leaf-block title centered, the language picker beside it (right in LTR, left in RTL).
+/* Title bar: the title art centered, the language picker beside it (right in LTR, left in RTL).
    On phones the picker sits on its own row above the title. */
 .titlebar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 12px; }
 .leaf-title { grid-column: 2; margin: 0; line-height: 0; min-width: 0; position: relative; isolation: isolate; }
 /* The title art (assets/brand/): sized by script to the free width (max 640px), sharp on any screen through
-   srcset. In light mode it sits on a dark plate; the opening glow animates its filter only. */
+   srcset. In light mode it sits on a dark plate. The opening effect is drawn on a canvas laid over it
+   (assets/title-fx.js); the image itself is never changed. */
 #leaf-title { display: block; max-width: 100%; height: auto; background: var(--title-plate); border-radius: 12px; will-change: filter; }
 /* The app hides the title until its opening effect starts (app/shell.js), so it never flashes plain first */
 .cw-title-wait #leaf-title { visibility: hidden; }
@@ -434,6 +435,10 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
 <script src="assets/title-fx.js"></script>
 <script>
 (() => {
+  // What is in this script, top to bottom:
+  //   i18n (texts in 7 languages) - dates - the installed app's hooks - elytra buttons - card pieces -
+  //   render (status strip, promotions, log, catalog) - title and opening effect - opening sound -
+  //   the 3D figure (cape3d) - detail window - filters and language - data (from app/shell.js in the app).
   // ---------- i18n ----------
   // English is the fallback. The starting language follows the viewer's browser languages;
   // a manual choice is remembered per viewer. Cape descriptions exist in English and Hebrew
@@ -762,9 +767,8 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   // (temporary 2010 capes, Bedrock-only capes) carry a textureUrl to the wiki's 64×32 texture file.
   const texUrl = (id) => {
     const c = S.capes.get(id);
-    // The installed app never loads wiki files (non-commercial licence; the app has a donate button).
+    // The installed app never loads wiki files: their licence is non-commercial and the app has a donate button.
     // Textures drawn by CapeWatch itself live in this repo (assets/own-capes/); the app accepts only those.
-    // It never loads wiki files: their licence is non-commercial and the app has a donate button.
     const own = typeof c?.textureUrl === 'string' && c.textureUrl.startsWith('https://raw.githubusercontent.com/Kayoiz/CapeWatch/main/assets/own-capes/');
     return c?.textureId ? 'https://textures.minecraft.net/texture/' + c.textureId : (APP && !own ? null : c?.textureUrl || null);
   };
@@ -776,8 +780,9 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   const art = (id, kind) => (window.capeArt ? window.capeArt.get(id, kind, texUrl(id)) : null);
 
   // ---------- elytra view in the cards ----------
-  // Elytra pictures are the minecraft.wiki renders of each cape's elytra, stored in the elytraImages
-  // collection exactly like the cape renders in capeImages. A cape with no elytra render gets no button.
+  // In the installed app every picture (cape and elytra) is drawn from the texture by app/shell.js (art()).
+  // On the web version of this page they come from the capeImages / elytraImages collections instead.
+  // A cape with no elytra picture gets no "Show elytra" button.
   const showEly = new Set();      // capes whose cards currently show the elytra
   const noElyLogged = new Set();
   function logMissingElytra() {
@@ -942,12 +947,9 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   }
 
   // ---------- header title ----------
-  // "CapeWatch" in my own 5×7 pixel letters (own drawing, no game texture or font). Every letter pixel is a
-  // block of dark-green leaf noise; letters are bold (each column smeared half a block to the right) and
-  // carry a small dark shadow. Drawn at a whole-number scale of device pixels so the blocks stay crisp,
-  // and redrawn when the bar's width changes.
+  // The title is CapeWatch's own title art (assets/brand/title-*.png, transparent, made for a dark background).
+  // (The id "leaf-title" is left from the first title, drawn in code from leaf blocks; it is the same element.)
   const titleView = (() => {
-    // The title is CapeWatch's own title art (assets/brand/title-*.png, transparent, made for a dark background).
     const MAX_W = 640;
     const img = $('leaf-title'), bar = $('titlebar'), tools = $('title-tools');
     // Width: as wide as the free space allows (never over the language picker), at most MAX_W; on narrow
