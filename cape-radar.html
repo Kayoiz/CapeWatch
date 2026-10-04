@@ -60,6 +60,8 @@
 }
 
 * { box-sizing: border-box; }
+/* `hidden` must win over the display rules below (section { display: grid } kept an empty "Announced" heading) */
+[hidden] { display: none !important; }
 /* CapeWatch's own pixel font (tools/make-font.py): one drawn weight, so the browser never smears it into a
    fake bold. 8 pixels per em: sizes that are multiples of 8px stay sharp. */
 @font-face { font-family: "CapeWatch Pixel"; src: url("assets/fonts/CapeWatchPixel.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }

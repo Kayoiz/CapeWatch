@@ -80,3 +80,11 @@ test('no internet on the very first start: the page says it is loading, and fill
   assert.deepEqual(page.exceptions, []);
   await page.close();
 });
+
+test('no announced cape: the "Announced" heading is not shown (it used to stay as an empty heading)', { skip }, async () => {
+  const page = await open({ data: sampleData() });   // the sample capes are ended and available, none announced
+  await page.waitFor(`document.querySelectorAll('#grid .tile').length === 2`);
+  assert.equal(await page.eval(`document.getElementById('sec-ann').hidden`), true);
+  assert.equal(await page.eval(`getComputedStyle(document.getElementById('sec-ann')).display`), 'none');
+  await page.close();
+});
