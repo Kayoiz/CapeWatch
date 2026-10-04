@@ -26,7 +26,7 @@ How to continue after a stop: read the table, pick the first task that is not "d
 | 16 | Cape picture inside the Windows notification (proposal + preview) | done | 9f21864. Proposal in tools/ideas.md, prototype tools/preview-toast.html (3 placements with the real drawn picture, toast XML). |
 | 17 | Countdown and add to calendar (proposal + preview) | done | 8aa2869. Proposal in tools/ideas.md, prototype tools/preview-calendar.html (countdown checked at 3 days / 5 h / 40 min; .ics valid lines, reminder). |
 | 18 | More ideas | done | 2b7671f. 9 more ideas in tools/ideas.md with effort and risk; tools/previews.html links every preview. |
-| E | README, change list draft, morning summary | not started | |
+| E | README, change list draft, morning summary | done | README (d5b607f), change list draft tools/CHANGELOG-draft.md. Morning summary: in the chat. |
 
 ## Owner's answers (2026-10-04, morning)
 
@@ -60,3 +60,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 16 done (proposal + prototype).
 - Task 17 done (proposal + prototype).
 - Task 18 done. Part C finished.
+- End tasks done. Next: rebuild the test copy with everything, for the owner's check before the merge.
