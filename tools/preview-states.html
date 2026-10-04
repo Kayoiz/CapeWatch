@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CapeWatch: מצבים חסרים</title>
+<!-- Task 12 (missing states). Preview only: nothing here changes the app.
+     Open through the local server (launch.json "title-tuner"): http://localhost:8766/tools/preview-states.html,
+     after `node app/build-web.mjs`. The real page (app/dist/index.html) runs in a frame with the network and the
+     app bridge faked here, so each state can be seen on demand. "Proposal" adds the new pieces on top of it. -->
+<link rel="stylesheet" href="../assets/fonts/google/fonts.css">
+<style>
+:root { --bg: #171916; --panel: #20231F; --fg: #E8EBE3; --muted: #A2A99C; --line: #343831; --accent: #6CC349; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 Assistant, "Segoe UI", system-ui, sans-serif; }
+.wrap { max-width: 1240px; margin-inline: auto; padding: 24px 16px 64px; display: grid; gap: 20px; }
+h1, h2 { font-family: "Secular One", Assistant, sans-serif; font-weight: 400; margin: 0; line-height: 1.2; }
+h1 { font-size: 2rem; } h2 { font-size: 1.3rem; }
+p { margin: 0; max-width: 80ch; }
+.muted { color: var(--muted); }
+.panel { background: var(--panel); padding: 16px; box-shadow: inset 0 0 0 2px var(--line); display: grid; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+button { font: 600 14px/1 Assistant, sans-serif; padding: 9px 12px; background: transparent; color: var(--fg); border: 0; box-shadow: inset 0 0 0 2px var(--line); cursor: pointer; }
+button[aria-pressed="true"] { background: var(--accent); color: #0F1A0B; box-shadow: none; }
+iframe { width: 100%; height: 720px; border: 0; background: #000; box-shadow: inset 0 0 0 2px var(--line); }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
+dt { color: var(--muted); }
+dd { margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <h1>מצבים חסרים: טעינה ראשונה, אין אינטרנט, בדיקה שנכשלה</h1>
+    <p>הדף האמיתי של התוכנה, כשהרשת והגשר לאפליקציה מדומים כאן, כך שאפשר לראות כל מצב. "היום" הוא בדיוק מה שהתוכנה מציגה עכשיו. "הצעה" מוסיפה את מה שאני מציע. שום דבר כאן לא שונה בתוכנה.</p>
+  </header>
+  <section class="panel">
+    <div class="row" id="states"></div>
+    <div class="row">
+      <button type="button" id="v-today" aria-pressed="false">היום</button>
+      <button type="button" id="v-prop" aria-pressed="true">הצעה</button>
+      <span class="muted" style="margin-inline-start:12px">שפה:</span>
+      <button type="button" data-lang="he" aria-pressed="true">עברית</button>
+      <button type="button" data-lang="en" aria-pressed="false">English</button>
+    </div>
+    <dl id="about"></dl>
+    <iframe id="app" title="CapeWatch"></iframe>
+  </section>
+</div>
+<script>
+(() => {
+  // ---------- the states ----------
+  // net: what the data request does. saved: whether a copy from an earlier run is stored. stale: the robot's last
+  // check is old (it stopped running). problems: the robot's last check reported a problem.
+  const STATES = {
+    loading: { label: '1. טעינה ראשונה', net: 'slow', saved: false,
+      today: 'קופסאות "טוען…" ושלוש נקודות במקום המספרים, בלי שום סימן שמשהו קורה.',
+      prop: 'כרטיסים ריקים בצורת המשבצות של הקטלוג (שלד), ושורה אחת: "טוען את רשימת הגלימות מ-GitHub…". עם "הפחתת אנימציות" השלד לא זז.' },
+    offlineFirst: { label: '2. אין אינטרנט בהפעלה הראשונה', net: 'offline', saved: false,
+      today: 'אותו "טוען…" לנצח (התוכנה מנסה שוב ברקע, אבל לא אומרת את זה).',
+      prop: 'הודעה ברורה במקום הרשימות: "אין חיבור לאינטרנט. CapeWatch יטען את הגלימות ברגע שהחיבור יחזור", וכפתור "לנסות שוב".' },
+    offlineSaved: { label: '3. אין אינטרנט, יש עותק שמור', net: 'offline', saved: true,
+      today: 'הרשימה השמורה מוצגת כרגיל, בלי שום סימן שהיא לא עדכנית. "בדיקה אחרונה" מתייחס לרובוט, לא לחיבור של המחשב.',
+      prop: 'פס צהוב דק מתחת לשורת הנתונים: "אין חיבור. מוצגת הרשימה שנשמרה ב-{תאריך}. ניסיון הבא בעוד 2 דקות" + "לנסות עכשיו".' },
+    failed: { label: '4. הבדיקה נכשלה (GitHub לא ענה)', net: 'error', saved: true,
+      today: 'כמו 3: לא רואים שום דבר (הבעיה רק ביומן).',
+      prop: 'אותו פס, בנוסח אחר: "לא הצלחתי להגיע ל-GitHub. מוצגת הרשימה שנשמרה ב-{תאריך}."' },
+    stale: { label: '5. הרובוט הפסיק לבדוק', net: 'ok', saved: true, stale: true,
+      today: '"בדיקה אחרונה: לפני 3 ימים" בשורת הנתונים, באותו צבע כמו תמיד.',
+      prop: 'כשהבדיקה האחרונה ישנה מיממה: המספר בצבע אזהרה וסימן ⚠ עם הסבר במעבר עכבר: "הנתונים לא עודכנו 3 ימים. ייתכן שהבדיקה האוטומטית נעצרה."' }
+  };
+  const TXT = {
+    he: { loading: 'טוען את רשימת הגלימות מ-GitHub…', offTitle: 'אין חיבור לאינטרנט', offText: 'CapeWatch יטען את הגלימות ברגע שהחיבור יחזור.', retry: 'לנסות שוב',
+      savedOff: 'אין חיבור. מוצגת הרשימה שנשמרה ב-{d}. ניסיון הבא בעוד 2 דקות.', savedFail: 'לא הצלחתי להגיע ל-GitHub. מוצגת הרשימה שנשמרה ב-{d}.', now: 'לנסות עכשיו',
+      stale: 'הנתונים לא עודכנו {n} ימים. ייתכן שהבדיקה האוטומטית נעצרה.' },
+    en: { loading: 'Loading the cape list from GitHub…', offTitle: 'No internet connection', offText: 'CapeWatch will load the capes as soon as you are back online.', retry: 'Try again',
+      savedOff: 'Offline. Showing the list saved on {d}. Next try in 2 minutes.', savedFail: 'Could not reach GitHub. Showing the list saved on {d}.', now: 'Try now',
+      stale: 'The data has not been updated for {n} days. The automatic check may have stopped.' }
+  };
+  let state = 'loading', view = 'prop', lang = 'he', data = null, page = null;
+
+  // ---------- the frame ----------
+  async function load() {
+    if (!data) data = await (await fetch('../data/capewatch.json')).json();
+    if (!page) page = await (await fetch('../app/dist/index.html')).text();
+    const s = STATES[state];
+    const d = JSON.parse(JSON.stringify(data));
+    if (s.stale) d.status.lastCheckAt = new Date(Date.now() - 3 * 864e5).toISOString().replace(/\.\d+Z$/, 'Z');
+    const saved = s.saved ? JSON.stringify(Object.assign(JSON.parse(JSON.stringify(d)), { __via: 'api' })) : null;
+    // runs in the frame before the app's own scripts: fake storage, fake app bridge, fake network
+    const fake = `<script>(() => {
+      const mem = new Map(Object.entries(${JSON.stringify({ 'caperadar:lang': lang })}));
+      ${saved ? `mem.set('capewatch:data', ${JSON.stringify(saved)}); mem.set('capewatch:seen', '[]');` : ''}
+      const ls = { getItem: (k) => mem.has(k) ? mem.get(k) : null, setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k), clear: () => mem.clear(), key: (i) => [...mem.keys()][i] ?? null, get length() { return mem.size; } };
+      Object.defineProperty(window, 'localStorage', { value: ls, configurable: true });
+      window.__TAURI__ = { core: { invoke: async (c) => (c === 'take_greeting' ? 'none' : null) }, event: { listen: async () => () => {} } };
+      const net = ${JSON.stringify(s.net)}, body = ${JSON.stringify(JSON.stringify(d))};
+      const real = window.fetch.bind(window);
+      window.fetch = (u, o) => {
+        if (!/api\\.github\\.com|raw\\.githubusercontent\\.com\\/Kayoiz\\/CapeWatch\\/main\\/data/.test(String(u))) return real(u, o);
+        if (net === 'slow') return new Promise(() => {});
+        if (net === 'offline') return Promise.reject(new TypeError('Failed to fetch'));
+        if (net === 'error') return Promise.resolve(new Response('Service Unavailable', { status: 503 }));
+        return Promise.resolve(new Response(body, { status: 200 }));
+      };
+    })();<\/script>`;
+    const html = page.replace('<head>', '<head><base href="' + new URL('../app/dist/', location.href).href + '">' + fake);
+    const f = document.getElementById('app');
+    f.onload = () => setTimeout(proposal, 600);
+    f.srcdoc = html;
+    const a = document.getElementById('about'); a.replaceChildren();
+    for (const [k, v] of [['היום', s.today], ['הצעה', s.prop]]) { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; a.append(dt, dd); }
+  }
+
+  // ---------- the proposal, drawn on top of the real page (in the app this would be part of the page) ----------
+  function proposal() {
+    if (view !== 'prop') return;
+    const w = document.getElementById('app').contentWindow, doc = w.document, T = TXT[lang];
+    const css = doc.createElement('style');
+    css.textContent = `
+      .pv-skel { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+      .pv-skel i { display: block; aspect-ratio: 4 / 5; background: var(--slot); box-shadow: inset 4px 4px 0 var(--bevel-lo), inset -4px -4px 0 var(--bevel-hi); animation: pv-pulse 1.2s steps(4) infinite; }
+      @keyframes pv-pulse { 50% { opacity: .55; } }
+      @media (prefers-reduced-motion: reduce) { .pv-skel i { animation: none; } }
+      .pv-note { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 8px 12px; font-size: var(--text-sm); font-weight: 600;
+        color: var(--announced); background: var(--announced-bg); box-shadow: inset 0 0 0 1.5px currentColor; }
+      .pv-note .btn { font-size: var(--step--1); }
+      .pv-off { display: grid; gap: 8px; justify-items: start; padding: 18px; background: var(--panel); border: 2px dashed var(--line); }
+      .pv-off b { font-family: var(--font-display); font-weight: 400; font-size: var(--step-1); }
+      .pv-stale { color: var(--soon) !important; }`;
+    doc.head.append(css);
+    const savedAt = () => { try { const d = JSON.parse(w.localStorage.getItem('capewatch:data')); return new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }).format(new Date(d.status.lastCheckAt)); } catch { return '—'; } };
+    const note = (text) => { const n = doc.createElement('div'); n.className = 'pv-note'; n.dir = lang === 'he' ? 'rtl' : 'ltr';
+      const s = doc.createElement('span'); s.textContent = text; const b = doc.createElement('button'); b.className = 'btn ghost'; b.type = 'button'; b.textContent = T.now; n.append(s, b);
+      doc.getElementById('status').after(n); };
+    if (state === 'loading') {
+      const line = doc.createElement('p'); line.className = 'eyebrow'; line.textContent = T.loading;
+      doc.getElementById('live').replaceChildren(line);
+      const sk = doc.createElement('div'); sk.className = 'pv-skel'; for (let i = 0; i < 12; i++) sk.append(doc.createElement('i'));
+      doc.getElementById('grid').replaceChildren(sk);
+    }
+    if (state === 'offlineFirst') {
+      for (const id of ['live', 'grid']) {
+        const box = doc.createElement('div'); box.className = 'pv-off';
+        const b = doc.createElement('b'); b.textContent = T.offTitle; const p = doc.createElement('p'); p.textContent = T.offText;
+        const btn = doc.createElement('button'); btn.className = 'btn'; btn.type = 'button'; btn.textContent = T.retry;
+        box.append(b, p, btn); doc.getElementById(id).replaceChildren(box);
+      }
+    }
+    if (state === 'offlineSaved') note(T.savedOff.replace('{d}', savedAt()));
+    if (state === 'failed') note(T.savedFail.replace('{d}', savedAt()));
+    if (state === 'stale') { const b = doc.getElementById('st-last'); b.classList.add('pv-stale'); b.textContent = '⚠ ' + b.textContent; b.title = T.stale.replace('{n}', 3); note(T.stale.replace('{n}', 3)); doc.querySelector('.pv-note button').remove(); }
+  }
+
+  // ---------- buttons ----------
+  const box = document.getElementById('states');
+  for (const [k, s] of Object.entries(STATES)) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = s.label; b.dataset.state = k; b.setAttribute('aria-pressed', k === state);
+    b.onclick = () => { state = k; box.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b)); load(); };
+    box.append(b);
+  }
+  const vt = document.getElementById('v-today'), vp = document.getElementById('v-prop');
+  vt.onclick = () => { view = 'today'; vt.setAttribute('aria-pressed', true); vp.setAttribute('aria-pressed', false); load(); };
+  vp.onclick = () => { view = 'prop'; vp.setAttribute('aria-pressed', true); vt.setAttribute('aria-pressed', false); load(); };
+  document.querySelectorAll('[data-lang]').forEach((b) => b.onclick = () => { lang = b.dataset.lang; document.querySelectorAll('[data-lang]').forEach((x) => x.setAttribute('aria-pressed', x === b)); load(); });
+  load();
+})();
+</script>
+</body>
+</html>
