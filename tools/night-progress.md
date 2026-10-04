@@ -61,3 +61,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 17 done (proposal + prototype).
 - Task 18 done. Part C finished.
 - End tasks done. Next: rebuild the test copy with everything, for the owner's check before the merge.
+- Test copy rebuilt with everything and installed over the old one (saved data, seen events and start with Windows kept, nothing blocked); running hidden. Waiting for the owner's check, then the merge into main.
