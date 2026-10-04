@@ -15,7 +15,7 @@ How to continue after a stop: read the table, pick the first task that is not "d
 | 5 | Long runs: memory, CPU, nothing drawn while hidden | code done, measuring | 5d1653f. Hidden window: no drawing (already) and now also no cape swaps / log lines. 2 Edge tests (fail on old code, pass now). Real-build measurement: pending (after the task 8 build). |
 | 6 | Logs: size limit, old logs deleted | code done, checking on install | 2671c42. Log rotation 1 MB x (current + 2 old), older deleted; routine lines no longer written. 2 unit tests. Rotation to be verified on the installed test build (task 8). |
 | 7 | Security: only needed addresses, data text cannot run code | code done, checking on install | 7ee7695. CSP (only needed addresses), opener limited to wiki/minecraft.net/paypal/mailto, HTTP plugin limited to the two Mojang APIs, blocks logged. 4 Edge tests incl. HTML/script tricks in every data field. List: tools/security.md. Check on the installed build: task 8. |
-| 8 | Install, uninstall, upgrade | not started | |
+| 8 | Install, uninstall, upgrade | done | 675d1c1. On the test copy: install over the previous build kept saved data, seen events, start with Windows. Uninstall removed install folder, Run entry, capewatch://, Programs entry, installer key, notification settings, shortcuts; only the settings/logs folder stays (Tauri's 'delete app data' box decides). Reinstalled and started hidden for the owner's morning check. |
 | 9 | Display: 125/150/200%, narrow window, 7 languages, glyphs | done | 65351cf. 14 checks (7 languages x 400/1200 px): 13 clean, 1 known (French 400 px: '(estimation)' touches the card border; fix only as a preview). Pixel font is missing Cyrillic, Spanish 'í', Portuguese 'á' (fallback font mid-word). Sharp enough at 100-200 %. Screenshots: _screenshots/night/display/ (local). |
 | 10 | Code cleanup and clear comments | done | 7108b40. runGlow (old CSS-filter title glow) removed; stale comments about the leaf-block title fixed; map of the page script; no behaviour change, all tests pass. Rays: already gone. |
 | 11 | Design consistency review (preview only) | not started | |
@@ -43,3 +43,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 7 code committed. All tests 67/67.
 - Task 9 done. Task 5 measured on the installed new build: hidden ~0.3-0.5 s CPU per minute, GPU 0 (figure not drawn), memory flat ~338 MB for 13+ min. Installed real 1.0.5 hidden: ~77 s CPU per minute (more than one core).
 - Task 10 done. Part A finished except the uninstall check of task 8 (next).
+- Task 8 done. Tasks 6 and 7 verified on the installed build: log rotation (1 MB, 2 old kept, older deleted) and nothing blocked by the security policy with the window open.
