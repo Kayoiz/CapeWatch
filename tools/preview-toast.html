@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CapeWatch: תמונה בהתראה</title>
+<!-- Task 16 (the cape picture inside the Windows notification): proposal prototype. Nothing in the app changes,
+     and no notification is shown: the notifications here are drawn in the page.
+     Open through the local server (launch.json "title-tuner"): http://localhost:8766/tools/preview-toast.html,
+     after `node app/build-web.mjs`. The real page runs hidden in a frame to draw the picture, exactly as the
+     app does at run time (from the texture; nothing is saved). -->
+<link rel="stylesheet" href="../assets/fonts/google/fonts.css">
+<style>
+:root { --bg: #171916; --panel: #20231F; --fg: #E8EBE3; --muted: #A2A99C; --line: #343831; --accent: #6CC349; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 Assistant, "Segoe UI", system-ui, sans-serif; }
+.wrap { max-width: 1240px; margin-inline: auto; padding: 24px 16px 64px; display: grid; gap: 20px; }
+h1, h2 { font-family: "Secular One", Assistant, sans-serif; font-weight: 400; margin: 0; line-height: 1.2; } h1 { font-size: 2rem; } h2 { font-size: 1.25rem; }
+p, ul { margin: 0; max-width: 85ch; } .muted { color: var(--muted); }
+.panel { background: var(--panel); padding: 16px; box-shadow: inset 0 0 0 2px var(--line); display: grid; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+select, button { font: 600 14px/1 Assistant, sans-serif; padding: 8px 10px; background: var(--bg); color: var(--fg); border: 0; box-shadow: inset 0 0 0 2px var(--line); }
+.toasts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 370px), 1fr)); gap: 20px; align-items: start; }
+.variant { display: grid; gap: 8px; }
+/* a Windows 11 notification (dark), drawn after the real one */
+.toast { direction: ltr; text-align: left; width: 364px; max-width: 100%; background: #2c2c2c; color: #fff; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.08); font: 14px/1.4 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+.t-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px 0; font-size: 12px; color: #c5c5c5; }
+.t-head img { width: 16px; height: 16px; image-rendering: pixelated; }
+.t-head span:last-child { margin-left: auto; letter-spacing: 2px; }
+.t-body { display: flex; gap: 12px; padding: 10px 16px 16px; align-items: flex-start; }
+.t-logo { width: 48px; height: 48px; flex: none; object-fit: contain; background: #3a3a3a; }
+.t-text b { display: block; font-weight: 600; font-size: 14px; } .t-text span { color: #d0d0d0; }
+.t-hero { display: block; width: 100%; height: 182px; object-fit: contain; background: #3a3a3a; }
+.t-inline { display: block; width: 100%; max-height: 220px; object-fit: contain; background: #3a3a3a; margin-top: 8px; }
+pre { margin: 0; padding: 12px; background: var(--bg); font: 12px/1.45 ui-monospace, Consolas, monospace; overflow: auto; direction: ltr; text-align: left; box-shadow: inset 0 0 0 2px var(--line); white-space: pre-wrap; }
+iframe { position: fixed; width: 1200px; height: 800px; inset-block-start: 0; inset-inline-start: 0; border: 0; opacity: 0; pointer-events: none; z-index: -1; }   /* the hidden page that draws the picture */
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <h1>תמונה קטנה של הגלימה בתוך התראת Windows (אב טיפוס)</h1>
+    <p>היום ההתראה היא טקסט בלבד. ההצעה: לצרף את התמונה ש-CapeWatch כבר מצייר לכרטיס של הגלימה. Windows תומך בשלוש צורות; ההמלצה שלי היא הראשונה (תמונה קטנה בצד, לא משנה את גובה ההתראה). ההתראות כאן מצוירות בדף, שום התראה אמיתית לא מוצגת.</p>
+  </header>
+  <section class="panel">
+    <div class="row"><span class="muted">גלימה:</span><select id="cape"></select><span class="muted" id="status">מצייר את התמונה…</span></div>
+    <div class="toasts" id="toasts"></div>
+  </section>
+  <section class="panel">
+    <h2>איך זה ייבנה</h2>
+    <ul>
+      <li>התמונה כבר קיימת בזיכרון (הדף מצייר אותה לכרטיס). כשנשלחת התראה, הדף מעביר אותה ל-<code>notify_cape</code> יחד עם הטקסט.</li>
+      <li>Windows מציג בהתראה של תוכנה רגילה (לא מחנות) רק תמונה מקובץ מקומי, לא מכתובת אינטרנט. לכן main.rs שומר את התמונה כקובץ PNG בתיקייה של התוכנה (<code>%LOCALAPPDATA%\com.kayoiz.capewatch\toast\</code>), ומוחק קבצים בני יותר משבוע. שום תמונה לא נכנסת לריפו.</li>
+      <li>אם התמונה עוד לא צוירה (התוכנה רק עלתה), ההתראה יוצאת כמו היום, בלי תמונה.</li>
+      <li>אותה תמונה יכולה לשמש גם להתראת דיסקורד (רעיון 15).</li>
+    </ul>
+    <p class="muted">ה-XML של ההתראה (הצורה המומלצת), כפי ש-main.rs היה בונה אותו:</p>
+    <pre id="xml"></pre>
+  </section>
+  <iframe id="app" title="CapeWatch" aria-hidden="true"></iframe>
+</div>
+<script>
+(async () => {
+  const $ = (id) => document.getElementById(id);
+  const data = await (await fetch('../data/capewatch.json')).json();
+  const page = await (await fetch('../app/dist/index.html')).text();
+  const icon = new URL('../app/src-tauri/icons/32x32.png', location.href).href;
+  const capes = Object.entries(data.capes).filter(([, c]) => c.textureId).sort((a, b) => String(b[1].releaseDate).localeCompare(String(a[1].releaseDate)));
+  for (const [id, c] of capes.slice(0, 15)) $('cape').append(new Option(c.name, id));
+  // the real page, hidden, draws the pictures like the app does
+  const fake = `<script>(() => {
+    const mem = new Map();
+    Object.defineProperty(window, 'localStorage', { value: { getItem: (k) => mem.has(k) ? mem.get(k) : null, setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k), clear: () => mem.clear(), key: () => null, get length() { return mem.size; } }, configurable: true });
+    window.__TAURI__ = { core: { invoke: async (c) => (c === 'take_greeting' ? 'none' : null) }, event: { listen: async () => () => {} } };
+    const body = ${JSON.stringify(JSON.stringify(data))}, real = window.fetch.bind(window);
+    window.fetch = (u, o) => /api\\.github\\.com|raw\\.githubusercontent\\.com\\/Kayoiz/.test(String(u)) ? Promise.resolve(new Response(body)) : real(u, o);
+  })();<\/script>`;
+  const f = $('app');
+  f.srcdoc = page.replace('<head>', '<head><base href="' + new URL('../app/dist/', location.href).href + '">' + fake);
+  const picture = (id) => { const w = f.contentWindow; const c = data.capes[id]; return w && w.capeArt ? w.capeArt.get(id, 'cape', 'https://textures.minecraft.net/texture/' + c.textureId) : null; };
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  function show() {
+    const id = $('cape').value, c = data.capes[id], pic = picture(id);
+    $('status').textContent = pic ? '' : 'מצייר את התמונה…';
+    if (!pic) { setTimeout(show, 400); return; }
+    const title = 'CapeWatch: New cape', text = String(c.shortEn || '').replace(/\*\*/g, '');
+    const head = '<div class="t-head"><img alt="" src="' + icon + '"><span>CapeWatch</span><span>···  ✕</span></div>';
+    const V = [
+      ['1. תמונה קטנה בצד (מומלץ)', head + '<div class="t-body"><img class="t-logo" alt="" src="' + pic + '"><div class="t-text"><b>' + esc(title) + '</b><span>' + esc(text) + '</span></div></div>'],
+      ['2. תמונה גדולה למעלה', '<img class="t-hero" alt="" src="' + pic + '">' + head + '<div class="t-body"><div class="t-text"><b>' + esc(title) + '</b><span>' + esc(text) + '</span></div></div>'],
+      ['3. תמונה בתוך הטקסט', head + '<div class="t-body"><div class="t-text" style="width:100%"><b>' + esc(title) + '</b><span>' + esc(text) + '</span><img class="t-inline" alt="" src="' + pic + '"></div></div>']
+    ];
+    $('toasts').replaceChildren(...V.map(([name, html]) => { const v = document.createElement('div'); v.className = 'variant'; const h = document.createElement('h2'); h.textContent = name; const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = html; v.append(h, t); return v; }));
+    $('xml').textContent =
+`<toast activationType="protocol" launch="capewatch://cape/${esc(id)}">
+  <visual>
+    <binding template="ToastGeneric">
+      <text>${esc(title)}</text>
+      <text>${esc(text)}</text>
+      <image placement="appLogoOverride" hint-crop="none"
+             src="file:///C:/Users/<user>/AppData/Local/com.kayoiz.capewatch/toast/${esc(id)}.png"/>
+    </binding>
+  </visual>
+</toast>`;
+  }
+  $('cape').onchange = show;
+  // wait for the page in the frame, then for its pictures
+  const ready = () => { const w = f.contentWindow; if (w && w.capeArt && w.CapeWatchPage) show(); else setTimeout(ready, 200); };
+  ready();
+})();
+</script>
+</body>
+</html>
