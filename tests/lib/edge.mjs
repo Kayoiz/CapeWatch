@@ -54,14 +54,22 @@ export async function launch({ headless = true } = {}) {
     const { targetId } = await send('Target.createTarget', { url: 'about:blank' });
     const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true });
     const s = (method, params) => send(method, params, sessionId);
-    const console = [], exceptions = [];
+    const console = [], exceptions = [], routes = [];
     handlers.add((msg) => {
       if (msg.sessionId !== sessionId) return;
+      if (msg.method === 'Fetch.requestPaused') {
+        const { requestId, request } = msg.params;
+        const r = routes.find((x) => x.re.test(request.url));
+        const a = r && r.answer(request.url);
+        if (a) s('Fetch.fulfillRequest', { requestId, responseCode: a.status || 200, responseHeaders: [{ name: 'Content-Type', value: a.type || 'application/octet-stream' }, { name: 'Access-Control-Allow-Origin', value: '*' }], body: Buffer.from(a.body).toString('base64') }).catch(() => {});
+        else s('Fetch.continueRequest', { requestId }).catch(() => {});
+        return;
+      }
       if (msg.method === 'Runtime.consoleAPICalled') console.push(msg.params.type + ' ' + msg.params.args.map((a) => a.value ?? a.description ?? '').join(' '));
       if (msg.method === 'Runtime.exceptionThrown') exceptions.push(msg.params.exceptionDetails.exception?.description || msg.params.exceptionDetails.text);
       if (msg.method === 'Log.entryAdded') console.push('log ' + msg.params.entry.level + ' ' + msg.params.entry.text);
     });
-    await s('Page.enable'); await s('Runtime.enable'); await s('Network.enable'); await s('Log.enable');
+    await s('Page.enable'); await s('Runtime.enable'); await s('Network.enable'); await s('Log.enable'); await s('Performance.enable');
     const waitEvent = (name, ms = 15000) => new Promise((res, rej) => {
       const t = setTimeout(() => { handlers.delete(h); rej(new Error('timeout waiting for ' + name)); }, ms);
       const h = (msg) => { if (msg.sessionId === sessionId && msg.method === name) { clearTimeout(t); handlers.delete(h); res(msg.params); } };
@@ -73,6 +81,14 @@ export async function launch({ headless = true } = {}) {
       // Script that runs before any of the page's own scripts, on every load.
       init: (source) => s('Page.addScriptToEvaluateOnNewDocument', { source }),
       block: (patterns) => s('Network.setBlockedURLs', { urls: patterns }),
+      // Answer requests to matching addresses from the test: route('*textures.minecraft.net*', (url) => ({ body, type })).
+      async route(pattern, answer) {
+        const escape = (x) => x.replace(/[.?+^$()[\]{}|\\]/g, '\\$&');
+        routes.push({ re: new RegExp('^' + pattern.split('*').map(escape).join('.*') + '$'), answer });
+        await s('Fetch.enable', { patterns: [{ urlPattern: '*' }] });
+      },
+      // Heap in use by the page's JavaScript, after a full garbage collection (bytes).
+      async heap() { await s('HeapProfiler.collectGarbage'); const m = await s('Performance.getMetrics'); return m.metrics.find((x) => x.name === 'JSHeapUsedSize').value; },
       offline: (on) => s('Network.emulateNetworkConditions', { offline: on, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }),
       async goto(url) { const load = waitEvent('Page.loadEventFired', 30000); await s('Page.navigate', { url }); await load; },
       async reload() { const load = waitEvent('Page.loadEventFired', 30000); await s('Page.reload', {}); await load; },

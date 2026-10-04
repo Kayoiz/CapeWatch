@@ -1162,11 +1162,14 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     let zoomGoal = 1, spin = { yaw: 0, pitch: 0 }, anim = 0, resetting = null;
     let invertDrag = false;                                 // the app's "reverse drag direction" setting (sideways only)
     const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // While the window is hidden (tray, minimized) nothing is drawn and the capes do not swap: no work at all
+    // for days in the background. Back on screen, it goes on from the cape it stopped at.
     let shown = true;
     function setVisible(v, why) {
       if (!viewer || v === shown) return;
       shown = v; viewer.renderPaused = !v;
       log('view: ' + (v ? 'running' : 'paused') + ' (' + why + ')');
+      if (v && started && !current) next();   // hidden since the start: put the first cape on at once
     }
     function applyView() {
       if (!base || !viewer) return;
@@ -1294,6 +1297,7 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     }
 
     async function next() {
+      if (!shown) return;                                               // hidden: no swap (see setVisible)
       if (busy) { log('swap: previous load still running, tick skipped'); return; }
       busy = true;
       try {
@@ -1366,7 +1370,7 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       // Hook the library's own render call: advance the wind, count frames.
       const render = viewer.render.bind(viewer);
       viewer.render = () => { const t = performance.now() / 1000; wind(t); wings(t); frames++; render(); };
-      setInterval(() => { log('fps', (frames / 5).toFixed(1)); frames = 0; }, 5000);
+      setInterval(() => { if (shown) log('fps', (frames / 5).toFixed(1)); frames = 0; }, 5000);   // nothing to count while hidden
       log('view: ready', viewer.width + 'x' + viewer.height, 'pixelRatio=' + viewer.renderer.getPixelRatio(),
         'webgl2=' + viewer.renderer.capabilities.isWebGL2, 'strips=' + STRIPS);
       loadSkin();
