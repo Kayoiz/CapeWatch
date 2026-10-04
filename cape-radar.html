@@ -127,7 +127,7 @@ header.top { display: grid; gap: 18px; }
 footer p { max-width: var(--measure); }
 /* Required notice (exact English line, translation under it); contact and donate sit next to it */
 .unofficial { display: grid; gap: 2px; }
-.mojang-en { letter-spacing: .01em; }
+.mojang-en { letter-spacing: .01em; unicode-bidi: plaintext; }   /* English even on a Hebrew page: the final period stays at the end */
 .mojang-tr { font-weight: 400; }
 .mojang-tr:empty { display: none; }
 .notice-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 10px; }

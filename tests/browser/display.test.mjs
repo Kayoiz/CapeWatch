@@ -59,3 +59,14 @@ for (const width of [400, 1200]) {
     });
   }
 }
+
+test('Hebrew page: the English Mojang line reads left to right, its final period at the end (right)', { skip }, async () => {
+  const page = await open('he', 1200);
+  const order = await page.eval(`[...document.querySelectorAll('.mojang-en')].map((e) => {
+    const t = e.firstChild, r = document.createRange();
+    r.setStart(t, 0); r.setEnd(t, 1); const first = r.getBoundingClientRect().left;
+    r.setStart(t, t.length - 1); r.setEnd(t, t.length); const last = r.getBoundingClientRect().left;
+    return last > first; })`);
+  assert.deepEqual(order, [true, true], 'header and footer notice');
+  await page.close();
+});
