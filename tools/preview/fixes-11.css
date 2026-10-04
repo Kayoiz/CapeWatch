@@ -1,0 +1,29 @@
+/* Task 11 proposal: consistency fixes for the owner to approve. Nothing here is in the app.
+   tools/design-review.html lays this file over the real page (on/off per item). Each block is one item. */
+
+/* 1. One height for every control that sits in a row with others: 32px (buttons, menus, search box). */
+.btn { min-height: 32px; }
+.field input, .field select, .lang-pick select { height: 32px; padding-block: 0; }
+
+/* 2. Two small text sizes instead of four (11/12/13/14px): 12px for badges and dates, 14px for buttons,
+      labels, facts and notes. (The pixel badges JAVA / BEDROCK / NEW keep their size: see the note.) */
+.btn, .facts { font-size: var(--text-sm); }
+.countdown .est, .tile .date, .pill { font-size: 12px; }
+
+/* 3. Badges in one row share one height: 20px. */
+.meta .ed, .meta .pill { display: inline-flex; align-items: center; height: 20px; box-sizing: border-box; line-height: 1; }
+
+/* 4. Spacing on a 4px scale (4, 8, 12, 16, 24, 40) instead of 6/10/14/18/20. */
+.grid { gap: 16px; }
+.tile { gap: 8px; }
+.filters { gap: 12px 16px; }
+.dlg { gap: 16px; }
+.cw-set { gap: 16px !important; }
+.notice-row { gap: 12px 24px; }
+
+/* 5. Both windows look alike: same width limit and an ✕ in the same corner (the ✕ is added by the preview). */
+#cw-settings { max-width: min(560px, calc(100vw - 32px)) !important; width: 100%; }
+.cw-preview-x { position: absolute; inset-block-start: 10px; inset-inline-end: 10px; }
+
+/* 6. Square corners on the title plate, like every other box (it was the only rounded one, visible in light mode). */
+#leaf-title { border-radius: 0; }

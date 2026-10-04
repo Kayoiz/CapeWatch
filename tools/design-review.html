@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CapeWatch: סקירת אחידות</title>
+<!-- Task 11 (design consistency review). Preview only: nothing here changes the app.
+     Open through the local server (launch.json "title-tuner", http://localhost:8766/tools/design-review.html)
+     after `node app/build-web.mjs`. The pictures come from `node tools/design-review.mjs` (_screenshots, local). -->
+<link rel="stylesheet" href="../assets/fonts/google/fonts.css">
+<style>
+:root { --bg: #E6E8E1; --panel: #F5F6F1; --fg: #1C1F1A; --muted: #585E54; --line: #CDD0C6; --accent: #3C8527; --bad: #A3470B; --good: #2F7A1F; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #171916; --panel: #20231F; --fg: #E8EBE3; --muted: #A2A99C; --line: #343831; --accent: #6CC349; --bad: #FF9B5C; --good: #86D866; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #171916; --panel: #20231F; --fg: #E8EBE3; --muted: #A2A99C; --line: #343831; --accent: #6CC349; --bad: #FF9B5C; --good: #86D866; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 Assistant, "Segoe UI", system-ui, sans-serif; }
+.wrap { max-width: 1240px; margin-inline: auto; padding: 24px 16px 64px; display: grid; gap: 28px; }
+h1, h2 { font-family: "Secular One", Assistant, sans-serif; font-weight: 400; margin: 0; line-height: 1.2; }
+h1 { font-size: 2rem; } h2 { font-size: 1.35rem; }
+p { margin: 0; max-width: 75ch; }
+.muted { color: var(--muted); }
+.panel { background: var(--panel); padding: 16px; box-shadow: inset 0 0 0 2px var(--line); display: grid; gap: 12px; min-width: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.controls label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+button { font: 600 14px/1 Assistant, sans-serif; padding: 8px 12px; background: var(--accent); color: #fff; border: 0; cursor: pointer; }
+button.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 2px var(--line); }
+iframe { width: 100%; height: 760px; border: 0; background: #000; box-shadow: inset 0 0 0 2px var(--line); }
+.item { display: grid; gap: 10px; }
+.item h2 span { color: var(--muted); font-size: 1rem; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 12px; align-items: start; }
+figure { margin: 0; display: grid; gap: 4px; min-width: 0; }
+figure img { max-width: 100%; height: auto; display: block; box-shadow: 0 0 0 1px var(--line); background: #111; }
+figcaption { font-size: 14px; font-weight: 700; }
+figure.before figcaption { color: var(--bad); }
+figure.after figcaption { color: var(--good); }
+.missing { font-size: 14px; color: var(--muted); padding: 8px; box-shadow: inset 0 0 0 1px dashed var(--line); }
+code { font-size: 14px; direction: ltr; unicode-bidi: isolate; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <h1>סקירת אחידות: ריווחים, גדלי טקסט וצבעים</h1>
+    <p>כל הממצאים נמדדו בדף עצמו (במצב כהה ובהיר, בחלון הראשי, בחלון הפרטים ובחלון ההגדרות). שום דבר כאן לא שונה בתוכנה: התיקונים נמצאים בקובץ <code>tools/preview/fixes-11.css</code> ומופעלים רק בתצוגה הזו. מה שתאשר, אכניס לתוכנה.</p>
+  </header>
+
+  <section class="panel">
+    <h2>התצוגה החיה</h2>
+    <p class="muted">הדף האמיתי של התוכנה (<code>app/dist</code>), עם הנתונים מ-GitHub. כל תיבה מפעילה תיקון אחד.</p>
+    <div class="controls" id="toggles"></div>
+    <div class="controls">
+      <button type="button" class="ghost" id="all-on">הכל מופעל</button>
+      <button type="button" class="ghost" id="all-off">הכל כבוי (כמו היום)</button>
+      <button type="button" class="ghost" id="open-set">פתח הגדרות</button>
+      <button type="button" class="ghost" id="open-dlg">פתח חלון פרטים</button>
+      <label><input type="checkbox" id="light"> מצב בהיר</label>
+    </div>
+    <iframe id="app" src="../app/dist/index.html" title="CapeWatch"></iframe>
+  </section>
+
+  <div id="items"></div>
+</div>
+<script>
+(() => {
+  // What each block of fixes-11.css fixes, in the owner's language, with the measured numbers.
+  const ITEMS = {
+    1: { title: 'גובה אחיד לפקדים שעומדים באותה שורה', text: 'כפתור "הגדרות" גבוה 29.6 פיקסלים, ובחירת השפה לידו 34. בשורת הסינון: תיבת החיפוש 35.7 והתפריטים 34. התיקון: 32 פיקסלים לכולם.', shots: ['1-controls-title', '1-controls-filters'] },
+    2: { title: 'שני גדלי טקסט קטנים במקום ארבעה', text: 'יש היום 11, 12, 13 ו-14 פיקסלים לתפקידים דומים (תגיות, תאריכים, כפתורים, הערות). התיקון: 12 לתגיות ותאריכים, 14 לכפתורים, עובדות והערות. התגיות בגופן המפוקסל (JAVA, BEDROCK, NEW) נשארות כמו שהן.', shots: ['2-sizes-card'] },
+    3: { title: 'תגיות באותה שורה באותו גובה', text: 'JAVA ו-BEDROCK גבוהות 19 פיקסלים, והתגיות "זמינה עכשיו" ו"חינמי לחלוטין" 22, באותה שורה. התיקון: 20 לכולן.', shots: ['3-badges'] },
+    4: { title: 'ריווחים לפי סולם אחד', text: 'רווחים של 6, 10, 14, 18 ו-20 פיקסלים בין רכיבים דומים. התיקון: סולם של 4, 8, 12, 16, 24 ו-40 (רשת הקטלוג 16, שורת הסינון 12/16, החלונות 16).', shots: ['4-spacing-grid'] },
+    5: { title: 'שני החלונות נראים אותו דבר', text: 'לחלון הפרטים יש ✕ בפינה, ולחלון ההגדרות אין (רק כפתור "סגירה" למטה), והריווח בתוכם שונה (18 מול 14). התיקון: ✕ באותה פינה, אותו ריווח, ואותו רוחב מרבי.', shots: ['5-dialog-details', '5-dialog-settings'] },
+    6: { title: 'פינות מרובעות ללוחית של הכותרת', text: 'במצב בהיר, הכותרת יושבת על לוחית כהה עם פינות מעוגלות (12 פיקסלים). זה הרכיב המעוגל היחיד במסך שכולו בסגנון פיקסלים מרובע. התיקון: פינות ישרות.', shots: ['6-title-light'] }
+  };
+  const SHOTS = '../_screenshots/night/review/';
+  const frame = document.getElementById('app');
+  let blocks = {};
+  const on = new Set(Object.keys(ITEMS));
+
+  fetch('preview/fixes-11.css').then((r) => r.text()).then((css) => {
+    // split the file at its numbered comments: "/* 1. ...", "/* 2. ..."
+    for (const part of css.split(/(?=\/\* \d\. )/)) { const m = part.match(/^\/\* (\d)\. /); if (m) blocks[m[1]] = part; }
+    apply();
+  });
+
+  const toggles = document.getElementById('toggles');
+  for (const [n, it] of Object.entries(ITEMS)) {
+    const l = document.createElement('label');
+    const c = document.createElement('input'); c.type = 'checkbox'; c.checked = true; c.dataset.n = n;
+    c.addEventListener('change', () => { c.checked ? on.add(n) : on.delete(n); apply(); });
+    l.append(c, ' ' + n + '. ' + it.title); toggles.append(l);
+  }
+  const setAll = (v) => { toggles.querySelectorAll('input').forEach((c) => { c.checked = v; v ? on.add(c.dataset.n) : on.delete(c.dataset.n); }); apply(); };
+  document.getElementById('all-on').onclick = () => setAll(true);
+  document.getElementById('all-off').onclick = () => setAll(false);
+
+  function doc() { try { return frame.contentDocument; } catch { return null; } }
+  function apply() {
+    const d = doc(); if (!d || !d.head) return;
+    let s = d.getElementById('review-fixes');
+    if (!s) { s = d.createElement('style'); s.id = 'review-fixes'; d.head.append(s); }
+    s.textContent = [...on].map((n) => blocks[n] || '').join('\n');
+    addX();
+    d.documentElement.dataset.theme = document.getElementById('light').checked ? 'light' : 'dark';
+  }
+  // item 5: the preview adds an ✕ to the settings window (the real one would be made by app/shell.js)
+  function addX() {
+    const d = doc(), dlg = d && d.getElementById('cw-settings');
+    if (!dlg) return;
+    let x = dlg.querySelector('.cw-preview-x');
+    if (on.has('5') && !x) { x = d.createElement('button'); x.type = 'button'; x.className = 'btn ghost cw-preview-x'; x.textContent = '✕'; x.onclick = () => dlg.close(); dlg.append(x); }
+    if (!on.has('5') && x) x.remove();
+  }
+  frame.addEventListener('load', apply);
+  document.getElementById('light').addEventListener('change', apply);
+  document.getElementById('open-set').onclick = () => { const d = doc(); d.getElementById('cw-open-settings')?.click(); setTimeout(addX, 50); };
+  document.getElementById('open-dlg').onclick = () => { const w = frame.contentWindow; const first = w.document.querySelector('[data-cape]'); if (first) w.CapeWatchPage.openDetail(first.dataset.cape); };
+
+  // the items with their before / after pictures
+  const box = document.getElementById('items');
+  box.style.display = 'grid'; box.style.gap = '20px';
+  for (const [n, it] of Object.entries(ITEMS)) {
+    const sec = document.createElement('section'); sec.className = 'panel item';
+    sec.innerHTML = '<h2></h2><p></p><div class="pairs" style="display:grid;gap:12px"></div>';
+    sec.querySelector('h2').textContent = n + '. ' + it.title;
+    sec.querySelector('p').textContent = it.text;
+    for (const s of it.shots) {
+      const pair = document.createElement('div'); pair.className = 'pair';
+      for (const [k, cap] of [['before', 'היום'], ['after', 'אחרי התיקון']]) {
+        const f = document.createElement('figure'); f.className = k;
+        const img = new Image(); img.src = SHOTS + s + '-' + k + '.png'; img.alt = cap + ': ' + it.title; img.loading = 'lazy';
+        img.onerror = () => { const m = document.createElement('div'); m.className = 'missing'; m.textContent = 'אין תמונה. להפקה: node tools/design-review.mjs'; img.replaceWith(m); };
+        const c = document.createElement('figcaption'); c.textContent = cap;
+        f.append(c, img); pair.append(f);
+      }
+      sec.querySelector('.pairs').append(pair);
+    }
+    box.append(sec);
+  }
+})();
+</script>
+</body>
+</html>
