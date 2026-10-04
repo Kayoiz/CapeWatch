@@ -141,7 +141,10 @@ footer .legal { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(
 .status { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px 16px; padding-block: 14px; border-block: 2px solid var(--line); }
 @media (max-width: 720px) { .status { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 480px) { .status { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.stat { display: grid; gap: 0; min-width: 0; }
+/* Each number and its label share two rows with the other stats in the same row (subgrid): the labels sit on one
+   line, and a number that needs two lines in some language grows upward from it. */
+.stat { display: grid; grid-row: span 2; grid-template-rows: subgrid; row-gap: 0; min-width: 0; }
+.stat b { display: grid; align-content: end; }
 .stat b { font-family: var(--font-pixel); font-size: var(--step-1); font-weight: 600; font-variant-numeric: tabular-nums; }
 .stat span { font-size: var(--text-sm); color: var(--muted); line-height: 1.35; }
 
@@ -216,6 +219,10 @@ button.slot { cursor: pointer; }
 .pic { display: grid; gap: 8px; align-content: start; min-width: 0; }
 .ely-btn { justify-content: center; width: 100%; padding-inline: 6px; }
 .slot .ph { font-family: var(--font-pixel); color: var(--muted); font-size: var(--step--1); text-align: center; padding: 8px; }
+/* A cape with no texture anywhere: the same plain cape outline for each (not the real cape), its name under it */
+.slot .ph.shape { display: grid; justify-items: center; align-content: center; gap: 8px; width: 100%; height: 100%; }
+.ph.shape svg { width: 35%; height: auto; shape-rendering: crispEdges; }
+.ph-name { line-height: 1.25; overflow-wrap: anywhere; unicode-bidi: isolate; }
 .slot .flag { position: absolute; z-index: 1; top: 8px; left: 8px; font: 600 11px/1 var(--font-pixel); letter-spacing: .04em; padding: 4px 6px;
   background: var(--accent); color: var(--accent-fg); }
 .tile-name { font-family: var(--font-pixel); font-weight: 600; font-size: 16px; unicode-bidi: isolate; overflow-wrap: anywhere; line-height: 1.25; }
@@ -238,12 +245,18 @@ dialog::backdrop { background: rgba(10, 12, 9, .55); }
 .dlg { display: grid; grid-template-columns: 140px 1fr; gap: 18px; padding: 20px; }
 @media (max-width: 480px) { .dlg { grid-template-columns: 1fr; } .dlg .slot { max-width: 160px; } }
 .dlg-body { display: grid; gap: 10px; align-content: start; min-width: 0; padding-inline-end: 28px; }
-.facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: var(--step--1); margin: 0; }
-.facts dt { color: var(--muted); }
+/* Each fact: its label as a small line above the value, in every language (so Hebrew also reads the label first) */
+.facts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; font-size: var(--step--1); margin: 0; }
+.facts dt { color: var(--muted); font-size: var(--text-sm); }
+.facts dd + dt { margin-top: 8px; }
 .facts dd { margin: 0; font-variant-numeric: tabular-nums; }
 .dlg-close { position: absolute; top: 10px; right: 10px; }   /* fixed corners: the layout never mirrors */
 
 footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid var(--line); padding-top: 16px; display: grid; gap: 4px; }
+
+/* Hebrew (the layout never mirrors): paragraphs run from the right of their box; short labels, numbers and headings
+   sit on the left, next to what they belong to (the checkbox, the number, the value under them). */
+[dir="rtl"]:is(.cw-opt span, dt, dd, .stat b, .stat span, .countdown, .field label, legend, h2, h3, .eyebrow, .count-line, .lang-pick span, .cw-skin span, .cw-skin small) { text-align: left; }
 
 /* ---------- Controls: one pixel feel for every button (approved on tools/buttons-demo.html) ----------
    Hover: a little brighter, soft green glow. Press: sinks 2px, darker, the bevel turns inward; back on release.
@@ -435,7 +448,7 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       <div class="live-actions" id="dlg-actions"></div>
     </div>
   </div>
-  <button class="btn ghost dlg-close" id="dlg-close" type="button" data-i18n-aria="close">✕</button>
+  <button class="btn ghost dlg-close" id="dlg-close" type="button" data-i18n-aria="close" autofocus>✕</button>
 </dialog>
 
 <script src="vendor/skinview3d/skinview3d.bundle.js"></script>
@@ -772,7 +785,7 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   }
   // Hebrew: the text in each box runs right to left (and starts on the right of its box); the boxes stay where they
   // are. Cape names, editions and other Latin-only labels stay left to right. Menus keep their arrow on the right.
-  const LATIN = '.latin, .live-name, .tile-name, .ph, .ed, .flag, .mojang-en, input[name="skinName"], #view-reset, .dlg-close';
+  const LATIN = '.latin, .live-name, .tile-name, .ph, .ph-name, .ed, .flag, .mojang-en, input[name="skinName"], #view-reset, .dlg-close';
   function textDir(root, l = lang) {
     const rtl = LANGS[l]?.dir === 'rtl';
     for (const e of root.querySelectorAll('*')) {
@@ -924,13 +937,26 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   }
 
   // ---------- pieces ----------
+  // A cape with no texture anywhere (none at Mojang, none of our own): a plain cape outline, the same for each, and
+  // its name. It is not a picture of the real cape.
+  // A faint blocky figure seen from behind (head, arms, legs) and, clearer, the cape on its back with a light top edge.
+  const CAPE_SHAPE = '<svg viewBox="0 0 16 32" aria-hidden="true"><g fill="currentColor">'
+    + '<path opacity=".14" d="M4 0h8v8H4zM0 8h3v12H0zM13 8h3v12h-3zM4 24h8v8H4z"/><path opacity=".75" d="M3 8h10v1H3z"/>'
+    + '<path opacity=".42" d="M3 9h9v15H3z"/><path opacity=".26" d="M12 9h1v15h-1z"/></g></svg>';
+  function capeShape(c) {
+    const p = h('span', { class: 'ph shape' });
+    p.innerHTML = CAPE_SHAPE;   // fixed markup, nothing from the data file
+    p.append(h('span', { class: 'ph-name', text: c.name }));
+    return p;
+  }
   function slot(id, c, interactive) {
     const ely = showEly.has(id) ? (S.elyImgs.get(id) || art(id, 'elytra')) : null;
     const gen = !S.imgs.get(id) && art(id, 'cape');
     const src = S.imgs.get(id) || gen;
     const genEly = ely && !S.elyImgs.get(id);
     const kids = [ely ? h('img', { src: ely, alt: '', class: genEly ? 'gen' : 'elytra', decoding: 'async' })
-      : src ? h('img', { src, alt: '', class: gen ? 'gen' : null, loading: 'lazy', decoding: 'async' }) : h('span', { class: 'ph', text: c.name })];
+      : src ? h('img', { src, alt: '', class: gen ? 'gen' : null, loading: 'lazy', decoding: 'async' })
+      : texUrl(id) ? h('span', { class: 'ph', text: c.name }) : capeShape(c)];
     if (isNew(c)) kids.push(h('span', { class: 'flag', text: 'NEW' }));
     if (!interactive) return h('div', { class: 'slot' }, kids);
     return h('button', { class: 'slot', type: 'button', 'aria-label': t('details', { n: c.name }), onclick: () => openDetail(id) }, kids);
@@ -1513,6 +1539,8 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
     // the same size in every language (see lockLayout)
     lockLayout($('dlg-inner'), (l) => { useLang(l); fillDetail(id, c); textDir(dlg, l); });
+    // Opens at the top, with the focus on ✕ (autofocus): a window taller than the screen is never opened half-way down.
+    dlg.scrollTop = 0;
   }
   function fillDetail(id, c) {
     $('dlg-slot').replaceChildren(...slot(id, c, false).childNodes);

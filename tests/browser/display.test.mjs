@@ -55,6 +55,10 @@ for (const width of [400, 1200]) {
         assert.equal(await page.eval(`document.getElementById('cw-settings').dir`), 'ltr');
         assert.equal(await page.eval(`document.querySelector('.lede').dir`), 'rtl');
         assert.equal(await page.eval(`document.querySelector('#cw-settings legend').dir`), 'rtl');
+        // paragraphs from the right of their box; short labels and numbers on the left, next to what they belong to
+        assert.equal(await page.eval(`getComputedStyle(document.querySelector('.lede')).textAlign`), 'start');
+        assert.equal(await page.eval(`[...document.querySelectorAll('.stat span, .stat b, #cw-settings .cw-opt span')].map((e) => getComputedStyle(e).textAlign).join()`),
+          Array(6 + 6 + 6).fill('left').join());
       }
       assert.deepEqual(page.exceptions, []);
       await page.close();
@@ -71,5 +75,61 @@ test('Hebrew page: the English Mojang line reads left to right, its final period
     r.setStart(t, t.length - 1); r.setEnd(t, t.length); const last = r.getBoundingClientRect().left;
     return last > first; })`);
   assert.deepEqual(order, [true, true], 'header and footer notice');
+  await page.close();
+});
+
+test('the details window opens at the top with the focus on ✕, also when it is taller than the window', { skip }, async () => {
+  for (const lang of ['en', 'he']) {
+    const page = await open(lang, 400);
+    await page.click('#grid .tile .slot');   // a real mouse click
+    await page.waitFor(`document.getElementById('dlg').open`);
+    await new Promise((r) => setTimeout(r, 300));
+    const s = await page.eval(`(() => { const d = document.getElementById('dlg'), a = document.activeElement;
+      return { tall: d.scrollHeight > d.clientHeight, top: d.scrollTop, focus: a.id, ring: a.matches(':focus-visible') }; })()`);
+    assert.deepEqual(s, { tall: true, top: 0, focus: 'dlg-close', ring: false }, lang);
+    assert.deepEqual(page.exceptions, []);
+    await page.close();
+  }
+});
+
+test('status strip: in every language the labels of a row are on one line, the numbers sit right above them', { skip }, async () => {
+  for (const width of [400, 1200]) for (const lang of LANGS) {
+    const page = await open(lang, width);
+    const rows = await page.eval(`(() => { const rows = {};
+      for (const s of document.querySelectorAll('.stat')) {
+        const b = s.querySelector('b'), n = document.createRange(); n.selectNodeContents(b);
+        const r = s.getBoundingClientRect(), t = n.getBoundingClientRect(), l = s.querySelector('span').getBoundingClientRect();
+        (rows[Math.round(r.top)] ||= []).push([Math.round(l.top), Math.round(l.top - t.bottom)]);
+      } return Object.values(rows); })()`);
+    for (const row of rows) {
+      assert.equal(new Set(row.map((x) => x[0])).size, 1, `${lang} ${width}: label tops ${JSON.stringify(row)}`);
+      assert.ok(row.every((x) => x[1] >= 0 && x[1] <= 6), `${lang} ${width}: number to label ${JSON.stringify(row)}`);
+    }
+    await page.close();
+  }
+});
+
+test('details window: each label is a small line right above its value', { skip }, async () => {
+  for (const lang of ['en', 'he']) {
+    const page = await open(lang, 1200);
+    await page.eval(`CapeWatchPage.openDetail('aurora')`);
+    await new Promise((r) => setTimeout(r, 200));
+    const pairs = await page.eval(`[...document.querySelectorAll('#dlg-facts dt')].map((dt) => { const dd = dt.nextElementSibling, a = dt.getBoundingClientRect(), b = dd.getBoundingClientRect();
+      return [Math.round(a.left - b.left), Math.round(b.top - a.bottom)]; })`);
+    assert.ok(pairs.length >= 3, lang);
+    for (const [dx, gap] of pairs) assert.ok(dx === 0 && gap >= 0 && gap <= 4, `${lang}: ${JSON.stringify(pairs)}`);
+    await page.close();
+  }
+});
+
+test('a cape with no texture anywhere: the same plain cape outline with its name, also in its details window', { skip }, async () => {
+  const none = Object.entries(DATA.capes).filter(([, c]) => !c.textureId && !c.textureUrl);
+  const page = await open('en', 1200);
+  await page.waitFor(`document.querySelectorAll('#grid .ph.shape').length === ${none.length}`);
+  assert.deepEqual(await page.eval(`[...document.querySelectorAll('#grid .ph.shape .ph-name')].map((e) => e.textContent).sort()`), none.map(([, c]) => c.name).sort());
+  assert.equal(await page.eval(`new Set([...document.querySelectorAll('#grid .ph.shape svg')].map((e) => e.outerHTML)).size`), 1, 'one outline for all');
+  await page.eval(`CapeWatchPage.openDetail(${JSON.stringify(none[0][0])})`);
+  assert.equal(await page.eval(`document.querySelector('#dlg-slot .ph-name')?.textContent`), none[0][1].name);
+  assert.deepEqual(page.exceptions, []);
   await page.close();
 });

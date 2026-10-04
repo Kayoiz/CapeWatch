@@ -55,7 +55,8 @@ test('text from the data file is shown as text, never run, in every place it app
   await page.eval(`document.querySelectorAll('a, button, [onmouseover]').forEach(e => e.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })))`);
   await new Promise((r) => setTimeout(r, 500));
   assert.equal(await page.eval('window.__pwned ?? null'), null, 'no payload ran');
-  assert.equal(await page.eval(`document.querySelectorAll('[onerror], [onload], [onclick], [onmouseover], svg').length`), 0, 'no element made from data text');
+  // (the plain cape outline of a cape with no texture is the page's own fixed svg, not data text)
+  assert.equal(await page.eval(`document.querySelectorAll('[onerror], [onload], [onclick], [onmouseover], svg:not(.ph.shape > svg)').length`), 0, 'no element made from data text');
   assert.equal(await page.eval(`document.querySelectorAll('script').length`), await page.eval(`document.querySelectorAll('script[src], body > script').length`), 'no extra script tags');
   assert.ok(await page.eval(`document.getElementById('dlg-title').textContent.includes('<img src=x onerror=')`), 'the name is shown literally');
   assert.ok(await page.eval(`[...document.querySelectorAll('#dlg-actions a')].every(a => a.href.startsWith('https://minecraft.wiki/w/'))`), 'the wiki link stays on the wiki');
