@@ -36,9 +36,7 @@ async function open(lang, width) {
 
 for (const width of [400, 1200]) {
   for (const lang of LANGS) {
-    // Known, waiting for the owner (a visible change): in French at 400 px "(estimation)" touches the card border.
-    const todo = lang === 'fr' && width === 400 && 'known: "(estimation)" touches the card border in French at 400 px; fix in tools/preview-fixes.html, waiting for approval';
-    test(`${lang} at ${width} px: nothing cut off or outside the window (page, details, settings)`, { skip, todo }, async () => {
+    test(`${lang} at ${width} px: nothing cut off or outside the window (page, details, settings)`, { skip }, async () => {
       const page = await open(lang, width);
       assert.equal(await page.eval('document.documentElement.lang'), lang, 'the page is in the chosen language');
       const problems = [];

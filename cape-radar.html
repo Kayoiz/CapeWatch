@@ -852,7 +852,8 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   // Compact card: name, badges, one countdown, one short line. Everything else lives in the detail dialog.
   function liveCard(id, c) {
     const rem = c.availability === 'available' ? remaining(c) : null;
-    const est = (f) => approxText(c, f) ? h('span', { class: 'est', text: '(' + t('est') + ')' }) : null;
+    // <wbr>: "(estimate)" may move to the next line when the card is narrow (it used to push past the border).
+    const est = (f) => approxText(c, f) ? [h('wbr'), h('span', { class: 'est', text: '(' + t('est') + ')' })] : null;
     let clock = null;
     if (rem) clock = h('div', { class: 'countdown' + (rem.urgent ? ' urgent' : ''), 'data-count': id }, rem.text, est('availableUntil'));
     else if (c.availability === 'announced' && c.availableFrom) clock = h('div', { class: 'countdown' }, t('opens', { d: fmtDate(c.availableFrom) }), est('availableFrom'));
