@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CapeWatch: חלון אודות</title>
+<!-- Task 13 (an About window). Preview only: nothing here changes the app.
+     Open through the local server (launch.json "title-tuner"): http://localhost:8766/tools/preview-about.html,
+     after `node app/build-web.mjs`. The real page runs in a frame (network faked, the data comes from
+     data/capewatch.json); the preview adds an "About" button next to Settings and the window itself. -->
+<link rel="stylesheet" href="../assets/fonts/google/fonts.css">
+<style>
+:root { --bg: #171916; --panel: #20231F; --fg: #E8EBE3; --muted: #A2A99C; --line: #343831; --accent: #6CC349; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 Assistant, "Segoe UI", system-ui, sans-serif; }
+.wrap { max-width: 1240px; margin-inline: auto; padding: 24px 16px 64px; display: grid; gap: 20px; }
+h1 { font-family: "Secular One", Assistant, sans-serif; font-weight: 400; margin: 0; font-size: 2rem; line-height: 1.2; }
+p { margin: 0; max-width: 80ch; }
+ul { margin: 0; padding-inline-start: 20px; }
+.panel { background: var(--panel); padding: 16px; box-shadow: inset 0 0 0 2px var(--line); display: grid; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+button { font: 600 14px/1 Assistant, sans-serif; padding: 9px 12px; background: transparent; color: var(--fg); border: 0; box-shadow: inset 0 0 0 2px var(--line); cursor: pointer; }
+button[aria-pressed="true"] { background: var(--accent); color: #0F1A0B; box-shadow: none; }
+iframe { width: 100%; height: 760px; border: 0; background: #000; box-shadow: inset 0 0 0 2px var(--line); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <h1>חלון "אודות"</h1>
+    <p>כפתור "אודות" ליד "הגדרות" (וגם בתפריט של סמל המגש), שפותח חלון בסגנון של חלון הפרטים: הגרסה, ההודעה של Mojang במלואה, יצירת קשר, תרומה, ומאיפה המידע והקוד שבתוכנה. שום דבר כאן לא שונה בתוכנה.</p>
+    <ul>
+      <li>הגרסה נקראת מהתוכנה עצמה (בתצוגה: מ-<code>tauri.conf.json</code>), עם "בדיקת עדכונים" שמראה את מה שהבודק האוטומטי מצא.</li>
+      <li>ההודעה של Mojang מופיעה כמו בתחתית הדף: השורה באנגלית בדיוק, והתרגום מתחתיה.</li>
+      <li>המייל והתרומה הם אותם קישורים שכבר בתחתית הדף, נפתחים בדפדפן או בתוכנת הדואר.</li>
+      <li>"קוד ומידע": מקור העובדות (minecraft.wiki), שהתמונות מצוירות מהטקסטורות, והרישיונות של הספריות והגופנים שהתוכנה כוללת (MIT, SIL OFL).</li>
+      <li>בתוכנה האמיתית החלון יתורגם ל-7 השפות. בתצוגה: עברית ואנגלית.</li>
+    </ul>
+  </header>
+  <section class="panel">
+    <div class="row">
+      <button type="button" data-lang="he" aria-pressed="true">עברית</button>
+      <button type="button" data-lang="en" aria-pressed="false">English</button>
+      <button type="button" data-theme="dark" aria-pressed="true">כהה</button>
+      <button type="button" data-theme="light" aria-pressed="false">בהיר</button>
+      <button type="button" id="open">פתח את חלון "אודות"</button>
+    </div>
+    <iframe id="app" title="CapeWatch"></iframe>
+  </section>
+</div>
+<script>
+(() => {
+  const TXT = {
+    he: { about: 'אודות', title: 'CapeWatch', version: 'גרסה {v}', upToDate: 'זו הגרסה העדכנית.', by: 'מאת Kayoiz', what: 'מעקב אחרי כל הגלימות של Minecraft ב-Java וב-Bedrock, עם התראות על גלימות חדשות ועל מבצעים.',
+      contact: 'יצירת קשר', donate: 'תמיכה ב-CapeWatch', sources: 'קוד ומידע',
+      src: ['העובדות על הגלימות: minecraft.wiki ומודעות רשמיות של Mojang. הניסוח של CapeWatch עצמו.', 'התמונות מצוירות על ידי CapeWatch מהטקסטורות של Minecraft, בזמן ריצה. אף תמונה לא נשמרת.', 'תצוגת הדמות: skinview3d ו-three.js (רישיון MIT).', 'גופנים: Assistant, Secular One, Pixelify Sans (SIL Open Font License), והגופן המפוקסל של CapeWatch.'],
+      close: 'סגירה' },
+    en: { about: 'About', title: 'CapeWatch', version: 'Version {v}', upToDate: 'This is the latest version.', by: 'By Kayoiz', what: 'Tracks every Minecraft cape on Java and Bedrock, with notifications for new capes and promotions.',
+      contact: 'Contact', donate: 'Support CapeWatch', sources: 'Code and information',
+      src: ['Cape facts: minecraft.wiki and official Mojang announcements, in CapeWatch’s own words.', 'Pictures are drawn by CapeWatch from Minecraft textures while it runs. No picture is stored.', 'The 3D figure: skinview3d and three.js (MIT licence).', 'Fonts: Assistant, Secular One, Pixelify Sans (SIL Open Font License) and CapeWatch’s own pixel font.'],
+      close: 'Close' }
+  };
+  let lang = 'he', theme = 'dark', data, page, version = '?';
+
+  async function load() {
+    if (!data) data = await (await fetch('../data/capewatch.json')).json();
+    if (!page) page = await (await fetch('../app/dist/index.html')).text();
+    try { version = (await (await fetch('../app/src-tauri/tauri.conf.json')).json()).version; } catch {}
+    const fake = `<script>(() => {
+      const mem = new Map([['caperadar:lang', ${JSON.stringify(lang)}]]);
+      Object.defineProperty(window, 'localStorage', { value: { getItem: (k) => mem.has(k) ? mem.get(k) : null, setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k), clear: () => mem.clear(), key: () => null, get length() { return mem.size; } }, configurable: true });
+      window.__TAURI__ = { core: { invoke: async (c) => (c === 'take_greeting' ? 'none' : null) }, event: { listen: async () => () => {} } };
+      const body = ${JSON.stringify(JSON.stringify(data))}, real = window.fetch.bind(window);
+      window.fetch = (u, o) => /api\\.github\\.com|raw\\.githubusercontent\\.com\\/Kayoiz/.test(String(u)) ? Promise.resolve(new Response(body)) : real(u, o);
+      document.documentElement.dataset.theme = ${JSON.stringify(theme)};
+    })();<\/script>`;
+    const f = document.getElementById('app');
+    // not the frame's load event: lazy pictures can hold it back for a long time. Wait for the page itself.
+    const gen = (f.gen = (f.gen || 0) + 1), old = f.contentDocument;
+    const ready = () => { if (f.gen !== gen) return; const w = f.contentWindow; if (w && w.document !== old && w.CapeWatchPage && w.document.querySelector('#grid')) setTimeout(() => { try { addAbout(); } catch (e) { console.error('about preview:', e.message); } }, 600); else setTimeout(ready, 100); };
+    setTimeout(ready, 100);
+    f.srcdoc = page.replace('<head>', '<head><base href="' + new URL('../app/dist/', location.href).href + '">' + fake);
+  }
+
+  // The window, built from the page's own classes (dialog, btn, unofficial, facts) so it matches the details window.
+  function addAbout() {
+    const w = document.getElementById('app').contentWindow, d = w.document, T = TXT[lang];
+    const el = (tag, cls, text) => { const e = d.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    const css = el('style');
+    css.textContent = `#cw-about .ab { display: grid; gap: 14px; padding: 20px; padding-inline-end: 56px; }
+      #cw-about .ab-head { display: flex; gap: 14px; align-items: center; }
+      #cw-about .ab-head img { width: 56px; height: 56px; image-rendering: pixelated; }
+      #cw-about h3 { font-family: var(--font-display); }
+      #cw-about .ab-ver { font-family: var(--font-pixel); color: var(--live); }
+      #cw-about h4 { margin: 0; font: 700 var(--text-sm)/1.3 var(--font-body); color: var(--muted); }
+      #cw-about ul { margin: 0; padding-inline-start: 18px; font-size: var(--text-sm); display: grid; gap: 4px; }
+      #cw-about .ab-actions { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }`;
+    d.head.append(css);
+    const dlg = el('dialog'); dlg.id = 'cw-about'; dlg.dir = lang === 'he' ? 'rtl' : 'ltr'; dlg.lang = lang;
+    const box = el('div', 'ab');
+    const head = el('div', 'ab-head');
+    const icon = el('img'); icon.src = new URL('../app/src-tauri/icons/32x32.png', location.href).href; icon.alt = '';
+    const names = el('div'); names.append(el('h3', null, T.title), el('div', 'ab-ver', T.version.replace('{v}', version)), el('div', 'muted', T.upToDate + ' · ' + T.by));
+    head.append(icon, names);
+    const notice = el('p', 'unofficial');
+    notice.append(el('span', 'mojang-en', 'NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.'), el('span', 'mojang-tr', w.CapeWatchPage.t('unofficialTr')));
+    const actions = el('div', 'ab-actions');
+    const donate = el('a', 'btn', T.donate); donate.href = 'https://paypal.me/Kayoiz'; donate.target = '_blank';
+    const mail = el('span'); const m = el('a', null, 'kayoiz.dev@gmail.com'); m.href = 'mailto:kayoiz.dev@gmail.com'; mail.append(T.contact + ': ', m);
+    actions.append(donate, mail);
+    const src = el('ul'); for (const s of T.src) src.append(el('li', null, s));
+    box.append(head, el('p', 'lede', T.what), notice, actions, el('h4', null, T.sources), src, el('p', 'muted', w.CapeWatchPage.t('legal')));
+    const x = el('button', 'btn ghost dlg-close', '✕'); x.type = 'button'; x.setAttribute('aria-label', T.close); x.onclick = () => dlg.close();
+    dlg.append(box, x); d.body.append(dlg);
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+    // the button next to Settings
+    const b = el('button', 'btn ghost', 'ⓘ ' + T.about); b.type = 'button'; b.onclick = () => dlg.showModal();
+    d.getElementById('title-tools').append(b);
+    dlg.showModal();
+  }
+
+  document.querySelectorAll('[data-lang]').forEach((b) => b.onclick = () => { lang = b.dataset.lang; document.querySelectorAll('[data-lang]').forEach((x) => x.setAttribute('aria-pressed', x === b)); load(); });
+  document.querySelectorAll('[data-theme]').forEach((b) => b.onclick = () => { theme = b.dataset.theme; document.querySelectorAll('[data-theme]').forEach((x) => x.setAttribute('aria-pressed', x === b)); load(); });
+  document.getElementById('open').onclick = () => document.getElementById('app').contentDocument.getElementById('cw-about')?.showModal();
+  load();
+})();
+</script>
+</body>
+</html>

@@ -106,7 +106,10 @@ dd { margin: 0; }
     })();<\/script>`;
     const html = page.replace('<head>', '<head><base href="' + new URL('../app/dist/', location.href).href + '">' + fake);
     const f = document.getElementById('app');
-    f.onload = () => setTimeout(proposal, 600);
+    // not the frame's load event: lazy pictures can hold it back for a long time. Wait for the page itself.
+    const gen = (f.gen = (f.gen || 0) + 1), old = f.contentDocument;
+    const ready = () => { if (f.gen !== gen) return; const w = f.contentWindow; if (w && w.document !== old && w.CapeWatchPage && w.document.querySelector('#grid')) setTimeout(proposal, 600); else setTimeout(ready, 100); };
+    setTimeout(ready, 100);
     f.srcdoc = html;
     const a = document.getElementById('about'); a.replaceChildren();
     for (const [k, v] of [['היום', s.today], ['הצעה', s.prop]]) { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; a.append(dt, dd); }
