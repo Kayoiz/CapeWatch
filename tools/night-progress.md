@@ -18,7 +18,7 @@ How to continue after a stop: read the table, pick the first task that is not "d
 | 8 | Install, uninstall, upgrade | done | 675d1c1. On the test copy: install over the previous build kept saved data, seen events, start with Windows. Uninstall removed install folder, Run entry, capewatch://, Programs entry, installer key, notification settings, shortcuts; only the settings/logs folder stays (Tauri's 'delete app data' box decides). Reinstalled and started hidden for the owner's morning check. |
 | 9 | Display: 125/150/200%, narrow window, 7 languages, glyphs | done | 65351cf. 14 checks (7 languages x 400/1200 px): 13 clean, 1 known (French 400 px: '(estimation)' touches the card border; fix only as a preview). Pixel font is missing Cyrillic, Spanish 'í', Portuguese 'á' (fallback font mid-word). Sharp enough at 100-200 %. Screenshots: _screenshots/night/display/ (local). |
 | 10 | Code cleanup and clear comments | done | 7108b40. runGlow (old CSS-filter title glow) removed; stale comments about the leaf-block title fixed; map of the page script; no behaviour change, all tests pass. Rays: already gone. |
-| 11 | Design consistency review (preview only) | not started | |
+| 11 | Design consistency review (preview only) | done | 1c691ce. 6 measured items, fixes only in tools/preview/fixes-11.css. Open http://localhost:8766/tools/design-review.html (launch.json title-tuner, after node app/build-web.mjs). |
 | 12 | Missing states: offline, failed check, first load (preview only) | not started | |
 | 13 | About window (preview only) | not started | |
 | 14 | Catalog search and filters (proposal + preview) | not started | |
@@ -52,3 +52,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 7 verified.
 - Task 5 done. STOPPED HERE (usage limit). Not started: tasks 11-18, README, change-list draft. Next: task 11.
 - Owner approved the three fixes; done and tested (81/81). Continuing with task 11.
+- Task 11 done (preview only).
