@@ -1,0 +1,10 @@
+{ "batchcomplete": true, "query": { "categorymembers": [
+  { "ns": 0, "title": "Cape" },
+  { "ns": 0, "title": "Known Sample Cape" },
+  { "ns": 0, "title": "Sample Sunrise Cape" },
+  { "ns": 0, "title": "Sample Bedrock Only Cape" },
+  { "ns": 0, "title": "Sample List Of Things" },
+  { "ns": 0, "title": "Sample Broken Page Cape" },
+  { "ns": 0, "title": "Sample Cape/Gallery" },
+  { "ns": 0, "title": "Sample Duplicate Cape (duplicate)" }
+] } }

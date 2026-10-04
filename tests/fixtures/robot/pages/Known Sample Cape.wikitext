@@ -1,0 +1,7 @@
+{{Infobox cape
+| je = yes
+| be = no
+| api = Changed Name On The Wiki
+| texture-id = ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+}}
+Someone edited this invented page: the robot must not copy the change into a cape it already knows.

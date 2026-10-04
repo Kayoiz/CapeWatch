@@ -1,0 +1,11 @@
+{{Infobox cape
+| image = Sample Sunrise Cape.png
+| je = yes
+| be = yes
+| api = '''sunrise'''
+| texture-id = 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+}}
+The '''Sample Sunrise Cape''' is an invented cape used only by the CapeWatch tests.<ref>Made up.</ref>
+
+== Obtaining ==
+Players can [[Redeem|redeem]] it from {{date|2026-10-01}} until {{date|2026-10-31}}.

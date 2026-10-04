@@ -1,0 +1,8 @@
+{{Infobox cape
+| image = Sample Bedrock Only Cape.png
+| je = no
+| be = yes
+| api = 
+| texture-id = 
+}}
+An invented Bedrock cape with no texture id and no API name, for the tests.
