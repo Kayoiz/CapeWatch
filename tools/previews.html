@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CapeWatch: תצוגות מקדימות</title>
+<!-- One page with links to every preview from the night work (Parts B and C). Nothing here changes the app.
+     Open through the local server (launch.json "title-tuner"): http://localhost:8766/tools/previews.html,
+     after `node app/build-web.mjs`. -->
+<link rel="stylesheet" href="../assets/fonts/google/fonts.css">
+<style>
+:root { --bg: #171916; --panel: #20231F; --fg: #E8EBE3; --muted: #A2A99C; --line: #343831; --accent: #6CC349; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 Assistant, "Segoe UI", system-ui, sans-serif; }
+.wrap { max-width: 900px; margin-inline: auto; padding: 32px 16px 64px; display: grid; gap: 18px; }
+h1, h2 { font-family: "Secular One", Assistant, sans-serif; font-weight: 400; margin: 0; } h1 { font-size: 2rem; } h2 { font-size: 1.2rem; color: var(--muted); }
+a.card { display: grid; gap: 4px; padding: 14px 16px; background: var(--panel); color: var(--fg); text-decoration: none; box-shadow: inset 0 0 0 2px var(--line); }
+a.card:hover, a.card:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); outline: none; }
+a.card b { color: var(--accent); } a.card span { color: var(--muted); font-size: 15px; }
+p { margin: 0; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>תצוגות מקדימות להחלטה שלך</h1>
+  <p>שום דבר כאן לא נמצא בתוכנה. מה שתאשר, אכניס. ההצעות הכתובות: <code>tools/ideas.md</code>.</p>
+  <h2>חלק ב': עיצוב</h2>
+  <a class="card" href="design-review.html"><b>11. סקירת אחידות</b><span>6 בעיות שנמדדו (גבהים, גדלי טקסט, תגיות, ריווחים, חלונות, פינות), לפני ואחרי, ותצוגה חיה עם מתגים.</span></a>
+  <a class="card" href="preview-states.html"><b>12. מצבים חסרים</b><span>טעינה ראשונה, בלי אינטרנט, בדיקה שנכשלה, רובוט שנעצר: היום מול ההצעה.</span></a>
+  <a class="card" href="preview-about.html"><b>13. חלון "אודות"</b><span>גרסה, ההודעה של Mojang, יצירת קשר, תרומה ורישיונות.</span></a>
+  <h2>חלק ג': רעיונות</h2>
+  <a class="card" href="preview-catalog.html"><b>14. חיפוש וסינון</b><span>חיפוש בתיאור ובסוג, סינון מהיר, שנה, ניקוי, מקלדת.</span></a>
+  <a class="card" href="preview-discord.html"><b>15. התראה לדיסקורד</b><span>ההגדרה, איך ההודעה נראית, וה-JSON שנשלח (בתצוגה לא נשלח כלום).</span></a>
+  <a class="card" href="preview-toast.html"><b>16. תמונה בהתראת Windows</b><span>שלוש צורות עם התמונה האמיתית ש-CapeWatch מצייר.</span></a>
+  <a class="card" href="preview-calendar.html"><b>17. ספירה לאחור ויומן</b><span>שעות ודקות ביממה האחרונה, שעת סיום מדויקת, קובץ יומן ו-Google Calendar.</span></a>
+  <h2>כלים קיימים</h2>
+  <a class="card" href="buttons-demo.html"><b>כפתורים</b><span>כל סוגי הכפתורים בכל המצבים (אושר).</span></a>
+  <a class="card" href="tune-title.html"><b>כוונון הכותרת</b><span>האפקט והצליל של הפתיחה.</span></a>
+</div>
+</body>
+</html>
