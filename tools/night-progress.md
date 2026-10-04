@@ -17,7 +17,7 @@ How to continue after a stop: read the table, pick the first task that is not "d
 | 7 | Security: only needed addresses, data text cannot run code | code done, checking on install | 7ee7695. CSP (only needed addresses), opener limited to wiki/minecraft.net/paypal/mailto, HTTP plugin limited to the two Mojang APIs, blocks logged. 4 Edge tests incl. HTML/script tricks in every data field. List: tools/security.md. Check on the installed build: task 8. |
 | 8 | Install, uninstall, upgrade | not started | |
 | 9 | Display: 125/150/200%, narrow window, 7 languages, glyphs | done | 65351cf. 14 checks (7 languages x 400/1200 px): 13 clean, 1 known (French 400 px: '(estimation)' touches the card border; fix only as a preview). Pixel font is missing Cyrillic, Spanish 'í', Portuguese 'á' (fallback font mid-word). Sharp enough at 100-200 %. Screenshots: _screenshots/night/display/ (local). |
-| 10 | Code cleanup and clear comments | not started | |
+| 10 | Code cleanup and clear comments | done | 7108b40. runGlow (old CSS-filter title glow) removed; stale comments about the leaf-block title fixed; map of the page script; no behaviour change, all tests pass. Rays: already gone. |
 | 11 | Design consistency review (preview only) | not started | |
 | 12 | Missing states: offline, failed check, first load (preview only) | not started | |
 | 13 | About window (preview only) | not started | |
@@ -42,3 +42,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 6 code committed (cargo check OK).
 - Task 7 code committed. All tests 67/67.
 - Task 9 done. Task 5 measured on the installed new build: hidden ~0.3-0.5 s CPU per minute, GPU 0 (figure not drawn), memory flat ~338 MB for 13+ min. Installed real 1.0.5 hidden: ~77 s CPU per minute (more than one core).
+- Task 10 done. Part A finished except the uninstall check of task 8 (next).
