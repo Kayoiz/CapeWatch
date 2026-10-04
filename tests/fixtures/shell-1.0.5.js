@@ -1,3 +1,5 @@
+// app/shell.js exactly as released in CapeWatch 1.0.5 (git tag v1.0.5). The update tests run it first, then today's shell
+// on the same storage, like a real update does. Do not edit.
 // CapeWatch Windows app shell. Loaded before the page script (see build-web.mjs).
 // - Data: pulls data/capewatch.json from the public repo on start and every 30 minutes, keeps the last copy
 //   for offline use, and feeds it to the page through the same small db interface the page already uses.
@@ -6,9 +8,6 @@
 // - Notifications: Windows notifications for new events, filtered by the three settings checkboxes.
 // - Settings: notifications, start with Windows, and the figure's skin by Minecraft username.
 window.__CAPEWATCH_APP__ = true;
-// The title stays hidden until the opening effect starts (or until it is clear there is none), so the window
-// never shows the plain title for a moment first. See cape-radar.html (.cw-title-wait).
-document.documentElement.classList.add('cw-title-wait');
 (() => {
   // The GitHub API returns the current file. raw.githubusercontent.com is only the fallback: it caches files for
   // up to 5 minutes, so "Check now" could get an old copy from there (the API allows 60 calls an hour).
@@ -28,7 +27,7 @@ document.documentElement.classList.add('cw-title-wait');
   // Mirror the page's own [Cape3D]/[Title]/[Cards] console lines into the log file too.
   for (const k of ['info', 'error']) {
     const orig = console[k].bind(console);
-    console[k] = (...a) => { orig(...a); if (typeof a[0] === 'string' && /^\[(Cape3D|Title|Cards|Sound)\]/.test(a[0])) { try { invoke('plugin:log|log', { level: LEVEL[k], message: a.map(String).join(' ') })?.catch(() => {}); } catch {} } };
+    console[k] = (...a) => { orig(...a); if (typeof a[0] === 'string' && /^\[(Cape3D|Title|Cards)\]/.test(a[0])) { try { invoke('plugin:log|log', { level: LEVEL[k], message: a.map(String).join(' ') })?.catch(() => {}); } catch {} } };
   }
   const store = {
     get(k, d) { try { const v = localStorage.getItem('capewatch:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -45,15 +44,6 @@ document.documentElement.classList.add('cw-title-wait');
     const ev = docs(data.events); ev.docs.sort((a, b) => String(b.data().at).localeCompare(String(a.data().at)));
     for (const cb of subs.events) cb(ev);
     for (const cb of subs.status) cb({ exists: true, data: () => data.status });
-    if (subs.capes.length) openPendingCape();
-  }
-  // CapeWatch was started by a click on one of its notifications while it was closed: open that cape once the
-  // capes are on the page.
-  let pendingAsked = false;
-  async function openPendingCape() {
-    if (pendingAsked) return; pendingAsked = true;
-    try { const id = await invoke('take_pending_cape'); if (id) setTimeout(() => openCape(id, 'notification click, app was closed'), 0); }
-    catch (e) { log('warn', 'open cape: ' + (e.message || e)); }
   }
   const collection = (name) => ({
     limit() { return this; }, orderBy() { return this; },
@@ -79,58 +69,43 @@ document.documentElement.classList.add('cw-title-wait');
       }
       const next = await r.json(); next.__via = via;
       if (!next || !next.capes) throw new Error('bad data file');
-      // Same as what the page already shows (the saved copy at start, most 30-minute checks): nothing to redraw.
-      // Redrawing the lists replaces every button, and a click that lands during it is lost.
-      const plain = (d) => JSON.stringify({ ...d, __via: null });
-      const same = !!data && plain(data) === plain(next);
       data = next; store.set('data', next);
-      log('info', 'data: loaded (' + reason + ', via ' + next.__via + '),', Object.keys(next.capes).length + ' capes, robot checked ' + (next.status?.lastCheckAt || '?') + (same ? ', unchanged' : ''));
-      if (!same) emit();
+      log('info', 'data: loaded (' + reason + ', via ' + next.__via + '),', Object.keys(next.capes).length + ' capes, robot checked ' + (next.status?.lastCheckAt || '?'));
+      emit();
       notify(next);
     } catch (e) {
-      log('warn', 'data: fetch failed (' + reason + '): ' + (e.message || e) + (data ? ' - showing the saved copy' : ''));   // already on the page
+      log('warn', 'data: fetch failed (' + reason + '): ' + (e.message || e) + (data ? ' - showing the saved copy' : ''));
+      if (data) emit();
     }
   }
 
   // ---------- texts the shell shows (7 languages) ----------
   const UI = {
-    en: { invertDrag: 'Reverse the figure’s drag direction', soundOnOpen: 'Sound when CapeWatch opens', settings: 'Settings', notif: 'Notifications', nNew: 'New cape', nOpen: 'Promotion opened', nEnding: 'Promotion ending soon', autostart: 'Start CapeWatch with Windows', skin: 'My skin (Minecraft username)', skinHint: 'Empty = the default skin.', save: 'Save', close: 'Close', skinOk: 'Skin loaded.', skinBad: 'Username not found.', EV: { new: 'New cape', announced: 'Announced', available: 'Promotion opened', ending: 'Ending soon' } },
-    he: { invertDrag: 'היפוך כיוון הסיבוב של הדמות בגרירה', soundOnOpen: 'צליל כשפותחים את CapeWatch', settings: 'הגדרות', notif: 'התראות', nNew: 'גלימה חדשה', nOpen: 'מבצע שנפתח', nEnding: 'מבצע שעומד להיגמר', autostart: 'להפעיל את CapeWatch עם Windows', skin: 'הסקין שלי (שם משתמש ב-Minecraft)', skinHint: 'ריק = הסקין המקורי.', save: 'שמירה', close: 'סגירה', skinOk: 'הסקין נטען.', skinBad: 'שם המשתמש לא נמצא.', EV: { new: 'גלימה חדשה', announced: 'הוכרזה', available: 'המבצע נפתח', ending: 'עומד להיגמר' } },
-    es: { invertDrag: 'Invertir el giro de la figura al arrastrar', soundOnOpen: 'Sonido al abrir CapeWatch', settings: 'Ajustes', notif: 'Notificaciones', nNew: 'Capa nueva', nOpen: 'Promoción abierta', nEnding: 'Promoción por terminar', autostart: 'Iniciar CapeWatch con Windows', skin: 'Mi skin (usuario de Minecraft)', skinHint: 'Vacío = la skin por defecto.', save: 'Guardar', close: 'Cerrar', skinOk: 'Skin cargada.', skinBad: 'No se encontró el usuario.', EV: { new: 'Capa nueva', announced: 'Anunciada', available: 'Promoción abierta', ending: 'Termina pronto' } },
-    pt: { invertDrag: 'Inverter o giro da figura ao arrastar', soundOnOpen: 'Som ao abrir o CapeWatch', settings: 'Configurações', notif: 'Notificações', nNew: 'Capa nova', nOpen: 'Promoção aberta', nEnding: 'Promoção acabando', autostart: 'Iniciar o CapeWatch com o Windows', skin: 'Minha skin (usuário do Minecraft)', skinHint: 'Vazio = a skin padrão.', save: 'Salvar', close: 'Fechar', skinOk: 'Skin carregada.', skinBad: 'Usuário não encontrado.', EV: { new: 'Capa nova', announced: 'Anunciada', available: 'Promoção aberta', ending: 'Acaba em breve' } },
-    fr: { invertDrag: 'Inverser la rotation du personnage au glisser', soundOnOpen: 'Son à l’ouverture de CapeWatch', settings: 'Réglages', notif: 'Notifications', nNew: 'Nouvelle cape', nOpen: 'Promotion ouverte', nEnding: 'Promotion bientôt finie', autostart: 'Lancer CapeWatch avec Windows', skin: 'Mon skin (pseudo Minecraft)', skinHint: 'Vide = le skin par défaut.', save: 'Enregistrer', close: 'Fermer', skinOk: 'Skin chargé.', skinBad: 'Pseudo introuvable.', EV: { new: 'Nouvelle cape', announced: 'Annoncée', available: 'Promotion ouverte', ending: 'Bientôt terminée' } },
-    de: { invertDrag: 'Drehrichtung der Figur beim Ziehen umkehren', soundOnOpen: 'Ton beim Öffnen von CapeWatch', settings: 'Einstellungen', notif: 'Benachrichtigungen', nNew: 'Neuer Umhang', nOpen: 'Aktion gestartet', nEnding: 'Aktion endet bald', autostart: 'CapeWatch mit Windows starten', skin: 'Mein Skin (Minecraft-Name)', skinHint: 'Leer = der Standard-Skin.', save: 'Speichern', close: 'Schließen', skinOk: 'Skin geladen.', skinBad: 'Name nicht gefunden.', EV: { new: 'Neuer Umhang', announced: 'Angekündigt', available: 'Aktion gestartet', ending: 'Endet bald' } },
-    ru: { invertDrag: 'Обратное вращение фигуры при перетаскивании', soundOnOpen: 'Звук при открытии CapeWatch', settings: 'Настройки', notif: 'Уведомления', nNew: 'Новый плащ', nOpen: 'Акция открыта', nEnding: 'Акция скоро закончится', autostart: 'Запускать CapeWatch с Windows', skin: 'Мой скин (ник в Minecraft)', skinHint: 'Пусто = скин по умолчанию.', save: 'Сохранить', close: 'Закрыть', skinOk: 'Скин загружен.', skinBad: 'Ник не найден.', EV: { new: 'Новый плащ', announced: 'Анонс', available: 'Акция открыта', ending: 'Скоро закончится' } }
+    en: { settings: 'Settings', notif: 'Notifications', nNew: 'New cape', nOpen: 'Promotion opened', nEnding: 'Promotion ending soon', autostart: 'Start CapeWatch with Windows', skin: 'My skin (Minecraft username)', skinHint: 'Empty = the default skin.', save: 'Save', close: 'Close', skinOk: 'Skin loaded.', skinBad: 'Username not found.', EV: { new: 'New cape', announced: 'Announced', available: 'Promotion opened', ending: 'Ending soon' } },
+    he: { settings: 'הגדרות', notif: 'התראות', nNew: 'גלימה חדשה', nOpen: 'מבצע שנפתח', nEnding: 'מבצע שעומד להיגמר', autostart: 'להפעיל את CapeWatch עם Windows', skin: 'הסקין שלי (שם משתמש ב-Minecraft)', skinHint: 'ריק = הסקין המקורי.', save: 'שמירה', close: 'סגירה', skinOk: 'הסקין נטען.', skinBad: 'שם המשתמש לא נמצא.', EV: { new: 'גלימה חדשה', announced: 'הוכרזה', available: 'המבצע נפתח', ending: 'עומד להיגמר' } },
+    es: { settings: 'Ajustes', notif: 'Notificaciones', nNew: 'Capa nueva', nOpen: 'Promoción abierta', nEnding: 'Promoción por terminar', autostart: 'Iniciar CapeWatch con Windows', skin: 'Mi skin (usuario de Minecraft)', skinHint: 'Vacío = la skin por defecto.', save: 'Guardar', close: 'Cerrar', skinOk: 'Skin cargada.', skinBad: 'No se encontró el usuario.', EV: { new: 'Capa nueva', announced: 'Anunciada', available: 'Promoción abierta', ending: 'Termina pronto' } },
+    pt: { settings: 'Configurações', notif: 'Notificações', nNew: 'Capa nova', nOpen: 'Promoção aberta', nEnding: 'Promoção acabando', autostart: 'Iniciar o CapeWatch com o Windows', skin: 'Minha skin (usuário do Minecraft)', skinHint: 'Vazio = a skin padrão.', save: 'Salvar', close: 'Fechar', skinOk: 'Skin carregada.', skinBad: 'Usuário não encontrado.', EV: { new: 'Capa nova', announced: 'Anunciada', available: 'Promoção aberta', ending: 'Acaba em breve' } },
+    fr: { settings: 'Réglages', notif: 'Notifications', nNew: 'Nouvelle cape', nOpen: 'Promotion ouverte', nEnding: 'Promotion bientôt finie', autostart: 'Lancer CapeWatch avec Windows', skin: 'Mon skin (pseudo Minecraft)', skinHint: 'Vide = le skin par défaut.', save: 'Enregistrer', close: 'Fermer', skinOk: 'Skin chargé.', skinBad: 'Pseudo introuvable.', EV: { new: 'Nouvelle cape', announced: 'Annoncée', available: 'Promotion ouverte', ending: 'Bientôt terminée' } },
+    de: { settings: 'Einstellungen', notif: 'Benachrichtigungen', nNew: 'Neuer Umhang', nOpen: 'Aktion gestartet', nEnding: 'Aktion endet bald', autostart: 'CapeWatch mit Windows starten', skin: 'Mein Skin (Minecraft-Name)', skinHint: 'Leer = der Standard-Skin.', save: 'Speichern', close: 'Schließen', skinOk: 'Skin geladen.', skinBad: 'Name nicht gefunden.', EV: { new: 'Neuer Umhang', announced: 'Angekündigt', available: 'Aktion gestartet', ending: 'Endet bald' } },
+    ru: { settings: 'Настройки', notif: 'Уведомления', nNew: 'Новый плащ', nOpen: 'Акция открыта', nEnding: 'Акция скоро закончится', autostart: 'Запускать CapeWatch с Windows', skin: 'Мой скин (ник в Minecraft)', skinHint: 'Пусто = скин по умолчанию.', save: 'Сохранить', close: 'Закрыть', skinOk: 'Скин загружен.', skinBad: 'Ник не найден.', EV: { new: 'Новый плащ', announced: 'Анонс', available: 'Акция открыта', ending: 'Скоро закончится' } }
   };
   const lang = () => (window.CapeWatchPage?.lang?.() || store.get('lang', 'en'));
   const ui = () => UI[lang()] || UI.en;
 
   // ---------- notifications ----------
-  const settings = Object.assign({ notifyNew: true, notifyOpen: false, notifyEnding: false, autostart: true, soundOnOpen: true, invertDrag: false, skinName: '' }, store.get('settings', {}));
+  const settings = Object.assign({ notifyNew: true, notifyOpen: false, notifyEnding: false, autostart: true, skinName: '' }, store.get('settings', {}));
   const saveSettings = () => store.set('settings', settings);
-  // "Reverse drag direction": the 3D figure turns the other way when dragged sideways (cape-radar.html).
-  const applyDrag = () => window.CapeWatchPage?.cape3d?.setInvertDrag?.(settings.invertDrag);
   const SETTING_FOR = { new: 'notifyNew', announced: 'notifyNew', available: 'notifyOpen', ending: 'notifyEnding' };
-  // Only news gets a notification. After a long time without CapeWatch (PC off, app closed, an update) the data
-  // can hold many events the user has not seen: those older than a week are only written to the log, and so are
-  // "opened" / "ending soon" events of a promotion that is already over.
-  const NOTIFY_MAX_AGE_MS = 7 * 24 * 3600e3;
   function notify(d) {
     const ids = Object.keys(d.events || {});
     const seenBefore = store.get('seen', null);
     store.set('seen', ids);
     if (!seenBefore) { log('info', 'notify: first run, ' + ids.length + ' existing events marked as seen'); return; }
     const seen = new Set(seenBefore);
-    const fresh = ids.filter((x) => !seen.has(x) && d.events[x])
-      .sort((a, b) => String(d.events[a].at).localeCompare(String(d.events[b].at)));   // oldest first, newest on top
-    for (const id of fresh) {
+    for (const id of ids.filter((x) => !seen.has(x))) {
       const e = d.events[id], key = SETTING_FOR[e.type];
       if (!key) { log('info', 'notify: ' + id + ' (' + e.type + ') has no notification type'); continue; }
       if (!settings[key]) { log('info', 'notify: ' + id + ' skipped, "' + key + '" is off'); continue; }
-      const age = Date.now() - Date.parse(e.at);
-      if (age > NOTIFY_MAX_AGE_MS) { log('info', 'notify: ' + id + ' skipped, too old (' + Math.round(age / 86400e3) + ' days)'); continue; }
-      const now = d.capes?.[e.capeId]?.availability;
-      if ((e.type === 'available' || e.type === 'ending') && now && now !== 'available') { log('info', 'notify: ' + id + ' skipped, the promotion is already ' + now); continue; }
       send(e);
     }
   }
@@ -141,6 +116,7 @@ document.documentElement.classList.add('cw-title-wait');
     try {
       // The app's own command: clicking this notification opens the window on the cape (see main.rs).
       await invoke('notify_cape', { title, body, capeId: e.capeId || '' });
+      store.set('lastNotified', { id: e.capeId, at: Date.now() });
       log('info', 'notify: sent', e.type, e.capeId);
     } catch (err) { log('error', 'notify: failed', e.capeId, err.message || err); }
   }
@@ -221,14 +197,7 @@ document.documentElement.classList.add('cw-title-wait');
     if (emissive) { mat.emissive.setRGB(1, 1, 1); mat.emissiveMap = mat.map; mat.emissiveIntensity = 0.15; }
     mat.needsUpdate = true;
   }
-  // Drawing the card pictures is heavy: it waits while the opening effect plays (and until it is known whether
-  // one will play), so the effect runs smoothly.
-  let pumpHoldUntil = Infinity;
-  const holdPictures = (ms) => { pumpHoldUntil = performance.now() + ms; setTimeout(pump, ms + 50); };   // resumes by itself
-  const releasePictures = () => { pumpHoldUntil = 0; pump(); };
   async function pump() {
-    const wait = pumpHoldUntil - performance.now();
-    if (wait > 0) { if (wait < Infinity) setTimeout(pump, wait + 50); return; }
     if (busy || !queue.length || !window.skinview3d) return;
     busy = true;
     try {
@@ -247,7 +216,7 @@ document.documentElement.classList.add('cw-title-wait');
           let has = false; for (let i = 3; i < px.length; i += 4) if (px[i] > 0) { has = true; break; }
           if (has) { p.backEquipment = 'elytra'; frame(gen, p.elytra); R.render(v.scene, v.camera); PICS.set(id + '|elytra', out.toDataURL('image/png')); }
           else PICS.set(id + '|elytra', null);
-          dispatchEvent(new CustomEvent('capeart', { detail: id }));   // the page puts it into that cape's cards
+          dispatchEvent(new Event('capeart'));
         } catch (e) { PICS.set(id + '|cape', null); PICS.set(id + '|elytra', null); log('warn', 'pictures: ' + id + ' failed: ' + (e.message || e)); }
       }
     } finally { busy = false; }
@@ -261,13 +230,11 @@ document.documentElement.classList.add('cw-title-wait');
       d.innerHTML = `<form method="dialog" class="cw-set">
         <h3 data-k="settings"></h3>
         <fieldset><legend data-k="notif"></legend>
-          <label class="cw-opt"><input type="checkbox" class="cw-box" name="notifyNew"> <span data-k="nNew"></span></label>
-          <label class="cw-opt"><input type="checkbox" class="cw-box" name="notifyOpen"> <span data-k="nOpen"></span></label>
-          <label class="cw-opt"><input type="checkbox" class="cw-box" name="notifyEnding"> <span data-k="nEnding"></span></label>
+          <label><input type="checkbox" name="notifyNew"> <span data-k="nNew"></span></label>
+          <label><input type="checkbox" name="notifyOpen"> <span data-k="nOpen"></span></label>
+          <label><input type="checkbox" name="notifyEnding"> <span data-k="nEnding"></span></label>
         </fieldset>
-        <label class="cw-opt"><input type="checkbox" class="cw-switch" role="switch" name="autostart"> <span data-k="autostart"></span></label>
-        <label class="cw-opt"><input type="checkbox" class="cw-switch" role="switch" name="soundOnOpen"> <span data-k="soundOnOpen"></span></label>
-        <label class="cw-opt"><input type="checkbox" class="cw-switch" role="switch" name="invertDrag"> <span data-k="invertDrag"></span></label>
+        <label><input type="checkbox" name="autostart"> <span data-k="autostart"></span></label>
         <label class="cw-skin"><span data-k="skin"></span><input type="text" name="skinName" maxlength="16" autocomplete="off" spellcheck="false"><small data-k="skinHint"></small></label>
         <p class="cw-msg" aria-live="polite"></p>
         <div class="cw-actions"><button type="button" class="btn" data-k="save" value="save"></button><button class="btn ghost" data-k="close" value="close"></button></div>
@@ -279,16 +246,15 @@ document.documentElement.classList.add('cw-title-wait');
         .cw-set legend{font-weight:700;margin-bottom:6px} .cw-set label{display:flex;gap:8px;align-items:center} .cw-skin{display:grid!important;gap:4px!important}
         .cw-skin input{font:inherit;padding:7px 10px;background:var(--bg);color:var(--fg);border:0;box-shadow:inset 2px 2px 0 var(--bevel-lo),inset -2px -2px 0 var(--bevel-hi)}
         .cw-skin small,.cw-msg{color:var(--muted);font-size:var(--text-sm);margin:0} .cw-actions{display:flex;gap:8px;justify-content:flex-end}
-`;
+        #cw-open-settings{margin-inline-start:8px}`;
       document.head.append(st);
       d.querySelector('[value=save]').addEventListener('click', async () => {
         const f = d.querySelector('form');
-        for (const k of ['notifyNew', 'notifyOpen', 'notifyEnding', 'soundOnOpen', 'invertDrag']) settings[k] = f[k].checked;
-        applyDrag();
+        for (const k of ['notifyNew', 'notifyOpen', 'notifyEnding']) settings[k] = f[k].checked;
         const name = f.skinName.value.trim(); const changed = name !== settings.skinName; settings.skinName = name; saveSettings();
         settings.autostart = f.autostart.checked; saveSettings();
         try { const A = T?.autostart; if (A) { const on = await A.isEnabled(); if (f.autostart.checked && !on) await A.enable(); if (!f.autostart.checked && on) await A.disable(); } } catch (e) { log('warn', 'autostart: ' + (e.message || e)); }
-        log('info', 'settings: saved', { notifyNew: settings.notifyNew, notifyOpen: settings.notifyOpen, notifyEnding: settings.notifyEnding, soundOnOpen: settings.soundOnOpen, invertDrag: settings.invertDrag, autostart: f.autostart.checked, skin: name || 'default' });
+        log('info', 'settings: saved', { notifyNew: settings.notifyNew, notifyOpen: settings.notifyOpen, notifyEnding: settings.notifyEnding, autostart: f.autostart.checked, skin: name || 'default' });
         const msg = d.querySelector('.cw-msg'); msg.textContent = '';
         if (changed) { const ok = await applySkin(name); msg.textContent = ok ? ui().skinOk : ui().skinBad; }
         if (!changed) d.close();
@@ -297,7 +263,7 @@ document.documentElement.classList.add('cw-title-wait');
     const L = ui(); d.dir = lang() === 'he' ? 'rtl' : 'ltr';
     d.querySelectorAll('[data-k]').forEach((el) => { el.textContent = L[el.dataset.k]; });
     const f = d.querySelector('form');
-    for (const k of ['notifyNew', 'notifyOpen', 'notifyEnding', 'soundOnOpen', 'invertDrag']) f[k].checked = !!settings[k];
+    for (const k of ['notifyNew', 'notifyOpen', 'notifyEnding']) f[k].checked = !!settings[k];
     f.skinName.value = settings.skinName || ''; d.querySelector('.cw-msg').textContent = '';
     (T?.autostart?.isEnabled?.() || Promise.resolve(false)).then((on) => { f.autostart.checked = !!on; }).catch(() => {});
     d.showModal();
@@ -317,49 +283,27 @@ document.documentElement.classList.add('cw-title-wait');
       const b = document.createElement('button'); b.type = 'button'; b.className = 'btn ghost'; b.id = 'cw-open-settings';
       const label = () => { b.textContent = '⚙ ' + ui().settings; };
       label(); document.getElementById('f-lang')?.addEventListener('change', () => setTimeout(label, 0));
-      b.addEventListener('click', settingsDialog); (document.getElementById('title-tools') || pick.parentNode).append(b);   // next to the language picker
+      b.addEventListener('click', settingsDialog); pick.after(b);
     }
     // the page script has run by now: re-check the queue, apply the saved skin
-    setTimeout(() => { pump(); applyDrag(); if (settings.skinName) applySkin(settings.skinName); }, 0);
+    setTimeout(() => { pump(); if (settings.skinName) applySkin(settings.skinName); }, 0);
   });
   T?.event?.listen?.('check-now', () => refresh('tray'));
   T?.event?.listen?.('open-settings', () => settingsDialog());
-  // Notification clicked while CapeWatch runs (main.rs sends 'open-cape'): show that cape.
+  // Notification clicked: show that cape. If the notification was clicked later in the notification centre,
+  // Windows starts the app again instead, so the running app opens the last notified cape (once, within a day).
   function openCape(id, why) {
+    store.set('lastNotified', null);
     const page = window.CapeWatchPage;
     if (!id || !page?.openDetail) { log('warn', 'open cape: not possible', id, why); return; }
     document.querySelectorAll('dialog[open]').forEach((d) => d.close());
     page.openDetail(id); log('info', 'open cape: ' + id + ' (' + why + ')');
   }
-  // The opening effect plays once per run, the first time the user sees the window (main.rs decides): the title
-  // effect and, unless switched off, the opening sound. "Reduce animations" in Windows: no visual effect (the
-  // page checks), the plain title.
-  const revealTitle = () => document.documentElement.classList.remove('cw-title-wait');
-  async function greet(why) {
-    const page = window.CapeWatchPage;
-    if (!page?.glow) { log('warn', 'greet: page not ready (' + why + ')'); revealTitle(); releasePictures(); return; }
-    holdPictures(((window.CapeWatchFX?.SCENE?.duration) || 4) * 1000 + 300);
-    log('info', 'greet: ' + why);
-    try { await page.glow(); } finally { revealTitle(); }   // the effect hides the image itself while it plays
-    // the sound starts with the effect (glow() resolves once the effect is running), at its place on the timeline
-    if (settings.soundOnOpen) page.holyChord(); else log('info', 'greet: sound is off in the settings');
-  }
-  T?.event?.listen?.('greet', () => greet('window opened for the first time in this run'));
-  // The window is hidden in the tray, minimized or shown again (main.rs): the 3D figure only draws while it can be seen.
-  const setVisible = (v) => window.CapeWatchPage?.cape3d?.setVisible?.(v);
-  T?.event?.listen?.('window-visible', (ev) => setVisible(!!ev.payload));
-  // As early as the page is ready (not after every picture has loaded): the effect waits only for the title image.
-  addEventListener('DOMContentLoaded', async () => {
-    let mode = 'none';
-    try { mode = (await invoke('take_greeting')) || 'none'; } catch (e) { log('warn', 'greet: ' + (e.message || e)); }
-    if (!T) mode = 'none';
-    log('info', 'opening effect: ' + mode);
-    if (mode === 'wait') setTimeout(() => setVisible(false), 0);   // started hidden with Windows: nothing to draw yet
-    if (settings.soundOnOpen && mode !== 'none') window.CapeWatchFX?.prepareSound(window.CapeWatchFX.SCENE.sound);
-    if (mode === 'greet') greet('CapeWatch started by the user');
-    else { releasePictures(); if (mode !== 'wait') revealTitle(); }   // 'wait': title hidden until the first open
+  T?.event?.listen?.('open-cape', (ev) => openCape(ev.payload, 'notification click'));
+  T?.event?.listen?.('second-start', () => {
+    const last = store.get('lastNotified', null);
+    if (last && Date.now() - last.at < 24 * 3600 * 1000) openCape(last.id, 'notification centre');
   });
-  T?.event?.listen?.('open-cape', (ev) => { revealTitle(); openCape(ev.payload, 'notification click, app was running'); });
   log('info', 'start: apis', { notification: !!T?.notification, http: !!T?.http?.fetch, autostart: !!T?.autostart, event: !!T?.event });
   // Start with Windows: the choice is kept in the app's settings and put back if Windows lost it
   // (reinstalling the app removes the entry from Windows' startup list).
