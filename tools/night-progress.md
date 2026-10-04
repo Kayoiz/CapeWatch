@@ -12,7 +12,7 @@ How to continue after a stop: read the table, pick the first task that is not "d
 | 2 | Automated tests, one command | done | 9630c6b. `node tests/run.mjs` (or `npm test`). 22 tests pass: notifications, first run, no duplicates, settings dialog in headless Edge. See tests/README.md. |
 | 3 | Robot tests with saved sample files | done | 862afe6. 17 robot tests on invented sample answers (tests/fixtures/robot). Fixed 2 robot bugs: a promotion that opened and closed between checks stayed 'announced'; unknown values from GitHub Models were written to the data file. Not pushed, so the robot on GitHub is unchanged. |
 | 4 | Resilience (offline, rate limit, bad data, textures) | done | 61957dd. Data files are checked before being shown or saved (a partial file used to be saved and could stop every later start). Faster retry after a failed check (1/2/5/10/15 min) and at once when back online. 20 tests (Node + Edge), including blocked textures. |
-| 5 | Long runs: memory, CPU, nothing drawn while hidden | code done, measuring | 5d1653f. Hidden window: no drawing (already) and now also no cape swaps / log lines. 2 Edge tests (fail on old code, pass now). Real-build measurement: pending (after the task 8 build). |
+| 5 | Long runs: memory, CPU, nothing drawn while hidden | done | 1b7636b. Installed new build, hidden: ~0.3-0.5 s CPU/min, GPU 0 s (figure not drawn), memory flat ~338 MB for 30 min. Long sample (3 h, every 5 min) in scratchpad samples-soak.csv. Installed real 1.0.5 hidden: ~77 s CPU/min (over one core); the update fixes it. |
 | 6 | Logs: size limit, old logs deleted | done | 2671c42. Verified on the installed test build: a 1.13 MB log was renamed with the date at start, a new log began, only the 2 newest old logs kept (3 planted, oldest deleted). |
 | 7 | Security: only needed addresses, data text cannot run code | done | 7ee7695. CSP, narrower opener/HTTP scopes, blocks logged. Verified on the installed test build with the window open: page, pictures, figure, details window all work, no 'blocked' line in the log. List: tools/security.md. |
 | 8 | Install, uninstall, upgrade | done | 675d1c1. On the test copy: install over the previous build kept saved data, seen events, start with Windows. Uninstall removed install folder, Run entry, capewatch://, Programs entry, installer key, notification settings, shortcuts; only the settings/logs folder stays (Tauri's 'delete app data' box decides). Reinstalled and started hidden for the owner's morning check. |
@@ -30,7 +30,8 @@ How to continue after a stop: read the table, pick the first task that is not "d
 
 ## Skipped: needs the owner
 
-(nothing yet)
+
+- Needs the owner: (1) visible fix for French '(estimation)' at 400 px; (2) pixel font lacks Cyrillic, Spanish í, Portuguese á; (3) optionally ship the Google fonts inside the app (tools/security.md); (4) merge the robot fixes to main (robot on GitHub unchanged until then).
 
 ## Log
 
@@ -46,3 +47,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 8 done. Tasks 6 and 7 verified on the installed build: log rotation (1 MB, 2 old kept, older deleted) and nothing blocked by the security policy with the window open.
 - Task 6 verified.
 - Task 7 verified.
+- Task 5 done. STOPPED HERE (usage limit). Not started: tasks 11-18, README, change-list draft. Next: task 11.
