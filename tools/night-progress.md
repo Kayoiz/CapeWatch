@@ -24,7 +24,7 @@ How to continue after a stop: read the table, pick the first task that is not "d
 | 14 | Catalog search and filters (proposal + preview) | done | 8066b79. Proposal in tools/ideas.md, prototype tools/preview-catalog.html (checked: TikTok 5, MINECON 7, volunteers 3, quick filters). |
 | 15 | Discord webhook (proposal + preview) | done | 92e05c0. Proposal in tools/ideas.md, prototype tools/preview-discord.html (nothing sent). Checked: address validation, mentions off, formatting escaped. |
 | 16 | Cape picture inside the Windows notification (proposal + preview) | done | 9f21864. Proposal in tools/ideas.md, prototype tools/preview-toast.html (3 placements with the real drawn picture, toast XML). |
-| 17 | Countdown and add to calendar (proposal + preview) | not started | |
+| 17 | Countdown and add to calendar (proposal + preview) | done | 8aa2869. Proposal in tools/ideas.md, prototype tools/preview-calendar.html (countdown checked at 3 days / 5 h / 40 min; .ics valid lines, reminder). |
 | 18 | More ideas | not started | |
 | E | README, change list draft, morning summary | not started | |
 
@@ -58,3 +58,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 14 done (proposal + prototype).
 - Task 15 done (proposal + prototype).
 - Task 16 done (proposal + prototype).
+- Task 17 done (proposal + prototype).
