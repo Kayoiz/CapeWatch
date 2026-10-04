@@ -2,7 +2,9 @@
 <!-- Assistant, Pixelify Sans and Secular One ship with CapeWatch (assets/fonts/google/): no call to Google, same look offline -->
 <link rel="stylesheet" href="assets/fonts/google/fonts.css">
 <style>
-/* Layout: one column (LTR or RTL by language). Status strip → live promotions → radar log → full wardrobe grid of inventory slots. */
+/* Layout: one column, the same in every language: switching language never moves anything (see "the same place in
+   every language" in the script). In Hebrew only the text inside each box runs right to left.
+   Status strip → live promotions → radar log → full wardrobe grid of inventory slots. */
 :root {
   --bg: #E6E8E1;          /* pale stone */
   --panel: #F5F6F1;
@@ -90,14 +92,14 @@ header.top { display: grid; gap: 18px; }
    The canvas is absolutely placed so it can't push the frame taller, and is resized from JS. */
 .logo { position: relative; width: 220px; min-height: 275px; align-self: stretch; flex: none; background: var(--slot); overflow: hidden; }
 @media (max-width: 520px) { .logo { width: 160px; min-height: 200px; } }   /* phones: 160 + 16 + 160 still fits 375px */
-/* Always on the physical right: last in left-to-right languages, first (= right) in Hebrew */
-[dir="ltr"] .brand .logo { order: 2; margin-left: auto; }   /* auto margin: stays right even if it wraps */
+/* The figure is always on the right (the layout never mirrors, also not in Hebrew) */
+.brand .logo { order: 2; margin-left: auto; }   /* auto margin: stays right even if it wraps */
 .logo::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   box-shadow: inset 3px 3px 0 var(--bevel-lo), inset -3px -3px 0 var(--bevel-hi); }
 .logo canvas { position: absolute; inset: 0; display: block; cursor: grab; touch-action: none; }
 .logo.dragging canvas { cursor: grabbing; }
 /* Reset the 3D view: small and quiet in the corner, clearer on hover and keyboard focus */
-.view-reset { position: absolute; z-index: 2; inset-block-start: 8px; inset-inline-end: 8px; width: 28px; height: 28px; padding: 0;
+.view-reset { position: absolute; z-index: 2; top: 8px; right: 8px; width: 28px; height: 28px; padding: 0;
   display: grid; place-items: center; font: 600 15px/1 var(--font-body); color: var(--fg); background: color-mix(in srgb, var(--panel) 75%, transparent);
   border: 0; }   /* quiet (see-through) until hovered or focused: see "Controls" */
 .brand-text { display: grid; gap: 4px; min-width: 0; flex: 1 1 160px; }   /* 160 + 16 + 120 fits a 375px phone */
@@ -126,7 +128,7 @@ header.top { display: grid; gap: 18px; }
   padding: 4px 10px; box-shadow: inset 0 0 0 1.5px currentColor; }
 footer p { max-width: var(--measure); }
 /* Required notice (exact English line, translation under it); contact and donate sit next to it */
-.unofficial { display: grid; gap: 2px; }
+.unofficial { display: grid; gap: 2px; align-content: start; }   /* the room kept for a longer translation stays below the text */
 .mojang-en { letter-spacing: .01em; unicode-bidi: plaintext; }   /* English even on a Hebrew page: the final period stays at the end */
 .mojang-tr { font-weight: 400; }
 .mojang-tr:empty { display: none; }
@@ -166,6 +168,10 @@ section { display: grid; gap: 16px; min-width: 0; }
 .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font: 600 var(--step--1)/1.2 var(--font-body);
   background: var(--accent); color: var(--accent-fg); text-decoration: none; border: 0; }   /* bevel, hover, press: see "Controls" */
 .btn.ghost { background: transparent; color: var(--fg); }
+/* Buttons and badges are as wide as their longest translation (see "the same place in every language"): the text sits
+   in the middle, so a shorter word never looks pushed to one side, in either direction. */
+.btn { justify-content: center; text-align: center; }
+.pill, .ed { text-align: center; }
 .empty { padding: 18px; color: var(--muted); background: var(--panel); border: 2px dashed var(--line); }
 
 /* Radar log */
@@ -210,7 +216,7 @@ button.slot { cursor: pointer; }
 .pic { display: grid; gap: 8px; align-content: start; min-width: 0; }
 .ely-btn { justify-content: center; width: 100%; padding-inline: 6px; }
 .slot .ph { font-family: var(--font-pixel); color: var(--muted); font-size: var(--step--1); text-align: center; padding: 8px; }
-.slot .flag { position: absolute; z-index: 1; inset-block-start: 8px; inset-inline-start: 8px; font: 600 11px/1 var(--font-pixel); letter-spacing: .04em; padding: 4px 6px;
+.slot .flag { position: absolute; z-index: 1; top: 8px; left: 8px; font: 600 11px/1 var(--font-pixel); letter-spacing: .04em; padding: 4px 6px;
   background: var(--accent); color: var(--accent-fg); }
 .tile-name { font-family: var(--font-pixel); font-weight: 600; font-size: 16px; unicode-bidi: isolate; overflow-wrap: anywhere; line-height: 1.25; }
 .meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
@@ -235,7 +241,7 @@ dialog::backdrop { background: rgba(10, 12, 9, .55); }
 .facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: var(--step--1); margin: 0; }
 .facts dt { color: var(--muted); }
 .facts dd { margin: 0; font-variant-numeric: tabular-nums; }
-.dlg-close { position: absolute; inset-block-start: 10px; inset-inline-end: 10px; }
+.dlg-close { position: absolute; top: 10px; right: 10px; }   /* fixed corners: the layout never mirrors */
 
 footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid var(--line); padding-top: 16px; display: grid; gap: 4px; }
 
@@ -678,7 +684,8 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   // Localized text field with fallbacks: obtainHe / obtainEn / textHe / textEn …
   const pick = (o, base) => o[base + cap(lang)] || o[base + 'En'] || o[base + 'He'] || '';
 
-  function setLang(next) {
+  // The language's texts and date formats (the page itself is not touched).
+  function useLang(next) {
     lang = LANGS[next] ? next : 'en';
     L = T[lang];
     locale = browserLangs().find(l => l.toLowerCase().split('-')[0] === lang) || lang;
@@ -690,8 +697,11 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     fmtDT = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
     fmtList = Intl.ListFormat ? new Intl.ListFormat(locale, { type: 'conjunction' }) : { format: (a) => a.join(' ') };
-    const dir = LANGS[lang].dir;
-    for (const el of [$('wrap'), $('dlg'), $('dlg-inner')]) { el.dir = dir; el.lang = lang; }
+  }
+  // The current language's texts in the fixed parts of the page. The layout stays left to right in every
+  // language; textDir() turns only the text inside each box right to left in Hebrew.
+  function paintTexts() {
+    for (const el of [$('wrap'), $('dlg'), $('dlg-inner')]) { el.dir = 'ltr'; el.lang = lang; }
     document.documentElement.lang = lang;
     document.title = t('title');
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
@@ -704,9 +714,99 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     $('foot2').replaceChildren(f2a, h('span', { class: 'latin', text: 'minecraft.net/redeem' }), f2b ?? '');
     $('f-cat').replaceChildren();   // rebuilt with localized labels on next render
     $('f-lang').value = lang;
-    titleView.draw();   // the picker's label just changed width; refit now rather than waiting for a resize event
-    render();
+    // the app's own buttons on the page (the settings button), texts from app/shell.js
+    document.querySelectorAll('[data-shell-i18n]').forEach((el) => { const s = window.CapeWatchShell?.text(el.dataset.shellI18n, lang); if (s) el.textContent = (el.dataset.prefix || '') + s; });
   }
+  function setLang(next) { useLang(next); update(); }
+
+  // ---------- the same place in every language ----------
+  // Switching language never moves anything. Every piece of the page gets the largest size it has in any of the
+  // 7 languages: the page is laid out in each language in turn, in one go (nothing is drawn in between), each
+  // piece's size is measured, and then each piece keeps the largest one (min-width / min-height). So buttons
+  // and labels are as wide as their longest translation, and a longer text never pushes anything.
+  // The layout itself never mirrors: in Hebrew only the text inside each box runs right to left (textDir).
+  // Boxes only: words inside a sentence (bold parts, links) follow the text and differ between languages.
+  const lockable = (root) => [...root.querySelectorAll('*')].filter((e) => !/^(CANVAS|OPTION|BR|WBR|STYLE)$/.test(e.tagName) && e.id !== 'leaf-title' && !e.closest('.slot') && getComputedStyle(e).display !== 'inline');
+  // What to lock, decided once per element: its width only when the width comes from its own text (buttons,
+  // badges, menus, pieces in a row or set to the start of a column); a block that fills its column keeps
+  // following the column. A grid whose columns change with the language gets its columns fixed instead.
+  function kindOf(e) {
+    const cs = getComputedStyle(e), ps = e.parentElement ? getComputedStyle(e.parentElement) : null, pd = ps ? ps.display : '';
+    const self = /^(auto|normal)$/.test(cs.justifySelf) && ps ? ps.justifyItems : cs.justifySelf;   // "auto": the column's own setting
+    const width = /^inline-/.test(cs.display) || /flex/.test(pd) || cs.position === 'absolute' || e.tagName === 'LEGEND'
+      || (/grid/.test(pd) && !/^(normal|stretch|auto|legacy)$/.test(self));
+    return { width, grid: /grid/.test(cs.display) };
+  }
+  function lockLayout(root, fill) {
+    const cur = lang, x = scrollX, y = scrollY;
+    for (const e of lockable(root)) { e.style.minWidth = ''; e.style.minHeight = ''; if (e.dataset.lkGrid != null) { e.style.gridTemplateColumns = ''; delete e.dataset.lkGrid; } }
+    let max = null, kinds = null, cols = null, same = true;
+    for (const l of Object.keys(LANGS)) {
+      fill(l, true);
+      const els = lockable(root);
+      if (!max) { max = els.map(() => [0, 0]); kinds = els.map(kindOf); cols = els.map(() => new Set()); }
+      if (els.length !== max.length) { same = false; break; }
+      els.forEach((e, i) => {
+        const r = e.getBoundingClientRect(); max[i][0] = Math.max(max[i][0], r.width); max[i][1] = Math.max(max[i][1], r.height);
+        if (kinds[i].grid) cols[i].add(getComputedStyle(e).gridTemplateColumns);
+      });
+    }
+    fill(cur, false);
+    const els = lockable(root);
+    if (same && max && els.length === max.length) {
+      els.forEach((e, i) => {
+        e.style.minHeight = max[i][1] + 'px';
+        if (kinds[i].width) e.style.minWidth = max[i][0] + 'px';
+        if (cols[i].size > 1) {
+          // the widest each column gets in any language; the last column takes what is left
+          const lists = [...cols[i]].map((v) => v.split(' ').map(parseFloat));
+          if (lists.every((t) => t.length === lists[0].length && t.every((n) => !isNaN(n)))) {
+            const widest = lists[0].map((_, j) => Math.max(...lists.map((t) => t[j])));
+            e.style.gridTemplateColumns = widest.slice(0, -1).map((n) => n + 'px').join(' ') + ' minmax(0, 1fr)';
+            e.dataset.lkGrid = '';
+          }
+        }
+      });
+    } else console.info('[Layout] sizes not locked: the page is not built the same in every language');
+    scrollTo(x, y);
+  }
+  // Hebrew: the text in each box runs right to left (and starts on the right of its box); the boxes stay where they
+  // are. Cape names, editions and other Latin-only labels stay left to right. Menus keep their arrow on the right.
+  const LATIN = '.latin, .live-name, .tile-name, .ph, .ed, .flag, .mojang-en, input[name="skinName"], #view-reset, .dlg-close';
+  function textDir(root, l = lang) {
+    const rtl = LANGS[l]?.dir === 'rtl';
+    for (const e of root.querySelectorAll('*')) {
+      if (e.matches(LATIN) || e.tagName === 'SELECT' || e.tagName === 'OPTION') continue;
+      const text = e.tagName === 'INPUT' ? e.type === 'search' || e.type === 'text' : [...e.childNodes].some((n) => n.nodeType === 3 && n.nodeValue.trim());
+      if (!text) continue;
+      if (rtl) e.dir = 'rtl'; else e.removeAttribute('dir');
+    }
+  }
+  // The elytra buttons say "Show elytra" or "Show cape": while measuring they hold the longer one, so a click on
+  // one never changes its size.
+  function longestToggles() {
+    const s = [t('showElytra'), t('showCape')].sort((a, b) => b.length - a.length)[0];
+    document.querySelectorAll('[data-ely]').forEach((b) => { b.textContent = s; });
+  }
+  function fillPage(l, measuring) { useLang(l); paintTexts(); render(); if (measuring) longestToggles(); textDir($('wrap'), l); }
+  // Lay the page out again (new data, another language, filters, window size). Never while a mouse button is
+  // held down: rebuilding the lists under a press would lose the click; it waits for the release.
+  let pressing = false, pendingUpdate = false, lockTimer = 0;
+  addEventListener('pointerdown', () => { pressing = true; }, true);
+  for (const ev of ['pointerup', 'pointercancel']) addEventListener(ev, () => { pressing = false; if (pendingUpdate) { pendingUpdate = false; setTimeout(update, 0); } }, true);
+  function update() {
+    if (!fmtFull) return;
+    if (pressing) { pendingUpdate = true; return; }
+    clearTimeout(lockTimer);
+    const t0 = performance.now();
+    lockLayout($('wrap'), fillPage);
+    titleView.draw();
+    const ms = performance.now() - t0;
+    if (ms > 150) console.info('[Layout] locked in ' + Math.round(ms) + 'ms');
+  }
+  const updateSoon = (ms = 600) => { clearTimeout(lockTimer); lockTimer = setTimeout(update, ms); };
+  // A new window size: free the sizes at once (so the page can follow the window), lock them again when it stops.
+  addEventListener('resize', () => { for (const e of lockable($('wrap'))) { e.style.minWidth = ''; e.style.minHeight = ''; } updateSoon(200); });
 
   // ---------- dates ----------
   function parseISO(s) { if (!s) return null; const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(s) ? s + 'T00:00:00Z' : s); return isNaN(d) ? null : d; }
@@ -817,7 +917,7 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       const el = card.querySelector('.slot');
       if (!el) return;
       el.replaceChildren(...slot(id, c, false).childNodes);
-      if (!card.querySelector('[data-ely]')) { const b = elytraBtn(id, c); if (b) el.after(b); }
+      if (!card.querySelector('[data-ely]')) { const b = elytraBtn(id, c); if (b) { el.after(b); updateSoon(); } }   // a new button: sizes again
     });
     const dlg = $('dlg');
     if (dlg.open && dlg.dataset.cape === id) $('dlg-slot').replaceChildren(...slot(id, c, false).childNodes);
@@ -1409,6 +1509,12 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     const c = S.capes.get(id); if (!c) return;
     const dlg = $('dlg');
     dlg.dataset.cape = id;
+    fillDetail(id, c);
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+    // the same size in every language (see lockLayout)
+    lockLayout($('dlg-inner'), (l) => { useLang(l); fillDetail(id, c); textDir(dlg, l); });
+  }
+  function fillDetail(id, c) {
     $('dlg-slot').replaceChildren(...slot(id, c, false).childNodes);
     $('dlg-title').textContent = c.name;
     // replaceChildren() prints a null as the text "null", so drop the empty badges (e.g. no "free" badge on a paid cape)
@@ -1426,7 +1532,6 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     if (c.source === 'radar' && c.detectedAt) facts.push([t('fDetected'), fmtWhen(c.detectedAt)]);
     $('dlg-facts').replaceChildren(...facts.flatMap(([k, v]) => [h('dt', { text: k }), h('dd', { text: v })]));
     $('dlg-actions').replaceChildren(h('a', { class: 'btn', href: wikiUrl(c), target: '_blank', rel: 'noopener', text: t('wikiPage') }));
-    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
   }
   $('dlg-close').addEventListener('click', () => $('dlg').close?.() ?? $('dlg').removeAttribute('open'));
   $('dlg').addEventListener('click', (e) => { if (e.target === $('dlg')) $('dlg').close(); });
@@ -1435,9 +1540,9 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   for (const [id, key] of [['f-ed', 'ed'], ['f-st', 'st'], ['f-cost', 'cost'], ['f-sort', 'sort'], ['f-cat', 'cat']]) {
     const el = $(id); const saved = store.get(key, null);
     if (saved && [...el.options].some(o => o.value === saved)) el.value = saved;
-    el.addEventListener('change', () => { store.set(key, el.value); renderGrid(); });
+    el.addEventListener('change', () => { store.set(key, el.value); update(); });
   }
-  $('f-q').addEventListener('input', renderGrid);
+  $('f-q').addEventListener('input', update);
   // Keyboard vs mouse, for the menus' focus ring (see the CSS above).
   addEventListener('keydown', () => { document.documentElement.dataset.kbd = ''; }, true);
   addEventListener('pointerdown', () => { delete document.documentElement.dataset.kbd; }, true);
@@ -1465,9 +1570,9 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   // ---------- data ----------
   // Several collections answer within the same moment on load; render once for all of them.
   let renderTimer = 0;
-  const requestRender = () => { if (!renderTimer) renderTimer = setTimeout(() => { renderTimer = 0; render(); }, 16); };
+  const requestRender = () => { if (!renderTimer) renderTimer = setTimeout(() => { renderTimer = 0; update(); }, 16); };
   addEventListener('capeart', (e) => (e.detail ? refreshPics(e.detail) : requestRender()));   // a drawn picture is ready
-  window.CapeWatchPage = { cape3d, lang: () => lang, t, openDetail: (id) => openDetail(id), glow: () => titleView.glow(), glowAt: (t) => titleView.introAt(t), holyChord };
+  window.CapeWatchPage = { cape3d, lang: () => lang, t, openDetail: (id) => openDetail(id), lockLayout, textDir, langs: Object.keys(LANGS), glow: () => titleView.glow(), glowAt: (t) => titleView.introAt(t), holyChord };
   (async () => {
     let db = null;
     try { db = await window.claude?.use?.('db'); } catch { db = null; }

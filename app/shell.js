@@ -160,6 +160,8 @@ document.documentElement.classList.add('cw-title-wait');
   };
   const lang = () => (window.CapeWatchPage?.lang?.() || store.get('lang', 'en'));
   const ui = () => UI[lang()] || UI.en;
+  // The page puts these texts into the shell's own buttons in every language while it measures (cape-radar.html).
+  window.CapeWatchShell = { text: (key, l) => (UI[l] || UI.en)[key] };
 
   // ---------- notifications ----------
   const settings = Object.assign({ notifyNew: true, notifyOpen: false, notifyEnding: false, autostart: true, soundOnOpen: true, invertDrag: false, skinName: '' }, store.get('settings', {}));
@@ -350,13 +352,23 @@ document.documentElement.classList.add('cw-title-wait');
         if (!changed) d.close();
       });
     }
-    const L = ui(); d.dir = lang() === 'he' ? 'rtl' : 'ltr';
-    d.querySelectorAll('[data-k]').forEach((el) => { el.textContent = L[el.dataset.k]; });
+    // The layout stays left to right in every language (only the text runs right to left in Hebrew), and every
+    // piece keeps the size of its longest translation, so nothing moves when the language changes.
+    d.dir = 'ltr';
+    const msg = d.querySelector('.cw-msg');
+    const fill = (l, measuring) => {
+      const T = UI[l] || UI.en;
+      d.querySelectorAll('[data-k]').forEach((el) => { el.textContent = T[el.dataset.k]; });
+      msg.textContent = measuring ? [T.skinOk, T.skinBad].sort((a, b) => b.length - a.length)[0] : '';   // room for the answer
+      window.CapeWatchPage?.textDir?.(d, l);
+    };
+    fill(lang(), false);
     const f = d.querySelector('form');
     for (const k of ['notifyNew', 'notifyOpen', 'notifyEnding', 'soundOnOpen', 'invertDrag']) f[k].checked = !!settings[k];
-    f.skinName.value = settings.skinName || ''; d.querySelector('.cw-msg').textContent = '';
+    f.skinName.value = settings.skinName || '';
     (T?.autostart?.isEnabled?.() || Promise.resolve(false)).then((on) => { f.autostart.checked = !!on; }).catch(() => {});
     d.showModal();
+    window.CapeWatchPage?.lockLayout?.(d, fill);
   }
 
   // ---------- wiring ----------
@@ -371,6 +383,7 @@ document.documentElement.classList.add('cw-title-wait');
     const pick = document.getElementById('lang-pick');
     if (pick) {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'btn ghost'; b.id = 'cw-open-settings';
+      b.dataset.shellI18n = 'settings'; b.dataset.prefix = '⚙ ';   // the page sizes it for every language
       const label = () => { b.textContent = '⚙ ' + ui().settings; };
       label(); document.getElementById('f-lang')?.addEventListener('change', () => setTimeout(label, 0));
       b.addEventListener('click', settingsDialog); (document.getElementById('title-tools') || pick.parentNode).append(b);   // next to the language picker

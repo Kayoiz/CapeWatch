@@ -50,8 +50,11 @@ for (const width of [400, 1200]) {
       await new Promise((r) => setTimeout(r, 200));
       problems.push(...(await page.eval(FIND_PROBLEMS)).map((p) => 'settings: ' + p));
       if (lang === 'he') {
-        assert.equal(await page.eval(`document.getElementById('wrap').dir`), 'rtl');
-        assert.equal(await page.eval(`document.getElementById('cw-settings').dir`), 'rtl');
+        // the layout never mirrors; only the text inside each box runs right to left
+        assert.equal(await page.eval(`document.getElementById('wrap').dir`), 'ltr');
+        assert.equal(await page.eval(`document.getElementById('cw-settings').dir`), 'ltr');
+        assert.equal(await page.eval(`document.querySelector('.lede').dir`), 'rtl');
+        assert.equal(await page.eval(`document.querySelector('#cw-settings legend').dir`), 'rtl');
       }
       assert.deepEqual(page.exceptions, []);
       await page.close();
