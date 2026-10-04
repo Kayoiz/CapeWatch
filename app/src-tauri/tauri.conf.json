@@ -10,25 +10,53 @@
   "app": {
     "withGlobalTauri": true,
     "windows": [
-      { "label": "main", "title": "CapeWatch", "width": 1200, "height": 880, "minWidth": 400, "minHeight": 500, "visible": false, "center": true }
+      {
+        "label": "main",
+        "title": "CapeWatch",
+        "width": 1200,
+        "height": 880,
+        "minWidth": 400,
+        "minHeight": 500,
+        "visible": false,
+        "center": true,
+        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required"
+      }
     ],
-    "security": { "csp": null }
+    "security": {
+      "csp": null
+    }
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "createUpdaterArtifacts": true,
     "publisher": "Kayoiz",
     "copyright": "© Kayoiz. All rights reserved.",
     "shortDescription": "Minecraft cape tracker",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
-    "windows": { "nsis": { "installMode": "currentUser" } }
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerHooks": "./windows/hooks.nsh"
+      }
+    }
   },
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDNDQkI4NjJEOEI3QTBFNUQKUldSZERucUxMWWE3UEpFSDJBR2o2alExZnVUYmh3cEt4a2dra2VCK2lXTk51cmNzNEFadUNJdSsK",
-      "endpoints": ["https://github.com/Kayoiz/CapeWatch/releases/latest/download/latest.json"],
-      "windows": { "installMode": "passive" }
+      "endpoints": [
+        "https://github.com/Kayoiz/CapeWatch/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

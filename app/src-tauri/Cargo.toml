@@ -19,8 +19,7 @@ log = "0.4"
 serde_json = "1"
 
 [target.'cfg(windows)'.dependencies]
-tauri-winrt-notification = "0.8"
-windows = { version = "0.62", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_Threading"] }
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_Threading", "Win32_System_Registry", "UI_Notifications", "Data_Xml_Dom"] }
 
 [profile.release]
 opt-level = "s"

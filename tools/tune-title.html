@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Title FX studio</title>
+<!-- Developer tool only: design the title effect live. Not part of the app build (app/build-web.mjs copies
+     only what the app needs). Same code as the app: ../assets/title-fx.js. Open it through the local server
+     (http://localhost:8766/tools/tune-title.html): pixel effects cannot read the image from a file:// page. -->
+<style>
+:root { --bg: #171916; --panel: #20231F; --panel2: #1a1d19; --line: #343831; --fg: #E8EBE3; --muted: #A2A99C; --accent: #6CC349; --accent-fg: #0F1A0B; --warn: #FF9B5C; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 "Segoe UI", system-ui, sans-serif; }
+main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 48px; }
+h1 { font-size: 1.05rem; font-weight: 600; margin: 0 0 2px; }
+.note { color: var(--muted); font-size: .85rem; margin: 0 0 12px; }
+.stage { position: relative; display: grid; place-items: center; min-height: 300px; padding: 70px 16px; background: #0e100d; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.holder { position: relative; width: min(640px, 100%); line-height: 0; }
+#title { width: 100%; height: auto; display: block; }
+.transport { display: grid; gap: 8px; margin: 12px 0 16px; padding: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+.tbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.time { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 9.5em; }
+.track { position: relative; height: 18px; }
+.track .kf { position: absolute; top: 2px; width: 12px; height: 12px; margin-left: -6px; transform: rotate(45deg); background: #E9C15C; border: 1px solid #0008; cursor: pointer; padding: 0; border-radius: 2px; }
+.track .kf.sel { background: #fff; }
+.track .span { position: absolute; top: 7px; height: 4px; border-radius: 2px; opacity: .55; }
+#scrub { width: 100%; accent-color: var(--accent); margin: 0; }
+button { font: inherit; font-weight: 600; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); color: var(--fg); cursor: pointer; }
+button.main { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+button.small { padding: 3px 8px; font-size: .8rem; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+label.check { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: .85rem; }
+select { font: inherit; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); max-width: 100%; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; align-items: start; }
+details.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+details.panel > summary { list-style: none; cursor: pointer; padding: 10px 14px; display: flex; gap: 10px; align-items: center; font-weight: 600; }
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel > summary .sw { margin-left: auto; }
+.body { padding: 0 14px 14px; }
+.row { display: grid; grid-template-columns: 8.5rem 1fr 4.6rem; gap: 8px; align-items: center; margin-top: 7px; }
+.row > span:first-child { font-size: .85rem; }
+.row output { text-align: end; font-variant-numeric: tabular-nums; color: var(--muted); font-size: .8rem; }
+.row.hidden { display: none; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+input[type=color] { width: 100%; height: 26px; border: 1px solid var(--line); border-radius: 6px; background: none; padding: 0; }
+.sub { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); color: var(--muted); font-size: .8rem; }
+.kfcard { margin-top: 10px; padding: 8px 10px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); }
+.kfcard.sel { border-color: #E9C15C; }
+.kfhead { display: flex; gap: 8px; align-items: center; }
+.kfhead b { font-weight: 600; }
+.warn { color: var(--warn); font-size: .82rem; margin-top: 8px; }
+pre { margin: 12px 0 0; padding: 10px; background: #0e100d; border: 1px solid var(--line); border-radius: 8px; font-size: .75rem; max-height: 260px; overflow: auto; color: var(--muted); }
+#msg { color: var(--accent); font-size: .85rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>CapeWatch title effect studio <span style="color:var(--muted);font-weight:400">(stage 2)</span></h1>
+  <p class="note">Same code as the app (assets/title-fx.js). Every change applies at once. When it is right, press “Copy values” and paste them to Claude.</p>
+
+  <div class="stage"><div class="holder"><img id="title" alt="CapeWatch" src="../assets/brand/title-1400.png"
+    srcset="../assets/brand/title-700.png 700w, ../assets/brand/title-1400.png 1400w, ../assets/brand/title-2029.png 2029w" sizes="(max-width: 700px) 100vw, 640px"></div></div>
+
+  <div class="transport">
+    <div class="tbar">
+      <button class="main" id="play">▶ Play</button>
+      <button id="stop">■ Stop</button>
+      <label class="check">Speed <select id="speed"><option value="1">1×</option><option value="0.5">½×</option><option value="0.25">¼×</option></select></label>
+      <label class="check"><input type="checkbox" id="loop"> Loop</label>
+      <label class="check"><input type="checkbox" id="withSound" checked> Sound on Play</label>
+      <span class="time" id="time">0.00 / 0.00 s</span>
+      <label class="check" style="margin-left:auto">Timeline length <input type="range" id="dur" min="0.5" max="10" step="0.05" style="width:140px"> <output id="durOut"></output></label>
+      <button class="small" id="fit">Fit to effects</button>
+    </div>
+    <div class="tbar"><span class="time" id="fps">fps: press Play</span><span class="warn" id="heavy" hidden></span></div>
+    <div class="track" id="track"></div>
+    <input type="range" id="scrub" min="0" max="1" step="0.001" value="0" aria-label="Timeline position">
+  </div>
+
+  <div class="grid">
+    <details class="panel" open id="pGlow"><summary>Glow <label class="check sw"><input type="checkbox" data-on="glow"> on</label></summary><div class="body" id="glowBody"></div></details>
+    <details class="panel" open id="pBlocks"><summary>Blocks: fall apart / come together <label class="check sw"><input type="checkbox" data-on="blocks"> on</label></summary><div class="body" id="blocksBody"></div></details>
+    <details class="panel" open id="pKf"><summary>Keyframes (size, position, rotation, opacity, brightness, blur) <label class="check sw"><input type="checkbox" data-on="keyframes"> on</label></summary>
+      <div class="body"><div class="tbar" style="margin-top:4px"><button id="addKf">+ Keyframe at playhead</button></div><div id="kfList"></div><div class="warn" id="kfWarn" hidden></div></div></details>
+    <details class="panel" open id="pShadow"><summary>Shadow <label class="check sw"><input type="checkbox" data-on="shadow"> on</label></summary><div class="body" id="shadowBody"></div></details>
+    <details class="panel" open id="pLong"><summary>Long shadow <label class="check sw"><input type="checkbox" data-on="longShadow"> on</label></summary><div class="body" id="longBody"></div></details>
+    <details class="panel" open id="pSweep"><summary>Light sweep over the letters <label class="check sw"><input type="checkbox" data-on="sweep"> on</label></summary><div class="body" id="sweepBody"></div></details>
+    <details class="panel" open id="pEyes"><summary>The eyes on their own <label class="check sw"><input type="checkbox" data-on="eyes"> on</label></summary><div class="body" id="eyesBody"></div></details>
+    <details class="panel" open id="pParticles"><summary>Particles <label class="check sw"><input type="checkbox" data-on="particles"> on</label></summary><div class="body" id="partBody"></div></details>
+    <details class="panel" open id="pSound"><summary>Sound <label class="check sw"><input type="checkbox" data-on="sound"> on</label></summary><div class="body" id="soundBody"></div></details>
+    <details class="panel" open id="pVersions"><summary>Saved versions (in this browser)</summary><div class="body">
+      <div class="tbar" style="margin-top:4px"><input id="vName" placeholder="Name, e.g. A" style="font:inherit;padding:5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg);flex:1;min-width:8rem"><button id="vSave">Save current</button></div>
+      <div id="vList"></div><p class="note" style="margin:8px 0 0">Click a version to switch to it instantly; switch back and forth to compare.</p></div></details>
+  </div>
+
+  <div class="tbar" style="margin-top:14px">
+    <button class="main" id="copy">Copy values</button>
+    <button id="reset">Back to the app’s values</button>
+    <span id="msg" role="status"></span>
+  </div>
+  <pre id="out"></pre>
+</main>
+<script src="../assets/title-fx.js"></script>
+<script>
+(() => {
+  const FX = window.CapeWatchFX;
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const DEF = clone(FX.SCENE);
+  const scene = clone(FX.SCENE);
+  const $ = (id) => document.getElementById(id);
+  const img = $('title');
+  const fx = FX.createTitleFx(img, scene);
+  let t = 0, showMask = false;
+  const EASES = Object.keys(FX.EASE);
+  const EASE_LABEL = { linear: 'constant (linear)', easeIn: 'speed up', easeOut: 'slow down', easeInOut: 'slow–fast–slow', step: 'jump (hold, then cut)', back: 'overshoot', bounce: 'bounce', elastic: 'elastic' };
+
+  // ---------- generic controls ----------
+  const rows = [];
+  function control(parent, obj, key, label, spec, onChange) {
+    const row = document.createElement('label'); row.className = 'row';
+    const name = document.createElement('span'); name.textContent = label;
+    const out = document.createElement('output');
+    let input;
+    if (spec.type === 'color') { input = document.createElement('input'); input.type = 'color'; }
+    else if (spec.type === 'select') { input = document.createElement('select'); for (const [v, l] of spec.options) { const o = document.createElement('option'); o.value = v; o.textContent = l; input.append(o); } }
+    else if (spec.type === 'check') { input = document.createElement('input'); input.type = 'checkbox'; }
+    else { input = document.createElement('input'); input.type = 'range'; input.min = spec.min; input.max = spec.max; input.step = spec.step; }
+    const fmt = spec.fmt || ((v) => (typeof v === 'number' ? String(Math.round(v * 100) / 100) : ''));
+    const sync = () => { if (input.type === 'checkbox') input.checked = !!obj[key]; else input.value = obj[key]; out.textContent = input.type === 'range' ? fmt(obj[key]) : ''; };
+    input.addEventListener('input', () => {
+      obj[key] = input.type === 'range' ? Number(input.value) : input.type === 'checkbox' ? input.checked : input.value;
+      out.textContent = input.type === 'range' ? fmt(obj[key]) : '';
+      (onChange || changed)(key);
+    });
+    row.append(name, input, out); parent.append(row);
+    const r = { row, sync, obj: () => obj, key }; rows.push(r); sync();
+    return r;
+  }
+  const s = (v) => v.toFixed(2) + ' s', px = (v) => Math.round(v) + ' px', deg = (v) => Math.round(v) + '°', x = (v) => v.toFixed(2) + '×';
+  const sub = (parent, text) => { const d = document.createElement('div'); d.className = 'sub'; d.textContent = text; parent.append(d); return d; };
+
+  // ---------- glow ----------
+  const gB = $('glowBody'), G = scene.glow;
+  control(gB, G, 'start', 'Starts at', { min: 0, max: 8, step: 0.01, fmt: s });
+  control(gB, G, 'intensity', 'Strength', { min: 0, max: 2.5, step: 0.05 });
+  control(gB, G, 'halo', 'Halo size', { min: 0, max: 4, step: 0.05, fmt: x });
+  control(gB, G, 'color', 'Colour', { type: 'color' });
+  control(gB, G, 'rise', 'Rise time', { min: 0.02, max: 3, step: 0.01, fmt: s });
+  control(gB, G, 'hold', 'Hold time', { min: 0, max: 3, step: 0.01, fmt: s });
+  control(gB, G, 'fade', 'Fade time', { min: 0.1, max: 5, step: 0.05, fmt: s });
+  sub(gB, 'What glows');
+  control(gB, G, 'area', 'Area', { type: 'select', options: [['all', 'the whole title'], ['edges', 'only the letters’ edges'], ['eyes', 'only the red eyes']] }, () => { areaRows(); changed(); });
+  const edgeRows = [
+    control(gB, G, 'edgeThreshold', 'Solid from alpha', { min: 20, max: 255, step: 1, fmt: (v) => Math.round(v) }),
+    control(gB, G, 'edgeWidth', 'Edge width', { min: 1, max: 12, step: 0.5, fmt: px })];
+  const eyeRows = [
+    control(gB, G, 'eyeMinRed', 'Min. red', { min: 60, max: 255, step: 1, fmt: (v) => Math.round(v) }),
+    control(gB, G, 'eyeDominance', 'Red over green/blue', { min: 1, max: 4, step: 0.05, fmt: x })];
+  const maskRow = document.createElement('label'); maskRow.className = 'check'; maskRow.style.marginTop = '8px';
+  maskRow.innerHTML = '<input type="checkbox" id="showMask"> Show the mask (magenta)'; gB.append(maskRow);
+  $('showMask').addEventListener('change', (e) => { showMask = e.target.checked; draw(); });
+  function areaRows() {
+    edgeRows.forEach((r) => r.row.classList.toggle('hidden', G.area !== 'edges'));
+    eyeRows.forEach((r) => r.row.classList.toggle('hidden', G.area !== 'eyes'));
+    maskRow.style.display = G.area === 'all' ? 'none' : 'inline-flex';
+  }
+  areaRows();
+
+  // ---------- blocks ----------
+  const bB = $('blocksBody'), B = scene.blocks;
+  control(bB, B, 'mode', 'Mode', { type: 'select', options: [['assemble', 'come together (fly in)'], ['disassemble', 'fall apart (fly out)']] });
+  control(bB, B, 'size', 'Block size', { min: 3, max: 64, step: 1, fmt: px });
+  control(bB, B, 'spread', 'Spread distance', { min: 0, max: 700, step: 5, fmt: px });
+  control(bB, B, 'direction', 'Direction', { type: 'select', options: [['center', 'from the centre'], ['random', 'random'], ['top', 'from the top']] });
+  control(bB, B, 'rotation', 'Block spin', { min: 0, max: 720, step: 5, fmt: deg });
+  control(bB, B, 'start', 'Starts at', { min: 0, max: 8, step: 0.01, fmt: s });
+  control(bB, B, 'duration', 'Flight time', { min: 0.05, max: 4, step: 0.01, fmt: s });
+  control(bB, B, 'stagger', 'Stagger', { min: 0, max: 4, step: 0.01, fmt: s });
+  control(bB, B, 'ease', 'Motion', { type: 'select', options: EASES.map((e) => [e, EASE_LABEL[e]]) });
+  control(bB, B, 'fade', 'Fade in/out', { type: 'check' });
+  control(bB, B, 'seed', 'Random pattern', { min: 1, max: 50, step: 1, fmt: (v) => '#' + v });
+
+  // ---------- keyframes ----------
+  const K = scene.keyframes;
+  let selKf = null;
+  const KF_SPEC = {
+    scale: ['Size', { min: 0.05, max: 3, step: 0.01, fmt: x }],
+    x: ['Move left/right', { min: -500, max: 500, step: 1, fmt: px }],
+    y: ['Move up/down', { min: -300, max: 300, step: 1, fmt: px }],
+    rot: ['Rotation', { min: -360, max: 360, step: 1, fmt: deg }],
+    opacity: ['Opacity', { min: 0, max: 1, step: 0.01, fmt: (v) => Math.round(v * 100) + '%' }],
+    brightness: ['Brightness', { min: 0, max: 3, step: 0.01, fmt: x }],
+    blur: ['Blur', { min: 0, max: 30, step: 0.1, fmt: px }]
+  };
+  function kfList() {
+    const box = $('kfList'); box.replaceChildren();
+    rows.splice(0, rows.length, ...rows.filter((r) => !r.kf));
+    [...K.list].sort((a, b) => a.t - b.t).forEach((k, i) => {
+      const card = document.createElement('div'); card.className = 'kfcard' + (k === selKf ? ' sel' : '');
+      const head = document.createElement('div'); head.className = 'kfhead';
+      const title = document.createElement('b'); title.textContent = 'Keyframe ' + (i + 1);
+      const go = document.createElement('button'); go.className = 'small'; go.textContent = 'Go to'; go.onclick = () => { selKf = k; seek(k.t); kfList(); };
+      const del = document.createElement('button'); del.className = 'small'; del.textContent = 'Delete'; del.onclick = () => { K.list.splice(K.list.indexOf(k), 1); if (selKf === k) selKf = null; kfList(); changed(); };
+      head.append(title, go, del); card.append(head);
+      const tr = control(card, k, 't', 'Time', { min: 0, max: scene.duration, step: 0.01, fmt: s }, () => { markers(); changed(); }); tr.kf = true;
+      for (const [p, [label, spec]] of Object.entries(KF_SPEC)) { const r = control(card, k, p, label, spec); r.kf = true; }
+      const er = control(card, k, 'ease', 'Transition to next', { type: 'select', options: EASES.map((e) => [e, EASE_LABEL[e]]) }); er.kf = true;
+      card.addEventListener('pointerdown', () => { if (selKf !== k) { selKf = k; box.querySelectorAll('.kfcard').forEach((c) => c.classList.remove('sel')); card.classList.add('sel'); markers(); } });
+      box.append(card);
+    });
+    markers(); kfWarn();
+  }
+  $('addKf').onclick = () => {
+    const cur = FX.keyframeAt({ on: true, list: K.list }, t);
+    const k = Object.assign({ t: Math.round(t * 100) / 100 }, K.list.length ? cur : FX.KF_REST, { ease: 'easeInOut' });
+    K.list.push(k); K.on = true; syncOn(); selKf = k; kfList(); changed();
+  };
+  function kfWarn() {
+    const w = $('kfWarn'), last = [...K.list].sort((a, b) => a.t - b.t).pop();
+    const off = K.on && last && Object.keys(FX.KF_REST).some((p) => Math.abs((last[p] ?? FX.KF_REST[p]) - FX.KF_REST[p]) > 1e-3);
+    w.hidden = !off;
+    if (off) { w.innerHTML = 'The app shows the plain title when the effect ends. The last keyframe is not at rest, so the title will jump at the end. '; const b = document.createElement('button'); b.className = 'small'; b.textContent = 'Set the last keyframe to rest'; b.onclick = () => { Object.assign(last, FX.KF_REST); kfList(); changed(); }; w.append(b); }
+  }
+
+  // ---------- shadows ----------
+  const envRows = (parent, o) => {
+    sub(parent, 'Timing (fades in and out, like the glow)');
+    control(parent, o, 'start', 'Starts at', { min: 0, max: 8, step: 0.01, fmt: s });
+    control(parent, o, 'rise', 'Fade in', { min: 0.02, max: 3, step: 0.01, fmt: s });
+    control(parent, o, 'hold', 'Hold', { min: 0, max: 6, step: 0.01, fmt: s });
+    control(parent, o, 'fade', 'Fade out', { min: 0.05, max: 4, step: 0.01, fmt: s });
+  };
+  const SH = scene.shadow, shB = $('shadowBody');
+  control(shB, SH, 'x', 'Offset left/right', { min: -60, max: 60, step: 1, fmt: px });
+  control(shB, SH, 'y', 'Offset up/down', { min: -60, max: 60, step: 1, fmt: px });
+  control(shB, SH, 'blur', 'Blur', { min: 0, max: 60, step: 0.5, fmt: px });
+  control(shB, SH, 'color', 'Colour', { type: 'color' });
+  control(shB, SH, 'opacity', 'Opacity', { min: 0, max: 1, step: 0.01, fmt: (v) => Math.round(v * 100) + '%' });
+  envRows(shB, SH);
+  const LS = scene.longShadow, lsB = $('longBody');
+  control(lsB, LS, 'angle', 'Direction', { min: 0, max: 360, step: 1, fmt: deg });
+  control(lsB, LS, 'length', 'Length', { min: 2, max: 160, step: 1, fmt: px });
+  control(lsB, LS, 'color', 'Colour', { type: 'color' });
+  control(lsB, LS, 'opacity', 'Opacity', { min: 0, max: 1, step: 0.01, fmt: (v) => Math.round(v * 100) + '%' });
+  envRows(lsB, LS);
+
+  // ---------- light sweep ----------
+  const SW = scene.sweep, swB = $('sweepBody');
+  control(swB, SW, 'angle', 'Angle', { min: -80, max: 80, step: 1, fmt: deg });
+  control(swB, SW, 'width', 'Width', { min: 4, max: 300, step: 1, fmt: px });
+  control(swB, SW, 'time', 'One pass takes', { min: 0.1, max: 4, step: 0.01, fmt: s });
+  control(swB, SW, 'color', 'Colour', { type: 'color' });
+  control(swB, SW, 'opacity', 'Strength', { min: 0, max: 1, step: 0.01, fmt: (v) => Math.round(v * 100) + '%' });
+  control(swB, SW, 'start', 'Starts at', { min: 0, max: 8, step: 0.01, fmt: s });
+  control(swB, SW, 'repeat', 'Passes', { min: 1, max: 6, step: 1, fmt: (v) => '×' + v });
+  control(swB, SW, 'gap', 'Pause between passes', { min: 0, max: 3, step: 0.01, fmt: s });
+
+  // ---------- eyes ----------
+  const EY = scene.eyes, eyB = $('eyesBody');
+  control(eyB, EY, 'mode', 'Effect', { type: 'select', options: [['blink', 'blink (close and open)'], ['flicker', 'flicker']] });
+  control(eyB, EY, 'start', 'Starts at', { min: 0, max: 8, step: 0.01, fmt: s });
+  control(eyB, EY, 'count', 'How many times', { min: 1, max: 8, step: 1, fmt: (v) => '×' + v });
+  control(eyB, EY, 'time', 'Each one takes', { min: 0.05, max: 1.5, step: 0.01, fmt: s });
+  control(eyB, EY, 'interval', 'Pause between', { min: 0, max: 2, step: 0.01, fmt: s });
+  control(eyB, EY, 'dim', 'How dark', { min: 0.1, max: 1, step: 0.01, fmt: (v) => Math.round(v * 100) + '%' });
+  sub(eyB, 'The eye mask is the one from Glow → “only the red eyes” (same red sliders there).');
+
+  // ---------- particles ----------
+  const PT = scene.particles, ptB = $('partBody');
+  control(ptB, PT, 'kind', 'Kind', { type: 'select', options: [['sparks', 'sparks (bright, fading)'], ['dust', 'dust (soft, drifting)']] });
+  control(ptB, PT, 'from', 'Born from', { type: 'select', options: [['edges', 'the letters’ edges'], ['all', 'anywhere on the letters']] });
+  control(ptB, PT, 'rate', 'Amount', { min: 1, max: 400, step: 1, fmt: (v) => v + '/s' });
+  control(ptB, PT, 'speed', 'Speed', { min: 0, max: 300, step: 1, fmt: (v) => v + ' px/s' });
+  control(ptB, PT, 'size', 'Size', { min: 0.5, max: 10, step: 0.1, fmt: px });
+  control(ptB, PT, 'color', 'Colour', { type: 'color' });
+  control(ptB, PT, 'life', 'Lifetime', { min: 0.1, max: 4, step: 0.05, fmt: s });
+  control(ptB, PT, 'start', 'Starts at', { min: 0, max: 8, step: 0.01, fmt: s });
+  control(ptB, PT, 'emit', 'Emits for', { min: 0.05, max: 6, step: 0.05, fmt: s });
+  control(ptB, PT, 'seed', 'Random pattern', { min: 1, max: 50, step: 1, fmt: (v) => '#' + v });
+
+  // ---------- sound ----------
+  const sB = $('soundBody'), S = scene.sound;
+  control(sB, S, 'volume', 'Volume', { min: 0, max: 1.5, step: 0.01, fmt: (v) => Math.round(v * 100) + '%' }, () => render());
+  control(sB, S, 'pitch', 'Pitch', { min: -12, max: 12, step: 1, fmt: (v) => (v > 0 ? '+' : '') + v + ' st' }, () => render());
+  control(sB, S, 'length', 'Length', { min: 0.4, max: 3, step: 0.05, fmt: x }, () => render());
+  control(sB, S, 'echo', 'Echo', { min: 0, max: 1.2, step: 0.01, fmt: (v) => Math.round(v / 1.2 * 100) + '%' }, () => render());
+  control(sB, S, 'chord', 'Chord', { type: 'select', options: Object.entries(FX.CHORDS).map(([k, c]) => [k, c.label]) }, () => render());
+  control(sB, S, 'start', 'Starts at (timeline)', { min: 0, max: 8, step: 0.01, fmt: s }, () => { markers(); render(); });
+  const tryS = document.createElement('button'); tryS.textContent = 'Sound only'; tryS.style.marginTop = '10px'; tryS.onclick = () => FX.holyChord(S); sB.append(tryS);
+
+  // ---------- on/off switches ----------
+  const syncOn = () => document.querySelectorAll('[data-on]').forEach((c) => { c.checked = !!scene[c.dataset.on].on; });
+  document.querySelectorAll('[data-on]').forEach((c) => {
+    c.addEventListener('click', (e) => e.stopPropagation());   // do not fold the panel
+    c.addEventListener('change', () => { scene[c.dataset.on].on = c.checked; kfWarn(); changed(); });
+  });
+  syncOn();
+
+  // ---------- timeline ----------
+  const scrub = $('scrub');
+  function markers() {
+    const tr = $('track'); tr.replaceChildren();
+    const pct = (v) => Math.min(100, v / scene.duration * 100) + '%';
+    const span = (a, b, color) => { const d = document.createElement('div'); d.className = 'span'; d.style.left = pct(a); d.style.width = `calc(${pct(Math.max(0, b - a))})`; d.style.background = color; tr.append(d); };
+    if (G.on) span(G.start, G.start + G.rise + G.hold + G.fade, '#6CC349');
+    if (B.on) span(B.start, B.start + B.stagger + B.duration, '#6FB3F0');
+    for (const [k, col] of [['shadow', '#9EA497'], ['longShadow', '#6b6f68']]) if (scene[k].on) span(scene[k].start, scene[k].start + scene[k].rise + scene[k].hold + scene[k].fade, col);
+    if (scene.sweep.on) span(scene.sweep.start, scene.sweep.start + scene.sweep.repeat * (scene.sweep.time + scene.sweep.gap), '#ffffff');
+    if (scene.eyes.on) span(scene.eyes.start, scene.eyes.start + scene.eyes.count * (scene.eyes.time + scene.eyes.interval), '#ff4040');
+    if (scene.particles.on) span(scene.particles.start, scene.particles.start + scene.particles.emit + scene.particles.life, '#E9C15C');
+    if (scene.sound.on) { const d = document.createElement('div'); d.className = 'kf'; d.style.cssText = `left:${pct(scene.sound.start)};background:#BC98FF;border-radius:50%;transform:none;cursor:default`; d.title = 'Sound starts'; tr.append(d); }
+    if (K.on) for (const k of K.list) {
+      const m = document.createElement('button'); m.className = 'kf' + (k === selKf ? ' sel' : ''); m.style.left = pct(k.t); m.title = 'Keyframe at ' + k.t.toFixed(2) + ' s';
+      m.onclick = () => { selKf = k; seek(k.t); kfList(); }; tr.append(m);
+    }
+  }
+  function setDur(v) { scene.duration = Math.max(0.5, v); $('dur').value = scene.duration; $('durOut').textContent = scene.duration.toFixed(2) + ' s'; rows.filter((r) => r.kf && r.key === 't').forEach((r) => { r.row.querySelector('input').max = scene.duration; }); seek(Math.min(t, scene.duration)); markers(); render(); }
+  $('dur').addEventListener('input', (e) => setDur(Number(e.target.value)));
+  $('fit').onclick = () => setDur(Math.max(0.5, Math.ceil((FX.sceneEnd(scene) + 0.05) * 20) / 20));
+  function seek(v) { t = Math.max(0, Math.min(scene.duration, v)); scrub.value = t / scene.duration; $('time').textContent = t.toFixed(2) + ' / ' + scene.duration.toFixed(2) + ' s'; if (!fx.playing) draw(); }
+  scrub.addEventListener('input', () => { if (fx.playing) pause(); seek(Number(scrub.value) * scene.duration); });
+
+  function draw() { if (fx.renderAt(t, { showMask })) fx.show(true); }
+  function play() {
+    if (t >= scene.duration - 1e-3) t = 0;
+    const speed = Number($('speed').value);
+    if ($('withSound').checked && speed === 1) FX.playSound(scene, t);
+    meter.reset();
+    $('play').textContent = '❚❚ Pause';
+    fx.play({ from: t, speed, loop: $('loop').checked, renderOpts: { showMask },
+      onFrame: (v, dt) => { meter.frame(dt); t = v; scrub.value = t / scene.duration; $('time').textContent = t.toFixed(2) + ' / ' + scene.duration.toFixed(2) + ' s'; },
+      onEnd: () => { $('play').textContent = '▶ Play'; meter.done(); } });
+  }
+  function pause() { fx.stop(); $('play').textContent = '▶ Play'; draw(); }
+  $('play').onclick = () => (fx.playing ? pause() : play());
+  $('stop').onclick = () => { fx.stop(); $('play').textContent = '▶ Play'; seek(0); };
+
+  // ---------- frame meter ----------
+  // The app window runs the same engine as Edge/Chrome, so this is a fair guide on this computer.
+  const meter = (() => {
+    let n = 0, sum = 0, worst = 0, slow = 0, shown = 0;
+    const show = (final) => {
+      const avg = n ? sum / n : 0, fps = avg ? 1000 / avg : 0, mp = (fx.pixels / 1e6).toFixed(1);
+      $('fps').textContent = `fps: ${fps.toFixed(0)}  ·  slowest frame ${Math.round(worst)} ms  ·  ${slow} slow frames  ·  canvas ${mp} MP${final ? '' : ' (playing)'}`;
+      const heavy = n > 10 && (fps < 50 || worst > 50 || slow > n * 0.1);
+      $('heavy').hidden = !heavy;
+      if (heavy) $('heavy').textContent = '⚠ Too heavy: this combination may stutter in the app window. Try bigger blocks, less spread, a smaller halo, fewer particles, or less blur.';
+    };
+    return {
+      reset() { n = sum = worst = slow = 0; },
+      frame(dt) { if (!dt) return; n++; sum += dt; worst = Math.max(worst, dt); if (dt > 25) slow++; const now = performance.now(); if (now - shown > 250) { shown = now; show(false); } },
+      done() { show(true); }
+    };
+  })();
+
+  // ---------- saved versions ----------
+  const VKEY = 'capewatch:fx-versions';
+  const loadV = () => { try { return JSON.parse(localStorage.getItem(VKEY) || '[]'); } catch { return []; } };
+  const saveV = (v) => { try { localStorage.setItem(VKEY, JSON.stringify(v)); } catch {} };
+  let current = null;
+  function useValues(v) {
+    const d = clone(v);
+    for (const part of ['glow', 'blocks', 'keyframes', 'shadow', 'longShadow', 'sweep', 'eyes', 'particles', 'sound']) {
+      if (!d[part]) continue;
+      for (const k of Object.keys(scene[part])) if (!(k in d[part])) d[part][k] = scene[part][k];
+      for (const k of Object.keys(scene[part])) delete scene[part][k];
+      Object.assign(scene[part], d[part]);
+    }
+    selKf = null; syncOn(); rows.forEach((r) => r.sync()); areaRows(); kfList(); setDur(d.duration || scene.duration); fx.invalidate(); changed();
+  }
+  function vList() {
+    const box = $('vList'); box.replaceChildren();
+    for (const v of loadV()) {
+      const row = document.createElement('div'); row.className = 'tbar'; row.style.marginTop = '6px';
+      const b = document.createElement('button'); b.textContent = v.name; if (v.name === current) b.className = 'main';
+      b.onclick = () => { current = v.name; useValues(v.values); vList(); $('msg').textContent = 'Switched to “' + v.name + '”.'; };
+      const when = document.createElement('span'); when.className = 'time'; when.textContent = new Date(v.at).toLocaleTimeString();
+      const del = document.createElement('button'); del.className = 'small'; del.textContent = 'Delete';
+      del.onclick = () => { saveV(loadV().filter((x) => x.name !== v.name)); vList(); };
+      row.append(b, when, del); box.append(row);
+    }
+  }
+  $('vSave').onclick = () => {
+    const name = ($('vName').value || '').trim() || 'Version ' + (loadV().length + 1);
+    const list = loadV().filter((x) => x.name !== name);
+    list.push({ name, at: Date.now(), values: JSON.parse(JSON.stringify(scene)) }); saveV(list); current = name; $('vName').value = ''; vList();
+    $('msg').textContent = 'Saved “' + name + '”.';
+  };
+  vList();
+
+  // ---------- every change: redraw the current moment ----------
+  function changed() { markers(); kfWarn(); render(); if (!fx.playing) draw(); }
+
+  // ---------- values ----------
+  const round = (v) => (typeof v === 'number' ? Math.round(v * 1000) / 1000 : Array.isArray(v) ? v.map(round) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, w]) => [k, round(w)])) : v);
+  const text = () => 'CapeWatch title FX values:\n' + JSON.stringify(round({ ...scene, keyframes: { on: K.on, list: [...K.list].sort((a, b) => a.t - b.t) } }), null, 2);
+  function render() { $('out').textContent = text(); }
+  $('copy').onclick = async () => {
+    const v = text();
+    try { await navigator.clipboard.writeText(v); } catch { const ta = document.createElement('textarea'); ta.value = v; document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+    $('msg').textContent = 'Copied. Paste it to Claude.';
+  };
+  $('reset').onclick = () => {
+    const d = clone(DEF);
+    for (const part of ['glow', 'blocks', 'keyframes', 'shadow', 'longShadow', 'sweep', 'eyes', 'particles', 'sound']) { for (const k of Object.keys(scene[part])) delete scene[part][k]; Object.assign(scene[part], d[part]); }
+    selKf = null; syncOn(); rows.forEach((r) => r.sync()); areaRows(); kfList(); setDur(d.duration); fx.invalidate(); changed();
+    $('msg').textContent = 'Back to the app’s current values.';
+  };
+
+  addEventListener('resize', () => { if (!fx.playing) draw(); });
+  img.addEventListener('load', () => { fx.invalidate(); draw(); });
+  setDur(scene.duration); kfList(); render();
+  if (img.complete && img.naturalWidth) draw();
+})();
+</script>
+</body>
+</html>

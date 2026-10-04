@@ -37,6 +37,7 @@
   --step-1: 1.25rem;
   --step-2: 1.6rem;
   --step-3: 2.2rem;
+  --title-plate: #141612;   /* light mode: the title art sits on a dark plate */
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -45,6 +46,7 @@
     --live: #86D866; --live-bg: #1F3319; --soon: #FF9B5C; --soon-bg: #3A2415;
     --announced: #E9C15C; --announced-bg: #332913; --ended: #9EA497; --ended-bg: #2A2D28;
     --exclusive: #BC98FF; --exclusive-bg: #2C2140; --java: #F0A05A; --bedrock: #6FB3F0;
+    --title-plate: transparent;
     color-scheme: dark;
   }
 }
@@ -54,6 +56,7 @@
   --live: #86D866; --live-bg: #1F3319; --soon: #FF9B5C; --soon-bg: #3A2415;
   --announced: #E9C15C; --announced-bg: #332913; --ended: #9EA497; --ended-bg: #2A2D28;
   --exclusive: #BC98FF; --exclusive-bg: #2C2140; --java: #F0A05A; --bedrock: #6FB3F0;
+  --title-plate: transparent;
   color-scheme: dark;
 }
 
@@ -71,7 +74,7 @@ p { margin: 0; }
 a { color: var(--accent); }
 a:focus-visible, button:focus-visible, input:focus-visible, .slot:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 /* Chrome keeps a menu's focus ring after a mouse pick, so menus show it only while the keyboard is in use */
-html[data-kbd] select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+html[data-kbd] select:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
 select:focus { outline: none; }
 .latin { font-family: var(--font-pixel); unicode-bidi: isolate; }
 .num { font-variant-numeric: tabular-nums; }
@@ -84,25 +87,33 @@ header.top { display: grid; gap: 18px; }
 /* Logo: a static slot frame holding the one 3D view (my skin from behind, wearing a cloth cape) */
 /* Fixed width; the height stretches to the title block beside it (never taller than it).
    The canvas is absolutely placed so it can't push the frame taller, and is resized from JS. */
-.logo { position: relative; width: 120px; min-height: 150px; align-self: stretch; flex: none; background: var(--slot); overflow: hidden; }
+.logo { position: relative; width: 220px; min-height: 275px; align-self: stretch; flex: none; background: var(--slot); overflow: hidden; }
+@media (max-width: 520px) { .logo { width: 160px; min-height: 200px; } }   /* phones: 160 + 16 + 160 still fits 375px */
 /* Always on the physical right: last in left-to-right languages, first (= right) in Hebrew */
 [dir="ltr"] .brand .logo { order: 2; margin-left: auto; }   /* auto margin: stays right even if it wraps */
 .logo::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   box-shadow: inset 3px 3px 0 var(--bevel-lo), inset -3px -3px 0 var(--bevel-hi); }
-.logo canvas { position: absolute; inset: 0; display: block; }
+.logo canvas { position: absolute; inset: 0; display: block; cursor: grab; touch-action: none; }
+.logo.dragging canvas { cursor: grabbing; }
+/* Reset the 3D view: small and quiet in the corner, clearer on hover and keyboard focus */
+.view-reset { position: absolute; z-index: 2; inset-block-start: 8px; inset-inline-end: 8px; width: 28px; height: 28px; padding: 0;
+  display: grid; place-items: center; font: 600 15px/1 var(--font-body); color: var(--fg); background: color-mix(in srgb, var(--panel) 75%, transparent);
+  border: 0; }   /* quiet (see-through) until hovered or focused: see "Controls" */
 .brand-text { display: grid; gap: 4px; min-width: 0; flex: 1 1 160px; }   /* 160 + 16 + 120 fits a 375px phone */
 /* Title bar: the leaf-block title centered, the language picker beside it (right in LTR, left in RTL).
    On phones the picker sits on its own row above the title. */
 .titlebar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 12px; }
 .leaf-title { grid-column: 2; margin: 0; line-height: 0; min-width: 0; position: relative; isolation: isolate; }
-/* Opening light effect: pixel rays drawn over everything; never part of the layout, gone after ~2.3 s */
-#leaf-title { position: relative; z-index: 1; }
-.title-fx { position: absolute; display: block; pointer-events: none; z-index: 2; image-rendering: pixelated; }
-#leaf-title { display: block; max-width: 100%; height: auto; image-rendering: pixelated; }
-.titlebar .lang-pick { grid-column: 3; justify-self: end; }
+/* The title art (assets/brand/): sized by script to the free width (max 640px), sharp on any screen through
+   srcset. In light mode it sits on a dark plate; the opening glow animates its filter only. */
+#leaf-title { display: block; max-width: 100%; height: auto; background: var(--title-plate); border-radius: 12px; will-change: filter; }
+/* The app hides the title until its opening effect starts (app/shell.js), so it never flashes plain first */
+.cw-title-wait #leaf-title { visibility: hidden; }
+/* Language picker and (in the app) the settings button, side by side next to the title */
+.title-tools { grid-column: 3; justify-self: end; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
 @media (max-width: 720px) {
   .titlebar { grid-template-columns: 1fr; }
-  .titlebar .lang-pick { grid-row: 1; grid-column: 1; }
+  .title-tools { grid-row: 1; grid-column: 1; }
   .leaf-title { grid-column: 1; justify-self: center; }
 }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -151,9 +162,8 @@ section { display: grid; gap: 16px; min-width: 0; }
 .short { font-size: var(--step-0); line-height: 1.5; }
 .live-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font: 600 var(--step--1)/1.2 var(--font-body);
-  background: var(--accent); color: var(--accent-fg); text-decoration: none; border: 0; cursor: pointer;
-  box-shadow: inset 2px 2px 0 rgba(255,255,255,.28), inset -2px -2px 0 rgba(0,0,0,.3); }
-.btn.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 2px var(--line); }
+  background: var(--accent); color: var(--accent-fg); text-decoration: none; border: 0; }   /* bevel, hover, press: see "Controls" */
+.btn.ghost { background: transparent; color: var(--fg); }
 .empty { padding: 18px; color: var(--muted); background: var(--panel); border: 2px dashed var(--line); }
 
 /* Radar log */
@@ -169,7 +179,7 @@ section { display: grid; gap: 16px; min-width: 0; }
 .field { display: grid; gap: 4px; min-width: 0; }
 .field label { font-size: var(--text-sm); color: var(--muted); }
 .field input, .field select, .lang-pick select { font: inherit; font-size: var(--text-sm); padding: 7px 10px; background: var(--panel); color: var(--fg);
-  border: 0; box-shadow: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); min-width: 0; }
+  border: 0; --bs: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); box-shadow: var(--bs); min-width: 0; }
 .field input { width: 12rem; max-width: 100%; }
 /* Phones: an even 2-column grid of filters, search across the full width */
 @media (max-width: 600px) {
@@ -226,17 +236,95 @@ dialog::backdrop { background: rgba(10, 12, 9, .55); }
 .dlg-close { position: absolute; inset-block-start: 10px; inset-inline-end: 10px; }
 
 footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid var(--line); padding-top: 16px; display: grid; gap: 4px; }
+
+/* ---------- Controls: one pixel feel for every button (approved on tools/buttons-demo.html) ----------
+   Hover: a little brighter, soft green glow. Press: sinks 2px, darker, the bevel turns inward; back on release.
+   Tab: a clear frame in the text colour. Disabled: grey, see-through, no hover. Checkboxes and switches (the
+   app's settings) change with a short animation. 0.08-0.14s throughout. "Reduce animations": colours still
+   change, nothing moves. Each control's resting bevel is --bs, so hover can add the glow on top of it. */
+.btn, .view-reset, button.slot, select, .cw-box, .cw-switch {
+  --glow: color-mix(in srgb, var(--accent) 55%, transparent);
+  --ring: 0 0 0 1px var(--glow), 0 0 12px var(--glow);
+  box-shadow: var(--bs);
+  cursor: pointer;
+  transition: filter .12s ease-out, box-shadow .12s ease-out, background-color .12s ease-out, opacity .12s ease-out, transform .08s ease-out;
+}
+/* each control's resting bevel */
+.btn { --bs: inset 2px 2px 0 rgba(255,255,255,.28), inset -2px -2px 0 rgba(0,0,0,.3); }
+.btn.ghost { --bs: inset 0 0 0 2px var(--line); }
+.view-reset { --bs: inset 2px 2px 0 var(--bevel-hi), inset -2px -2px 0 var(--bevel-lo); opacity: .55; }
+button.slot { --bs: inset 4px 4px 0 var(--bevel-lo), inset -4px -4px 0 var(--bevel-hi); }
+select { --bs: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); }
+
+/* 1. hover: a little brighter, soft green glow */
+.btn:hover:not(:disabled), .view-reset:hover:not(:disabled), button.slot:hover:not(:disabled) { filter: brightness(1.12); box-shadow: var(--bs), var(--ring); }
+.btn.ghost:hover:not(:disabled) { filter: none; background-color: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 0 0 0 2px var(--accent), var(--ring); }
+.view-reset:hover:not(:disabled) { opacity: 1; }
+select:hover:not(:disabled) { background-color: color-mix(in srgb, var(--accent) 8%, var(--panel)); box-shadow: var(--bs), var(--ring); }
+
+/* 2. press: sinks in (down 2px, darker, the bevel turns inward) and comes back on release */
+.btn:active:not(:disabled), .view-reset:active:not(:disabled), button.slot:active:not(:disabled) {
+  filter: brightness(.8); box-shadow: inset 2px 2px 0 rgba(0,0,0,.35), inset -2px -2px 0 rgba(255,255,255,.12); }
+/* the content sinks 2px, the button itself stays put: a moving button lost presses made near its edge */
+.btn:active:not(:disabled) { padding-block: 9px 5px; }
+.view-reset:active:not(:disabled) { padding-top: 4px; }
+button.slot:active:not(:disabled) > * { transform: translateY(2px); }
+.view-reset:active:not(:disabled) { opacity: 1; }
+.btn.ghost:active:not(:disabled) { filter: none; background-color: color-mix(in srgb, var(--accent) 12%, rgba(0,0,0,.22));
+  box-shadow: inset 0 0 0 2px var(--accent), inset 2px 2px 0 2px rgba(0,0,0,.2); }
+select:active:not(:disabled) { filter: brightness(.9); box-shadow: var(--bs); }   /* a menu opens: colour only, no sinking */
+
+/* 3. keyboard (Tab): a clear frame around the control */
+.btn:focus-visible, .view-reset:focus-visible, button.slot:focus-visible, .cw-box:focus-visible, .cw-switch:focus-visible {
+  outline: 3px solid var(--fg); outline-offset: 3px; }
+.view-reset:focus-visible { opacity: 1; }
+
+/* 4. not available: grey, see-through, no reaction */
+.btn:disabled, .view-reset:disabled, button.slot:disabled, select:disabled, .cw-box:disabled, .cw-switch:disabled { filter: grayscale(1); opacity: .45; cursor: not-allowed; }
+label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
+
+/* 5. checkboxes and switches (settings): the change is animated */
+.cw-opt { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.cw-box, .cw-switch { appearance: none; -webkit-appearance: none; margin: 0; flex: none; position: relative; }
+.cw-box { width: 20px; height: 20px; background-color: var(--bg); --bs: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); }
+.cw-box::before { content: ""; position: absolute; inset: 3px; background: var(--accent-fg); transform: scale(.3); opacity: 0;
+  transition: transform .12s ease-out, opacity .12s ease-out;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpath d='M0 3h1v2H0zM1 4h1v2H1zM2 5h1v2H2zM3 4h1v2H3zM4 3h1v2H4zM5 2h1v2H5zM6 1h1v2H6z'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpath d='M0 3h1v2H0zM1 4h1v2H1zM2 5h1v2H2zM3 4h1v2H3zM4 3h1v2H4zM5 2h1v2H5zM6 1h1v2H6z'/%3E%3C/svg%3E") center / 14px 14px no-repeat; }
+.cw-box:checked { background-color: var(--accent); --bs: inset 2px 2px 0 rgba(255,255,255,.28), inset -2px -2px 0 rgba(0,0,0,.3); }
+.cw-box:checked::before { transform: scale(1); opacity: 1; }
+.cw-switch { width: 40px; height: 22px; background-color: var(--slot); --bs: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); }
+.cw-switch::before { content: ""; position: absolute; top: 4px; inset-inline-start: 4px; width: 14px; height: 14px; background: var(--panel);
+  box-shadow: inset 2px 2px 0 var(--bevel-hi), inset -2px -2px 0 var(--bevel-lo); transition: transform .14s cubic-bezier(.3, .7, .4, 1); }
+.cw-switch:checked { background-color: var(--accent); }
+.cw-switch:checked::before { transform: translateX(18px); }
+.cw-switch:checked:dir(rtl)::before { transform: translateX(-18px); }
+/* hover (also when the pointer is on the label text) and press */
+.cw-box:hover:not(:disabled), .cw-switch:hover:not(:disabled), label:hover > .cw-box:not(:disabled), label:hover > .cw-switch:not(:disabled) {
+  filter: brightness(1.1); box-shadow: var(--bs), var(--ring); }
+.cw-box:active:not(:disabled), .cw-switch:active:not(:disabled) { filter: brightness(.85); box-shadow: var(--bs); }
+
+/* 9. "Reduce animations": colours still change, nothing moves */
+@media (prefers-reduced-motion: reduce) {
+  .btn:active:not(:disabled) { padding-block: 7px; }
+  .view-reset:active:not(:disabled) { padding-top: 0; }
+  button.slot:active:not(:disabled) > * { transform: none; }
+  .cw-box::before, .cw-box:checked::before { transform: none; }
+  .cw-switch::before { transition: none; }
+}
 </style>
 
 <div class="wrap" id="wrap" dir="ltr" lang="en">
   <header class="top">
     <div class="titlebar" id="titlebar">
-      <h1 class="leaf-title"><span class="sr" data-i18n="title">CapeWatch</span><canvas id="leaf-title" aria-hidden="true"></canvas></h1>
-      <label class="lang-pick" id="lang-pick"><span data-i18n="langLbl">Language</span>
-        <select id="f-lang"></select></label>
+      <h1 class="leaf-title"><span class="sr" data-i18n="title">CapeWatch</span><img id="leaf-title" alt="" aria-hidden="true" decoding="async" fetchpriority="high" src="assets/brand/title-1400.png" srcset="assets/brand/title-700.png 700w, assets/brand/title-1400.png 1400w, assets/brand/title-2029.png 2029w" sizes="(max-width: 720px) calc(100vw - 32px), 640px" width="2029" height="467"></h1>
+      <div class="title-tools" id="title-tools">
+        <label class="lang-pick" id="lang-pick"><span data-i18n="langLbl">Language</span>
+          <select id="f-lang"></select></label>
+      </div>
     </div>
     <div class="brand">
-      <div class="logo" id="logo" aria-hidden="true"><canvas id="cape3d"></canvas></div>
+      <div class="logo" id="logo"><canvas id="cape3d" aria-hidden="true"></canvas><button class="view-reset" id="view-reset" type="button" data-i18n-aria="resetView">⟲</button></div>
       <div class="brand-text">
         <p class="lede" data-i18n="lede"></p>
         <p class="unofficial"><span class="mojang-en">NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</span><span class="mojang-tr" data-i18n="unofficialTr"></span></p>
@@ -343,6 +431,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
 </dialog>
 
 <script src="vendor/skinview3d/skinview3d.bundle.js"></script>
+<script src="assets/title-fx.js"></script>
 <script>
 (() => {
   // ---------- i18n ----------
@@ -374,7 +463,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
       opens: 'Opens {d}', redeemBy: 'Redeem the code by {d}', redeemBtn: 'Redeem code', wiki: 'Wiki', wikiPage: 'Open wiki page', details: 'Details: {n}',
       fReleased: 'Released', fWindow: 'Promotion window', fRemaining: 'Time left', fRedeem: 'Redeem by', fApi: 'API name', fDetected: 'Detected by CapeWatch',
       left: '{x} left', lessHour: 'Less than an hour left',
-      noExact: 'No exact date. Estimate: {x}', fFrom: 'Starts', fUntil: 'Ends', est: 'estimate', more: 'Details', showElytra: 'Show elytra', showCape: 'Show cape', unofficialTr: '', support: 'Support CapeWatch', contact: 'Contact', foot1App: 'Cape facts from {wiki} and official Mojang announcements. Pictures are drawn by CapeWatch from Minecraft textures.',
+      noExact: 'No exact date. Estimate: {x}', fFrom: 'Starts', fUntil: 'Ends', est: 'estimate', more: 'Details', showElytra: 'Show elytra', showCape: 'Show cape', resetView: 'Reset view', unofficialTr: '', support: 'Support CapeWatch', contact: 'Contact', foot1App: 'Cape facts from {wiki} and official Mojang announcements. Pictures are drawn by CapeWatch from Minecraft textures.',
       free: 'Completely free', paid: 'Requires a purchase', freeTip: 'Only a Minecraft account is needed. Nothing else to buy.',
       fCost: 'Cost', costAll: 'Any cost', stFree: 'Free right now',
       CAT: { ownership: 'Game ownership', staff: 'Mojang / Microsoft staff', 'event-physical': 'In-person event', 'event-virtual': 'Online event',
@@ -401,7 +490,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
       opens: 'נפתח ב-{d}', redeemBy: 'לממש את הקוד עד {d}', redeemBtn: 'מימוש קוד', wiki: 'בוויקי', wikiPage: 'לדף בוויקי', details: 'פרטים על {n}',
       fReleased: 'יצאה', fWindow: 'חלון המבצע', fRemaining: 'זמן שנשאר', fRedeem: 'מימוש קוד עד', fApi: 'שם ב-API', fDetected: 'CapeWatch זיהה',
       left: 'נותרו {x}', lessHour: 'נותרה פחות משעה',
-      noExact: 'אין תאריך מדויק. הערכה: {x}', fFrom: 'מתחיל', fUntil: 'מסתיים', est: 'הערכה', more: 'פירוט מלא', showElytra: 'הצג אליטרה', showCape: 'הצג גלימה', unofficialTr: 'זה לא מוצר רשמי של Minecraft. לא אושר על ידי Mojang או Microsoft ואין לו קשר אליהן.', support: 'תמיכה ב-CapeWatch', contact: 'יצירת קשר', foot1App: 'העובדות על הגלימות מ-{wiki} ומהודעות רשמיות של Mojang. התמונות מצוירות על ידי CapeWatch מהטקסטורות של Minecraft.',
+      noExact: 'אין תאריך מדויק. הערכה: {x}', fFrom: 'מתחיל', fUntil: 'מסתיים', est: 'הערכה', more: 'פירוט מלא', showElytra: 'הצג אליטרה', showCape: 'הצג גלימה', resetView: 'איפוס תצוגה', unofficialTr: 'זה לא מוצר רשמי של Minecraft. לא אושר על ידי Mojang או Microsoft ואין לו קשר אליהן.', support: 'תמיכה ב-CapeWatch', contact: 'יצירת קשר', foot1App: 'העובדות על הגלימות מ-{wiki} ומהודעות רשמיות של Mojang. התמונות מצוירות על ידי CapeWatch מהטקסטורות של Minecraft.',
       free: 'חינמי לחלוטין', paid: 'דורש רכישה', freeTip: 'צריך רק חשבון Minecraft, בלי לקנות שום דבר נוסף.',
       fCost: 'עלות', costAll: 'כל העלויות', stFree: 'חינמיות עכשיו',
       CAT: { ownership: 'בעלות על המשחק', staff: 'צוות Mojang / Microsoft', 'event-physical': 'אירוע פיזי', 'event-virtual': 'אירוע מקוון',
@@ -428,7 +517,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
       opens: 'Abre el {d}', redeemBy: 'Canjea el código antes del {d}', redeemBtn: 'Canjear código', wiki: 'Wiki', wikiPage: 'Abrir en la wiki', details: 'Detalles: {n}',
       fReleased: 'Lanzada', fWindow: 'Periodo de la promoción', fRemaining: 'Tiempo restante', fRedeem: 'Canjear antes de', fApi: 'Nombre en la API', fDetected: 'Detectada por CapeWatch',
       left: 'Quedan {x}', lessHour: 'Queda menos de una hora',
-      noExact: 'Sin fecha exacta. Estimación: {x}', fFrom: 'Empieza', fUntil: 'Termina', est: 'estimación', more: 'Detalles', showElytra: 'Ver élitros', showCape: 'Ver capa', unofficialTr: 'No es un producto oficial de Minecraft. No está aprobado por Mojang ni Microsoft ni asociado con ellas.', support: 'Apoyar a CapeWatch', contact: 'Contacto', foot1App: 'Datos de las capas de {wiki} y de anuncios oficiales de Mojang. CapeWatch dibuja las imágenes a partir de las texturas de Minecraft.',
+      noExact: 'Sin fecha exacta. Estimación: {x}', fFrom: 'Empieza', fUntil: 'Termina', est: 'estimación', more: 'Detalles', showElytra: 'Ver élitros', showCape: 'Ver capa', resetView: 'Restablecer vista', unofficialTr: 'No es un producto oficial de Minecraft. No está aprobado por Mojang ni Microsoft ni asociado con ellas.', support: 'Apoyar a CapeWatch', contact: 'Contacto', foot1App: 'Datos de las capas de {wiki} y de anuncios oficiales de Mojang. CapeWatch dibuja las imágenes a partir de las texturas de Minecraft.',
       free: 'Totalmente gratis', paid: 'Requiere una compra', freeTip: 'Solo necesitas una cuenta de Minecraft. Nada más que comprar.',
       fCost: 'Coste', costAll: 'Cualquier coste', stFree: 'Gratis ahora',
       CAT: { ownership: 'Propiedad del juego', staff: 'Personal de Mojang / Microsoft', 'event-physical': 'Evento presencial', 'event-virtual': 'Evento en línea',
@@ -455,7 +544,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
       opens: 'Abre em {d}', redeemBy: 'Resgate o código até {d}', redeemBtn: 'Resgatar código', wiki: 'Wiki', wikiPage: 'Abrir na wiki', details: 'Detalhes: {n}',
       fReleased: 'Lançada', fWindow: 'Período da promoção', fRemaining: 'Tempo restante', fRedeem: 'Resgatar até', fApi: 'Nome na API', fDetected: 'Detectada pelo CapeWatch',
       left: 'Faltam {x}', lessHour: 'Falta menos de uma hora',
-      noExact: 'Sem data exata. Estimativa: {x}', fFrom: 'Começa', fUntil: 'Termina', est: 'estimativa', more: 'Detalhes', showElytra: 'Ver élitros', showCape: 'Ver capa', unofficialTr: 'Não é um produto oficial do Minecraft. Não é aprovado nem associado à Mojang ou à Microsoft.', support: 'Apoiar o CapeWatch', contact: 'Contato', foot1App: 'Dados das capas de {wiki} e de anúncios oficiais da Mojang. O CapeWatch desenha as imagens a partir das texturas do Minecraft.',
+      noExact: 'Sem data exata. Estimativa: {x}', fFrom: 'Começa', fUntil: 'Termina', est: 'estimativa', more: 'Detalhes', showElytra: 'Ver élitros', showCape: 'Ver capa', resetView: 'Redefinir visualização', unofficialTr: 'Não é um produto oficial do Minecraft. Não é aprovado nem associado à Mojang ou à Microsoft.', support: 'Apoiar o CapeWatch', contact: 'Contato', foot1App: 'Dados das capas de {wiki} e de anúncios oficiais da Mojang. O CapeWatch desenha as imagens a partir das texturas do Minecraft.',
       free: 'Totalmente grátis', paid: 'Requer uma compra', freeTip: 'Só precisa de uma conta Minecraft. Nada mais para comprar.',
       fCost: 'Custo', costAll: 'Qualquer custo', stFree: 'Grátis agora',
       CAT: { ownership: 'Posse do jogo', staff: 'Equipe Mojang / Microsoft', 'event-physical': 'Evento presencial', 'event-virtual': 'Evento online',
@@ -482,7 +571,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
       opens: 'Ouvre le {d}', redeemBy: 'Échangez le code avant le {d}', redeemBtn: 'Échanger le code', wiki: 'Wiki', wikiPage: 'Ouvrir le wiki', details: 'Détails : {n}',
       fReleased: 'Sortie', fWindow: 'Période de la promotion', fRemaining: 'Temps restant', fRedeem: 'Échanger avant', fApi: 'Nom dans l’API', fDetected: 'Détectée par CapeWatch',
       left: 'Encore {x}', lessHour: 'Moins d’une heure restante',
-      noExact: 'Pas de date exacte. Estimation : {x}', fFrom: 'Début', fUntil: 'Fin', est: 'estimation', more: 'Détails', showElytra: 'Voir les élytres', showCape: 'Voir la cape', unofficialTr: 'Ce n’est pas un produit officiel Minecraft. Il n’est ni approuvé par Mojang ou Microsoft, ni associé à eux.', support: 'Soutenir CapeWatch', contact: 'Contact', foot1App: 'Infos sur les capes : {wiki} et annonces officielles de Mojang. Les images sont dessinées par CapeWatch à partir des textures de Minecraft.',
+      noExact: 'Pas de date exacte. Estimation : {x}', fFrom: 'Début', fUntil: 'Fin', est: 'estimation', more: 'Détails', showElytra: 'Voir les élytres', showCape: 'Voir la cape', resetView: 'Réinitialiser la vue', unofficialTr: 'Ce n’est pas un produit officiel Minecraft. Il n’est ni approuvé par Mojang ou Microsoft, ni associé à eux.', support: 'Soutenir CapeWatch', contact: 'Contact', foot1App: 'Infos sur les capes : {wiki} et annonces officielles de Mojang. Les images sont dessinées par CapeWatch à partir des textures de Minecraft.',
       free: 'Entièrement gratuite', paid: 'Achat nécessaire', freeTip: 'Un compte Minecraft suffit. Rien d’autre à acheter.',
       fCost: 'Coût', costAll: 'Tous les coûts', stFree: 'Gratuites maintenant',
       CAT: { ownership: 'Possession du jeu', staff: 'Équipe Mojang / Microsoft', 'event-physical': 'Événement physique', 'event-virtual': 'Événement en ligne',
@@ -509,7 +598,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
       opens: 'Startet am {d}', redeemBy: 'Code bis {d} einlösen', redeemBtn: 'Code einlösen', wiki: 'Wiki', wikiPage: 'Im Wiki öffnen', details: 'Details: {n}',
       fReleased: 'Erschienen', fWindow: 'Aktionszeitraum', fRemaining: 'Verbleibend', fRedeem: 'Einlösen bis', fApi: 'API-Name', fDetected: 'Von CapeWatch erkannt',
       left: 'Noch {x}', lessHour: 'Weniger als eine Stunde',
-      noExact: 'Kein genaues Datum. Schätzung: {x}', fFrom: 'Beginn', fUntil: 'Ende', est: 'Schätzung', more: 'Details', showElytra: 'Elytren zeigen', showCape: 'Umhang zeigen', unofficialTr: 'Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt und nicht mit ihnen verbunden.', support: 'CapeWatch unterstützen', contact: 'Kontakt', foot1App: 'Fakten zu den Umhängen von {wiki} und aus offiziellen Mojang-Ankündigungen. Die Bilder zeichnet CapeWatch aus Minecraft-Texturen.',
+      noExact: 'Kein genaues Datum. Schätzung: {x}', fFrom: 'Beginn', fUntil: 'Ende', est: 'Schätzung', more: 'Details', showElytra: 'Elytren zeigen', showCape: 'Umhang zeigen', resetView: 'Ansicht zurücksetzen', unofficialTr: 'Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt und nicht mit ihnen verbunden.', support: 'CapeWatch unterstützen', contact: 'Kontakt', foot1App: 'Fakten zu den Umhängen von {wiki} und aus offiziellen Mojang-Ankündigungen. Die Bilder zeichnet CapeWatch aus Minecraft-Texturen.',
       free: 'Komplett kostenlos', paid: 'Kauf erforderlich', freeTip: 'Nur ein Minecraft-Konto nötig. Nichts extra zu kaufen.',
       fCost: 'Kosten', costAll: 'Alle', stFree: 'Jetzt gratis',
       CAT: { ownership: 'Spielbesitz', staff: 'Mojang-/Microsoft-Team', 'event-physical': 'Vor-Ort-Event', 'event-virtual': 'Online-Event',
@@ -536,7 +625,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
       opens: 'Откроется {d}', redeemBy: 'Активируйте код до {d}', redeemBtn: 'Активировать код', wiki: 'Вики', wikiPage: 'Открыть в вики', details: 'Подробнее: {n}',
       fReleased: 'Вышел', fWindow: 'Период акции', fRemaining: 'Осталось времени', fRedeem: 'Активировать до', fApi: 'Имя в API', fDetected: 'Обнаружен CapeWatch',
       left: 'Осталось {x}', lessHour: 'Осталось меньше часа',
-      noExact: 'Точной даты нет. Оценка: {x}', fFrom: 'Начало', fUntil: 'Конец', est: 'оценка', more: 'Подробнее', showElytra: 'Показать элитры', showCape: 'Показать плащ', unofficialTr: 'Это не официальный продукт Minecraft. Не одобрен Mojang или Microsoft и не связан с ними.', support: 'Поддержать CapeWatch', contact: 'Связаться', foot1App: 'Сведения о плащах — {wiki} и официальные анонсы Mojang. Картинки рисует CapeWatch по текстурам Minecraft.',
+      noExact: 'Точной даты нет. Оценка: {x}', fFrom: 'Начало', fUntil: 'Конец', est: 'оценка', more: 'Подробнее', showElytra: 'Показать элитры', showCape: 'Показать плащ', resetView: 'Сбросить вид', unofficialTr: 'Это не официальный продукт Minecraft. Не одобрен Mojang или Microsoft и не связан с ними.', support: 'Поддержать CapeWatch', contact: 'Связаться', foot1App: 'Сведения о плащах — {wiki} и официальные анонсы Mojang. Картинки рисует CapeWatch по текстурам Minecraft.',
       free: 'Полностью бесплатно', paid: 'Нужна покупка', freeTip: 'Нужен только аккаунт Minecraft. Больше ничего покупать не надо.',
       fCost: 'Стоимость', costAll: 'Любая', stFree: 'Бесплатно сейчас',
       CAT: { ownership: 'Владение игрой', staff: 'Сотрудники Mojang / Microsoft', 'event-physical': 'Офлайн-событие', 'event-virtual': 'Онлайн-событие',
@@ -662,6 +751,8 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
     return { text, urgent: ms < 3 * 86400000, ms };
   }
   const isLive = (c) => c.availability === 'available' || c.availability === 'permanent';
+  // Handed out at an in-person event that has no end date (a touring show): obtainable, but not a promotion.
+  const ongoingInPerson = (c) => c.category === 'event-physical' && !c.availableUntil;
   function isNew(c) {
     const ref = parseISO(c.source === 'radar' ? c.detectedAt : c.releaseDate);
     return !!ref && (Date.now() - ref) < 14 * 86400000 && (Date.now() - ref) > -86400000;
@@ -673,6 +764,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
     const c = S.capes.get(id);
     // The installed app never loads wiki files (non-commercial licence; the app has a donate button).
     // Textures drawn by CapeWatch itself live in this repo (assets/own-capes/); the app accepts only those.
+    // It never loads wiki files: their licence is non-commercial and the app has a donate button.
     const own = typeof c?.textureUrl === 'string' && c.textureUrl.startsWith('https://raw.githubusercontent.com/Kayoiz/CapeWatch/main/assets/own-capes/');
     return c?.textureId ? 'https://textures.minecraft.net/texture/' + c.textureId : (APP && !own ? null : c?.textureUrl || null);
   };
@@ -703,10 +795,26 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
         if (showEly.has(id)) showEly.delete(id); else showEly.add(id);
         document.querySelectorAll('[data-cape="' + CSS.escape(id) + '"]').forEach((card) => {
           const old = card.querySelector('.slot');
-          old.replaceWith(slot(id, c, old.tagName === 'BUTTON'));
+          old.replaceChildren(...slot(id, c, false).childNodes);   // same element: a click on it is never lost
         });
         document.querySelectorAll('[data-ely="' + CSS.escape(id) + '"]').forEach((b) => { b.textContent = t(showEly.has(id) ? 'showCape' : 'showElytra'); });
       } });
+  }
+
+  // A picture the app has just drawn: put it into that cape's cards (and the open detail window) in place.
+  // Rebuilding the lists for every picture (dozens of times in the first seconds) threw away the buttons
+  // under the mouse, so a click that landed during a rebuild did nothing.
+  function refreshPics(id) {
+    const c = S.capes.get(id);
+    if (!c) return;
+    document.querySelectorAll('[data-cape="' + CSS.escape(id) + '"]').forEach((card) => {
+      const el = card.querySelector('.slot');
+      if (!el) return;
+      el.replaceChildren(...slot(id, c, false).childNodes);
+      if (!card.querySelector('[data-ely]')) { const b = elytraBtn(id, c); if (b) el.after(b); }
+    });
+    const dlg = $('dlg');
+    if (dlg.open && dlg.dataset.cape === id) $('dlg-slot').replaceChildren(...slot(id, c, false).childNodes);
   }
 
   // ---------- pieces ----------
@@ -763,7 +871,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
     $('st-last').textContent = S.status?.lastCheckAt ? ago(S.status.lastCheckAt) : (S.loaded ? t('notChecked') : '…');
     if (S.status?.lastCheckAt) $('st-last').title = fmtWhen(S.status.lastCheckAt);
     if (S.loaded) {
-      $('st-live').textContent = all.filter(([, c]) => isLive(c)).length;   // same set as "Get it now"; "free" is a subset
+      $('st-live').textContent = all.filter(([, c]) => isLive(c)).length;   // all obtainable capes (also in-person ones); "free" is a subset
       $('st-free').textContent = all.filter(([, c]) => isLive(c) && c.cost === 'free').length;
       $('st-total').textContent = all.length;
       $('st-java').textContent = all.filter(([, c]) => (c.editions || []).includes('java')).length;
@@ -775,7 +883,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
     if (S.dbMissing) live.append(h('div', { class: 'empty', text: t('dbMissing') }));
     else if (!S.loaded) live.append(h('div', { class: 'empty', text: t('loading') }));
     else {
-      const now = all.filter(([, c]) => c.availability === 'available')
+      const now = all.filter(([, c]) => c.availability === 'available' && !ongoingInPerson(c))
         .sort((a, b) => (endOf(a[1])?.getTime() ?? Infinity) - (endOf(b[1])?.getTime() ?? Infinity));
       if (!now.length) live.append(h('div', { class: 'empty', text: t('noLive') }));
       now.forEach(([id, c]) => live.append(liveCard(id, c)));
@@ -839,171 +947,65 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
   // carry a small dark shadow. Drawn at a whole-number scale of device pixels so the blocks stay crisp,
   // and redrawn when the bar's width changes.
   const titleView = (() => {
-    const GLYPHS = {
-      C: ['.###.', '#...#', '#....', '#....', '#....', '#...#', '.###.', '.....', '.....'],
-      a: ['.....', '.....', '.###.', '....#', '.####', '#...#', '.####', '.....', '.....'],
-      p: ['.....', '.....', '####.', '#...#', '#...#', '#...#', '####.', '#....', '#....'],
-      e: ['.....', '.....', '.###.', '#...#', '#####', '#....', '.####', '.....', '.....'],
-      W: ['#...#', '#...#', '#...#', '#.#.#', '#.#.#', '##.##', '#...#', '.....', '.....'],
-      t: ['....', '.#..', '####', '.#..', '.#..', '.#..', '..##', '....', '....'],
-      c: ['.....', '.....', '.###.', '#...#', '#....', '#...#', '.###.', '.....', '.....'],
-      h: ['#....', '#....', '#.##.', '##..#', '#...#', '#...#', '#...#', '.....', '.....']
-    };
-    const WORD = 'CapeWatch', SUB = 4, ROWS = 9, MAX_W = 640;
-    const BOLD = 2, SHADOW_OFF = 2;                    // in texture pixels (a block is SUB × SUB)
-    const LEAVES = ['#17470E', '#1E5A12', '#256B17', '#2C7A1C', '#348A22'];
-    const HOLE = '#0D2A09', SHADOW = '#081806';
-    // Lit texture pixels: every letter cell, widened by BOLD; letters one empty column apart.
-    const lit = new Map();
-    let cols = 0, wStart = 0;
-    for (const ch of WORD) {
-      const g = GLYPHS[ch];
-      if (ch === 'W') wStart = cols;
-      g.forEach((line, r) => [...line].forEach((px, c) => {
-        if (px !== '#') return;
-        for (let dy = 0; dy < SUB; dy++) for (let dx = 0; dx < SUB + BOLD; dx++) {
-          const x = (cols + c) * SUB + dx, y = r * SUB + dy;
-          lit.set(x + ',' + y, [x, y]);
-        }
-      }));
-      cols += g[0].length + 1;
-    }
-    cols -= 1;
-    const W = cols * SUB + BOLD + SHADOW_OFF, H = ROWS * SUB + SHADOW_OFF;
-    // Seeded noise, so the leaves look the same on every load.
-    let seed = 20261001;
-    const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-    const pixels = [...lit.values()].sort((a, b) => a[1] - b[1] || a[0] - b[0])
-      .map(([x, y]) => [x, y, rnd() < 0.08 ? HOLE : LEAVES[Math.floor(rnd() * LEAVES.length)]]);
-    const canvas = $('leaf-title'), bar = $('titlebar'), langPick = $('lang-pick');
-    let lastScale = 0;
+    // The title is CapeWatch's own title art (assets/brand/title-*.png, transparent, made for a dark background).
+    const MAX_W = 640;
+    const img = $('leaf-title'), bar = $('titlebar'), tools = $('title-tools');
+    // Width: as wide as the free space allows (never over the language picker), at most MAX_W; on narrow
+    // windows the picker has its own row and the title takes the full width. srcset picks a sharp file.
+    let lastW = 0;
     function draw() {
-      const dpr = window.devicePixelRatio || 1;
       const narrow = matchMedia('(max-width: 720px)').matches;
-      const avail = narrow ? bar.clientWidth : bar.clientWidth - 2 * (langPick.offsetWidth + 12);
-      const s = Math.max(1, Math.floor(Math.min(MAX_W, avail) * dpr / W));
-      if (s === lastScale) return;
-      lastScale = s;
-      canvas.width = W * s; canvas.height = H * s;
-      canvas.style.width = (W * s / dpr) + 'px';   // height follows from the canvas's own aspect ratio
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = SHADOW;
-      for (const [x, y] of pixels) ctx.fillRect((x + SHADOW_OFF) * s, (y + SHADOW_OFF) * s, s, s);
-      for (const [x, y, color] of pixels) { ctx.fillStyle = color; ctx.fillRect(x * s, y * s, s, s); }
+      const avail = narrow ? bar.clientWidth : bar.clientWidth - 2 * (tools.offsetWidth + 12);
+      const w = Math.max(120, Math.floor(Math.min(MAX_W, avail)));
+      if (w === lastW) return;
+      lastW = w;
+      img.style.width = w + 'px';
+      img.sizes = w + 'px';
     }
-    // The free width depends on the bar and on the picker (its label changes with the language).
     const ro = new ResizeObserver(draw);
-    ro.observe(bar); ro.observe(langPick);
+    ro.observe(bar); ro.observe(tools);
     draw();
 
-    // ---------- opening effect ----------
-    // The letters are the light. A wave starts between "e" and "W" and runs to both ends (slow, fast, slow);
-    // every leaf pixel it reaches lights up bright green (brightest in the band at the wave's front) and, in
-    // each pixel row, a ray of light leaves the outermost lit pixel outward: left from "Cap", right from "atch",
-    // fanning a little up and down. Everything is drawn in squares of the title's own pixel size, in five fixed
-    // greens that step darker and more transparent with distance; bands of light flow outward along the rays.
-    // Dark holes never light up or shine, so the word stays readable. Then a hold and a fade. Only an overlay
-    // is drawn on top; the title canvas is never touched, so it ends exactly in its normal state.
-    const FX = { wave: 1.3, hold: 0.2, fade: 0.8, spread: 0.3, bandEvery: 9, bandHalf: 2, flow: 26, grow: 0.18, frontWidth: 0.12, lightUp: 0.05 };
-    // Smooth motion, stepped look: every square keeps one of the five fixed shades; only the opacity of the
-    // squares at a moving edge (the growing tip of a ray, a flowing band, a pixel lighting up) changes gradually.
-    const clamp01 = (v) => Math.max(0, Math.min(1, v));
-    const TOTAL = FX.wave + FX.hold + FX.fade;
-    const STEPS = [['#A3DC83', 0.95], ['#7CC45E', 0.8], ['#5FAE47', 0.62], ['#4F9A3C', 0.45], ['#3F8A32', 0.28]];
-    const LIT = '#7CC45E', FRONT = '#A3DC83';
-    const lightX = (wStart - 1) * SUB + (SUB + BOLD) / 2, lightY = 3.5 * SUB;   // texture px
-    const emit = pixels.filter((p) => p[2] !== HOLE);                           // holes never shine
-    const reachL = lightX - Math.min(...emit.map((p) => p[0])), reachR = Math.max(...emit.map((p) => p[0] + 1)) - lightX;
-    const TH = ROWS * SUB;                                                        // title height in texture px
-    const rayLen = Array.from({ length: H }, () => [TH * (1 + rnd()), TH * (1 + rnd())]);   // 1×–2× per row and side
-    const ease = (u) => u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
-    let fx = null;
-    function fxFrame(t) {
-      const dpr = window.devicePixelRatio || 1, tw = canvas.clientWidth;
-      if (!tw) return;
-      const s = canvas.width / W, k = s / dpr;                 // device / css px per title pixel
-      const maxRay = Math.ceil(2 * TH), room = Math.max(0, (bar.clientWidth - tw) / 2);
-      const ex = Math.min(maxRay, Math.floor(room / k)), ey = Math.ceil(maxRay * FX.spread * 0.5) + 2;   // margins in title px
-      if (!fx) { fx = document.createElement('canvas'); fx.className = 'title-fx'; fx.setAttribute('aria-hidden', 'true'); canvas.after(fx); }
-      const cwPx = W + 2 * ex, chPx = H + 2 * ey;
-      if (fx.width !== cwPx * s || fx.height !== chPx * s) { fx.width = cwPx * s; fx.height = chPx * s; }
-      fx.style.cssText = `left:${-ex * k}px;top:${-ey * k}px;width:${cwPx * k}px;height:${chPx * k}px`;
-      const ctx = fx.getContext('2d');
-      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, fx.width, fx.height);
-      const f = ease(Math.min(1, t / FX.wave));
-      const fade = t <= FX.wave + FX.hold ? 1 : Math.max(0, 1 - (t - FX.wave - FX.hold) / FX.fade);
-      if (fade <= 0) return;
-      ctx.setTransform(s, 0, 0, s, ex * s, ey * s);             // 1 unit = 1 title pixel, crisp squares
-      // lit letter pixels, and per row the outermost lit pixel on each side with how long it has been lit
-      const outer = Array.from({ length: H }, () => [null, null]);
-      for (const [x, y] of emit) {
-        const right = x + 0.5 >= lightX, side = right ? 1 : 0, reachSide = right ? reachR : reachL;
-        const d = Math.abs(x + 0.5 - lightX), reach = f * reachSide;
-        if (d > reach) continue;
-        const on = clamp01((reach - d) / (FX.lightUp * reachSide));          // lights up over a short moment
-        ctx.globalAlpha = fade * on; ctx.fillStyle = LIT; ctx.fillRect(x, y, 1, 1);
-        // the wave's bright front: strongest at the edge, blending back into LIT, gone gently as the wave ends
-        const front = (1 - clamp01((reach - d) / (FX.frontWidth * reachSide))) * clamp01((1 - f) / 0.08);
-        if (front > 0) { ctx.globalAlpha = fade * on * front; ctx.fillStyle = FRONT; ctx.fillRect(x, y, 1, 1); }
-        const o = outer[y][side];
-        // how long this pixel has shone, in wave lengths; keeps counting after the wave ends, so rays of the
-        // last letters keep growing smoothly instead of all snapping to full length when the wave arrives
-        const shone = (reach - d) / reachSide + Math.max(0, t - FX.wave);
-        if (!o || (right ? x > o.x : x < o.x)) outer[y][side] = { x, lit: shone };
-      }
-      // rays: squares stepping outward, five fixed shades by distance, a light band flowing outward
-      const shift = t * FX.flow;
-      for (let y = 0; y < H; y++) for (let side = 0; side < 2; side++) {
-        const o = outer[y][side];
-        if (!o) continue;
-        const dir = side ? 1 : -1, full = rayLen[y][side];
-        const len = full * Math.min(1, o.lit / FX.grow);   // rays grow in as the wave passes
-        const slope = (y + 0.5 - lightY) / TH * FX.spread;
-        for (let j = 1; j <= Math.ceil(len); j++) {
-          const rx = o.x + dir * j, ry = y + Math.round(j * slope);
-          if (lit.has(rx + ',' + ry)) continue;               // never paint over a letter: rays pass behind other letters
-          const tip = Math.min(1, len - (j - 1));              // the growing tip fades in instead of popping
-          const step = Math.min(STEPS.length - 1, Math.floor(j / full * STEPS.length));
-          ctx.globalAlpha = fade * STEPS[step][1] * tip;
-          ctx.fillStyle = STEPS[step][0];
-          ctx.fillRect(rx, ry, 1, 1);
-          // a band of light sliding outward: the next brighter shade laid over, weighted by distance to the band
-          if (step > 0) {
-            const p = ((j - shift) % FX.bandEvery + FX.bandEvery) % FX.bandEvery;
-            const band = Math.max(0, 1 - Math.abs(p - FX.bandEvery / 2) / FX.bandHalf);
-            if (band > 0) { ctx.globalAlpha = fade * STEPS[step - 1][1] * tip * band; ctx.fillStyle = STEPS[step - 1][0]; ctx.fillRect(rx, ry, 1, 1); }
-          }
-        }
-      }
-      ctx.globalAlpha = 1;
+    // ---------- opening glow ----------
+    // When the window is opened, the title art itself glows for a moment: it brightens and a soft green halo
+    // rises around its outline, then it goes back to normal (timing in assets/title-fx.js). Only the image's filter changes, so
+    // it ends exactly as it was. "Reduce animations" in Windows: no glow. In the app the shell decides when to
+    // play it (only when the user opens the window, never on a start with Windows); on the web page it plays
+    // once on load.
+    // The effect itself (timeline, glow, keyframes, blocks, defaults) lives in assets/title-fx.js, shared with
+    // tools/tune-title.html. It draws on a canvas laid over the image while it plays, then the image is back.
+    const FX = window.CapeWatchFX;
+    let fx = null, run = 0;
+    // fixed: the overlay never adds scrollbars when blocks fly past the window edge
+    const fxNew = () => { if (!fx && FX) fx = FX.createTitleFx(img, FX.SCENE, { fixed: true }); return fx; };
+    const fxEnd = () => { if (fx) { fx.destroy(); fx = null; } };
+    function fxFrame(t) { if (t == null) return fxEnd(); const f = fxNew(); if (f && f.renderAt(t)) f.show(true); }
+    async function glow() {
+      if (!FX) { console.info('[Title] glow: skipped (assets/title-fx.js missing)'); return false; }
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) { console.info('[Title] glow: skipped (reduce animations is on)'); return false; }
+      const me = ++run; fxEnd();
+      try { await img.decode(); } catch {}                 // play over the picture, not an empty box
+      if (me !== run) return false;
+      console.info('[Title] glow: start');
+      fxNew().play({ onEnd: ({ frames, ms, worst }) => {
+        fxEnd();
+        console.info('[Title] glow: ' + frames + ' frames in ' + Math.round(ms) + 'ms, ' + (frames * 1000 / ms).toFixed(1) + ' fps, slowest frame ' + Math.round(worst) + 'ms');
+      } });
+      return true;
     }
-    function fxEnd() { if (fx) { fx.remove(); fx = null; } }
-    let live = true;   // false once introAt() takes over (stills), so the running intro stops touching the overlay
-    // Plays once, from the first frame the page is actually shown. "Reduce motion": the title just appears.
-    (function intro() {
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) { console.info('[Title] intro: skipped (reduced motion)'); return; }
-      let t0 = 0, last = 0, frames = 0, worst = 0;
-      const tick = (now) => {
-        if (!live) return;
-        if (!t0) t0 = last = now;
-        worst = Math.max(worst, now - last); last = now; frames++;
-        const t = (now - t0) / 1000;
-        if (t >= TOTAL) {
-          fxEnd();
-          const ms = now - t0;
-          console.info('[Title] intro: ' + frames + ' frames in ' + Math.round(ms) + 'ms, ' + (frames * 1000 / ms).toFixed(1) + ' fps, slowest frame ' + Math.round(worst) + 'ms');
-          return;
-        }
-        fxFrame(t);
-        requestAnimationFrame(tick);
-      };
-      console.info('[Title] intro: start');
-      requestAnimationFrame(tick);
-    })();
-    // introAt(t) draws one moment of the effect (for checking stills); introAt(null) removes it.
-    return { draw, introAt: (t) => { live = false; if (t == null) fxEnd(); else fxFrame(t); } };
+    if (!APP) glow();
+    // introAt(t) shows one moment of the glow (for checking stills); introAt(null) removes it.
+    return { draw, glow, introAt: (t) => { run++; if (fx) fx.stop(); fxFrame(t); } };
   })();
+
+  // ---------- opening sound ----------
+  // The chord itself (synthesised in code, no sound file) lives in assets/title-fx.js, shared with tools/tune-title.html.
+  function holyChord() {
+    if (!window.CapeWatchFX) { console.info('[Sound] skipped: assets/title-fx.js missing'); return false; }
+    const state = window.CapeWatchFX.playSound(window.CapeWatchFX.SCENE);   // at its place on the effect's timeline
+    console.info('[Sound] holy chord: ' + state);
+    return state === 'running' || state === 'scheduled';
+  }
 
   // ---------- header 3D view (skinview3d, vendored in vendor/skinview3d/) ----------
   // One WebGL view only (browsers cap live WebGL contexts): my skin, seen from straight behind,
@@ -1017,7 +1019,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
     const STRIPS = 8, STRIP_H = 2;         // 8 strips × 2 px = the cape's 16 px height, folds fall between pixels
     // Wind: each hinge adds its own angle, so lower strips lean further. Degrees / seconds / radians per strip.
     const WIND = { base: 2.2, amp: 1.6, period: 1.8, delay: 0.5, grow: 0.12 };
-    // Camera: straight behind (never from the side), raised 15° and looking down a little like the game's
+    // Camera (default view; the user can turn and zoom it, see "turning the figure by hand"): straight behind, raised 15° and looking down a little like the game's
     // F5 view, with game-like perspective so the cape's thickness, its gap from the back and the lifting hem
     // show. The distance is fitted to the drawn model, so head to feet and the whole cape always fit.
     const CAM = { fov: 50, elevation: 15, fill: 0.94 };
@@ -1144,6 +1146,103 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
       cam.position.set(0, y + dist * Math.sin(e), -dist * Math.cos(e));
       cam.lookAt(0, y, 0);
       viewer.controls.target.set(0, y, 0);
+      base = { dist, y };
+      applyView();
+    }
+
+    // ---------- turning the figure by hand ----------
+    // Drag: turn freely sideways (360°), up and down only within limits so it never flips over. Let go: it keeps
+    // turning a little and slows to a stop (not with "reduce animations"), then stays at that angle. Wheel: zoom,
+    // limited so the camera never goes inside the figure or loses it. Reset (button or double-click): smoothly
+    // back to the view from behind at the normal size. The camera orbits the fitted framing (base), so the cape
+    // rotation, the cloth and the skin are untouched.
+    const VIEW = { pitchMin: -25, pitchMax: 55, zoomMin: 0.6, zoomMax: 2.5, dragDeg: 0.45, friction: 4.5, wheel: 0.0015, resetMs: 520 };
+    let base = null;
+    const view = { yaw: 0, pitch: 0, zoom: 1 };            // degrees, degrees (added to the 15° elevation), factor
+    let zoomGoal = 1, spin = { yaw: 0, pitch: 0 }, anim = 0, resetting = null;
+    let invertDrag = false;                                 // the app's "reverse drag direction" setting (sideways only)
+    const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let shown = true;
+    function setVisible(v, why) {
+      if (!viewer || v === shown) return;
+      shown = v; viewer.renderPaused = !v;
+      log('view: ' + (v ? 'running' : 'paused') + ' (' + why + ')');
+    }
+    function applyView() {
+      if (!base || !viewer) return;
+      const cam = viewer.camera, r = base.dist / view.zoom;
+      const yaw = view.yaw * Math.PI / 180, el = (CAM.elevation + view.pitch) * Math.PI / 180;
+      cam.position.set(r * Math.cos(el) * Math.sin(yaw), base.y + r * Math.sin(el), -r * Math.cos(el) * Math.cos(yaw));
+      cam.lookAt(0, base.y, 0);
+    }
+    const clampPitch = (p) => Math.max(VIEW.pitchMin, Math.min(VIEW.pitchMax, p));
+    // one small loop, running only while something moves (spin after letting go, zoom easing, reset)
+    function tick(now) {
+      anim = 0;
+      const dt = Math.min(0.05, (now - (tick.last || now)) / 1000); tick.last = now;
+      let moving = false;
+      if (resetting) {
+        const u = Math.min(1, (now - resetting.t0) / VIEW.resetMs), e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+        view.yaw = resetting.yaw * (1 - e); view.pitch = resetting.pitch * (1 - e); view.zoom = resetting.zoom + (1 - resetting.zoom) * e;
+        if (u >= 1) { resetting = null; view.yaw = view.pitch = 0; view.zoom = zoomGoal = 1; } else moving = true;
+      } else {
+        if (Math.abs(spin.yaw) > 2 || Math.abs(spin.pitch) > 2) {              // degrees per second
+          view.yaw = (view.yaw + spin.yaw * dt) % 360; view.pitch = clampPitch(view.pitch + spin.pitch * dt);
+          const k = Math.exp(-VIEW.friction * dt); spin.yaw *= k; spin.pitch *= k; moving = true;
+        } else spin.yaw = spin.pitch = 0;
+        if (Math.abs(zoomGoal - view.zoom) > 0.001) { view.zoom += (zoomGoal - view.zoom) * Math.min(1, dt * 14); moving = true; }
+        else view.zoom = zoomGoal;
+      }
+      applyView();
+      if (moving) anim = requestAnimationFrame(tick); else tick.last = 0;
+    }
+    const kick = () => { if (!anim) anim = requestAnimationFrame(tick); };
+    function resetView() {
+      spin = { yaw: 0, pitch: 0 };
+      const yaw = ((view.yaw % 360) + 540) % 360 - 180;                     // the short way round
+      resetting = { t0: performance.now(), yaw, pitch: view.pitch, zoom: view.zoom };
+      zoomGoal = 1; kick(); log('view: reset');
+    }
+    function setupOrbit() {
+      const canvas = $('cape3d'), box = $('logo');
+      let drag = null;
+      canvas.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        canvas.setPointerCapture(e.pointerId);
+        resetting = null; spin = { yaw: 0, pitch: 0 };
+        drag = { x: e.clientX, y: e.clientY, t: e.timeStamp, vy: 0, vp: 0 };
+        box.classList.add('dragging');
+      });
+      canvas.addEventListener('pointermove', (e) => {
+        if (!drag) return;
+        const dx = e.clientX - drag.x, dy = e.clientY - drag.y, dt = Math.max(1, e.timeStamp - drag.t) / 1000;
+        // sideways: the figure turns with the hand, like grabbing it (reversed with the setting)
+        const dyaw = (invertDrag ? -dx : dx) * VIEW.dragDeg, dpitch = dy * VIEW.dragDeg;
+        view.yaw = (view.yaw + dyaw) % 360; view.pitch = clampPitch(view.pitch + dpitch);
+        // smoothed speed, for the spin after letting go
+        drag.vy = drag.vy * 0.6 + (dyaw / dt) * 0.4; drag.vp = drag.vp * 0.6 + (dpitch / dt) * 0.4;
+        drag.x = e.clientX; drag.y = e.clientY; drag.t = e.timeStamp;
+        applyView();
+      });
+      const end = (e) => {
+        if (!drag) return;
+        const still = e.timeStamp - drag.t > 90;                            // held still before letting go: no spin
+        if (!reducedMotion() && !still) { spin = { yaw: Math.max(-900, Math.min(900, drag.vy)), pitch: Math.max(-400, Math.min(400, drag.vp)) }; kick(); }
+        drag = null; box.classList.remove('dragging');
+      };
+      canvas.addEventListener('pointerup', end);
+      canvas.addEventListener('pointercancel', end);
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();                                                 // zoom the figure, not the page
+        resetting = null;
+        zoomGoal = Math.max(VIEW.zoomMin, Math.min(VIEW.zoomMax, zoomGoal * Math.exp(-e.deltaY * VIEW.wheel)));
+        kick();
+      }, { passive: false });
+      canvas.addEventListener('dblclick', resetView);
+      $('view-reset').addEventListener('click', resetView);
+      // Nothing to draw while the window is hidden or minimized: stop rendering until it is back. In a browser the
+      // page knows (visibilitychange); in the app the window tells it (setVisible, from app/shell.js).
+      document.addEventListener('visibilitychange', () => setVisible(!document.hidden, 'page'));
     }
 
     async function loadSkin() {
@@ -1255,6 +1354,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
       gameLight();
       viewer.playerObject.elytra.rightWing.position.z = ELYTRA.behind;   // never updated by updateRightWing
       placeCamera();
+      setupOrbit();
       // The frame's height follows the title block (language, window width), so keep the view matched to it.
       new ResizeObserver(() => {
         const w = box.clientWidth, h = box.clientHeight;
@@ -1284,6 +1384,10 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
         log('swap: rotation started, every', SWAP_MS / 1000 + 's');
       },
       get viewer() { return viewer; },
+      // The app tells the view when its window is hidden in the tray or minimized (see app/shell.js).
+      setVisible: (v) => setVisible(v, 'window ' + (v ? 'shown' : 'hidden or minimized')),
+      // The app's "reverse drag direction" setting: dragging sideways turns the figure the other way.
+      setInvertDrag(on) { invertDrag = !!on; log('view: drag direction ' + (invertDrag ? 'reversed' : 'normal')); },
       // Swap the figure's skin (the app's "my skin" setting); back to the default skin when url is empty.
       async setSkin(url) {
         try { await viewer.loadSkin(url || SKIN_URL, { model: 'auto-detect' }); placeCamera(); log('skin: set', url || SKIN_URL); return true; }
@@ -1296,6 +1400,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
   function openDetail(id) {
     const c = S.capes.get(id); if (!c) return;
     const dlg = $('dlg');
+    dlg.dataset.cape = id;
     $('dlg-slot').replaceChildren(...slot(id, c, false).childNodes);
     $('dlg-title').textContent = c.name;
     // replaceChildren() prints a null as the text "null", so drop the empty badges (e.g. no "free" badge on a paid cape)
@@ -1353,8 +1458,8 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
   // Several collections answer within the same moment on load; render once for all of them.
   let renderTimer = 0;
   const requestRender = () => { if (!renderTimer) renderTimer = setTimeout(() => { renderTimer = 0; render(); }, 16); };
-  addEventListener('capeart', requestRender);   // a drawn picture is ready
-  window.CapeWatchPage = { cape3d, lang: () => lang, t, openDetail: (id) => openDetail(id) };
+  addEventListener('capeart', (e) => (e.detail ? refreshPics(e.detail) : requestRender()));   // a drawn picture is ready
+  window.CapeWatchPage = { cape3d, lang: () => lang, t, openDetail: (id) => openDetail(id), glow: () => titleView.glow(), glowAt: (t) => titleView.introAt(t), holyChord };
   (async () => {
     let db = null;
     try { db = await window.claude?.use?.('db'); } catch { db = null; }

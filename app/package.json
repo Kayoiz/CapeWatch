@@ -4,7 +4,8 @@
   "version": "1.0.5",
   "scripts": {
     "web": "node build-web.mjs",
-    "build": "node build-web.mjs && tauri build"
+    "build": "node build-web.mjs && cargo clean --manifest-path src-tauri/Cargo.toml -p capewatch --release && tauri build",
+    "//build": "cargo clean -p capewatch: icons and the page are embedded at compile time, and a cached build could keep old ones"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2"

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CapeWatch Buttons</title>
+<!-- Dev-only check page (not part of the app): every kind of button in every state, light and dark. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Secular+One&display=swap">
+<style>
+/* ---------- the page's colour tokens (same as cape-radar.html), light and dark ---------- */
+:root, .theme-light {
+  --bg: #E6E8E1; --panel: #F5F6F1; --slot: #B4B7AE; --bevel-hi: #FFFFFF; --bevel-lo: #5E625A;
+  --fg: #1C1F1A; --muted: #585E54; --line: #CDD0C6; --accent: #3C8527; --accent-fg: #FFFFFF;
+  --font-display: "Secular One", "Assistant", system-ui, sans-serif;
+  --font-body: "Assistant", "Segoe UI", system-ui, sans-serif;
+  --font-pixel: "CapeWatch Pixel", ui-monospace, monospace;
+  --step--1: .8125rem; --text-sm: .875rem;
+  color-scheme: light;
+}
+.theme-dark {
+  --bg: #171916; --panel: #20231F; --slot: #2E322C; --bevel-hi: #4B5047; --bevel-lo: #0A0B09;
+  --fg: #E8EBE3; --muted: #A2A99C; --line: #343831; --accent: #6CC349; --accent-fg: #0F1A0B;
+  color-scheme: dark;
+}
+@font-face { font-family: "CapeWatch Pixel"; src: url("../assets/fonts/CapeWatchPixel.ttf") format("truetype"); }
+* { box-sizing: border-box; }
+body { margin: 0; background: #8d9188; font-family: var(--font-body); color: var(--fg); }
+
+/* ---------- the elements as they are in the app (base look, unchanged) ---------- */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font: 600 var(--step--1)/1.2 var(--font-body);
+  background: var(--accent); color: var(--accent-fg); text-decoration: none; border: 0; }
+.btn.ghost { background: transparent; color: var(--fg); }
+.ely-btn { justify-content: center; width: 100%; padding-inline: 6px; }
+select { font: inherit; font-size: var(--text-sm); padding: 7px 10px; background: var(--panel); color: var(--fg); border: 0; }
+.view-reset { position: absolute; z-index: 2; inset-block-start: 8px; inset-inline-end: 8px; width: 28px; height: 28px; padding: 0;
+  display: grid; place-items: center; font: 600 15px/1 var(--font-body); color: var(--fg); background: color-mix(in srgb, var(--panel) 75%, transparent); border: 0; }
+.slot { position: relative; aspect-ratio: 4 / 5; background: var(--slot); overflow: hidden; border: 0; padding: 0; display: grid; place-items: center; }
+</style>
+
+<style id="controls">
+/* ======================================================================================================
+   CapeWatch controls: one pixel feel for every button (this block is what goes into the app).
+   Hover: a little brighter, soft green glow. Press: sinks 2px, darker, bevel turns inward; back on release.
+   Tab: a clear frame in the text colour (dark on light, light on dark). Disabled: grey, see-through, no hover.
+   Checkboxes and switches change with a short animation. Everything 0.08–0.14s, so it feels immediate.
+   "Reduce animations" in Windows: colours still change, nothing moves.
+   ====================================================================================================== */
+.btn, .view-reset, button.slot, select, .cw-box, .cw-switch {
+  --glow: color-mix(in srgb, var(--accent) 55%, transparent);
+  --ring: 0 0 0 1px var(--glow), 0 0 12px var(--glow);
+  box-shadow: var(--bs);
+  cursor: pointer;
+  transition: filter .12s ease-out, box-shadow .12s ease-out, background-color .12s ease-out, opacity .12s ease-out, transform .08s ease-out;
+}
+/* each control's resting bevel */
+.btn { --bs: inset 2px 2px 0 rgba(255,255,255,.28), inset -2px -2px 0 rgba(0,0,0,.3); }
+.btn.ghost { --bs: inset 0 0 0 2px var(--line); }
+.view-reset { --bs: inset 2px 2px 0 var(--bevel-hi), inset -2px -2px 0 var(--bevel-lo); opacity: .55; }
+button.slot { --bs: inset 4px 4px 0 var(--bevel-lo), inset -4px -4px 0 var(--bevel-hi); }
+select { --bs: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); }
+
+/* 1. hover: a little brighter, soft green glow */
+.btn:hover:not(:disabled), .view-reset:hover:not(:disabled), button.slot:hover:not(:disabled) { filter: brightness(1.12); box-shadow: var(--bs), var(--ring); }
+.btn.ghost:hover:not(:disabled) { filter: none; background-color: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 0 0 0 2px var(--accent), var(--ring); }
+.view-reset:hover:not(:disabled) { opacity: 1; }
+select:hover:not(:disabled) { background-color: color-mix(in srgb, var(--accent) 8%, var(--panel)); box-shadow: var(--bs), var(--ring); }
+
+/* 2. press: sinks in (down 2px, darker, the bevel turns inward) and comes back on release */
+.btn:active:not(:disabled), .view-reset:active:not(:disabled), button.slot:active:not(:disabled) {
+  filter: brightness(.8); box-shadow: inset 2px 2px 0 rgba(0,0,0,.35), inset -2px -2px 0 rgba(255,255,255,.12); }
+/* the content sinks 2px, the button itself stays put: a moving button lost presses made near its edge */
+.btn:active:not(:disabled) { padding-block: 9px 5px; }
+.view-reset:active:not(:disabled) { padding-top: 4px; }
+button.slot:active:not(:disabled) > * { transform: translateY(2px); }
+.view-reset:active:not(:disabled) { opacity: 1; }
+.btn.ghost:active:not(:disabled) { filter: none; background-color: color-mix(in srgb, var(--accent) 12%, rgba(0,0,0,.22));
+  box-shadow: inset 0 0 0 2px var(--accent), inset 2px 2px 0 2px rgba(0,0,0,.2); }
+select:active:not(:disabled) { filter: brightness(.9); box-shadow: var(--bs); }   /* a menu opens: colour only, no sinking */
+
+/* 3. keyboard (Tab): a clear frame around the control */
+.btn:focus-visible, .view-reset:focus-visible, button.slot:focus-visible, select:focus-visible, .cw-box:focus-visible, .cw-switch:focus-visible {
+  outline: 3px solid var(--fg); outline-offset: 3px; }
+.view-reset:focus-visible { opacity: 1; }
+
+/* 4. not available: grey, see-through, no reaction */
+.btn:disabled, .view-reset:disabled, button.slot:disabled, select:disabled, .cw-box:disabled, .cw-switch:disabled { filter: grayscale(1); opacity: .45; cursor: not-allowed; }
+label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
+
+/* 5. checkboxes and switches (settings): the change is animated */
+.cw-opt { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.cw-box, .cw-switch { appearance: none; -webkit-appearance: none; margin: 0; flex: none; position: relative; }
+.cw-box { width: 20px; height: 20px; background-color: var(--bg); --bs: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); }
+.cw-box::before { content: ""; position: absolute; inset: 3px; background: var(--accent-fg); transform: scale(.3); opacity: 0;
+  transition: transform .12s ease-out, opacity .12s ease-out;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpath d='M0 3h1v2H0zM1 4h1v2H1zM2 5h1v2H2zM3 4h1v2H3zM4 3h1v2H4zM5 2h1v2H5zM6 1h1v2H6z'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpath d='M0 3h1v2H0zM1 4h1v2H1zM2 5h1v2H2zM3 4h1v2H3zM4 3h1v2H4zM5 2h1v2H5zM6 1h1v2H6z'/%3E%3C/svg%3E") center / 14px 14px no-repeat; }
+.cw-box:checked { background-color: var(--accent); --bs: inset 2px 2px 0 rgba(255,255,255,.28), inset -2px -2px 0 rgba(0,0,0,.3); }
+.cw-box:checked::before { transform: scale(1); opacity: 1; }
+.cw-switch { width: 40px; height: 22px; background-color: var(--slot); --bs: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); }
+.cw-switch::before { content: ""; position: absolute; top: 4px; inset-inline-start: 4px; width: 14px; height: 14px; background: var(--panel);
+  box-shadow: inset 2px 2px 0 var(--bevel-hi), inset -2px -2px 0 var(--bevel-lo); transition: transform .14s cubic-bezier(.3, .7, .4, 1); }
+.cw-switch:checked { background-color: var(--accent); }
+.cw-switch:checked::before { transform: translateX(18px); }
+.cw-switch:checked:dir(rtl)::before { transform: translateX(-18px); }
+/* hover (also when the pointer is on the label text) and press */
+.cw-box:hover:not(:disabled), .cw-switch:hover:not(:disabled), label:hover > .cw-box:not(:disabled), label:hover > .cw-switch:not(:disabled) {
+  filter: brightness(1.1); box-shadow: var(--bs), var(--ring); }
+.cw-box:active:not(:disabled), .cw-switch:active:not(:disabled) { filter: brightness(.85); box-shadow: var(--bs); }
+
+/* 9. "Reduce animations": colours still change, nothing moves */
+@media (prefers-reduced-motion: reduce) {
+  .btn:active:not(:disabled) { padding-block: 7px; }
+  .view-reset:active:not(:disabled) { padding-top: 0; }
+  button.slot:active:not(:disabled) > * { transform: none; }
+  .cw-box::before, .cw-box:checked::before { transform: none; }
+  .cw-switch::before { transition: none; }
+}
+</style>
+<style id="demo-states"></style>
+
+<style>
+/* ---------- the check page itself ---------- */
+.top { max-width: 1180px; margin: 0 auto; padding: 24px 16px 8px; color: #10130e; display: grid; gap: 10px; }
+.top h1 { font: 400 1.8rem/1.2 var(--font-display); margin: 0; }
+.top p { margin: 0; max-width: 75ch; line-height: 1.55; }
+.top .bar { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; background: #E6E8E1; padding: 10px 14px; }
+.theme { max-width: 1180px; margin: 16px auto; padding: 18px 16px 22px; background: var(--bg); color: var(--fg); }
+.theme h2 { font: 400 1.3rem/1.2 var(--font-display); margin: 0 0 12px; }
+.scroll { overflow-x: auto; }
+.table { display: grid; grid-template-columns: 210px repeat(5, minmax(150px, 1fr)); min-width: 960px; }
+.table > * { padding: 12px 10px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.table .h { font-weight: 700; font-size: var(--text-sm); color: var(--muted); border-bottom: 2px solid var(--line); }
+.table .name { font-size: var(--text-sm); line-height: 1.35; display: block; }
+.table .name b { display: block; font-size: 1rem; }
+.stack { display: grid; gap: 10px; }
+.mini-logo { position: relative; width: 76px; height: 76px; background: var(--slot); }
+.mini-slot { width: 80px; }
+.mini-slot .cape { width: 46px; height: 60px; background: #2f6b9a; box-shadow: inset 3px 3px 0 #4f8fc0, inset -3px -3px 0 #1d4566; }
+.note { font-size: var(--text-sm); color: var(--muted); margin-top: 10px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>CapeWatch: לחצנים, כל המצבים</h1>
+  <p>דף בדיקה מקומי, הוא לא נכנס לתוכנה. כל לחצן מופיע בכל מצב, בערכת הצבעים הבהירה ובכהה.
+     העמודות "מעבר עכבר", "לחיצה" ו"מקלדת" מקפיאות את המצב כדי שאפשר יהיה להסתכל עליו בנחת.
+     בעמודה "רגיל" הכול חי: עוברים עם העכבר, לוחצים, ועוברים עם Tab כדי לראות את המסגרת.</p>
+  <div class="bar">
+    <label class="cw-opt"><input type="checkbox" class="cw-switch" role="switch" id="rm-toggle"> <span>הדמיה של "צמצום אנימציות" ב-Windows</span></label>
+    <span id="rm-system" style="font-size:.875rem;color:#585E54"></span>
+  </div>
+</header>
+
+<section class="theme theme-light" aria-labelledby="h-light"><h2 id="h-light">בהיר</h2><div class="scroll"><div class="table" data-table></div></div>
+  <p class="note">סמן העכבר: יד על כל מה שאפשר ללחוץ עליו, וסימן "אסור" על לחצן לא זמין.</p></section>
+<section class="theme theme-dark" aria-labelledby="h-dark"><h2 id="h-dark">כהה</h2><div class="scroll"><div class="table" data-table></div></div></section>
+
+<script>
+// Frozen states: copy every :hover / :active / :focus-visible rule of the controls block to a class (.is-hover,
+// .is-active, .is-focus), and every "reduce animations" rule to .rm, so the page shows exactly the real CSS.
+(() => {
+  const src = document.getElementById('controls').sheet, out = document.getElementById('demo-states').sheet;
+  const STATE = /:hover|:active|:focus-visible/;
+  const freeze = (s) => s.replace(/:hover/g, '.is-hover').replace(/:active/g, '.is-active').replace(/:focus-visible/g, '.is-focus');
+  const add = (sels, css) => { if (sels.length) out.insertRule(sels.join(', ') + ' {' + css + '}', out.cssRules.length); };
+  for (const r of src.cssRules) {
+    if (r instanceof CSSStyleRule) add(r.selectorText.split(',').map((s) => s.trim()).filter((s) => STATE.test(s)).map(freeze), r.style.cssText);
+  }
+  for (const r of src.cssRules) {
+    if (!(r instanceof CSSMediaRule) || !/reduced-motion/.test(r.conditionText)) continue;
+    for (const x of r.cssRules) {
+      const sels = x.selectorText.split(',').map((s) => s.trim());
+      add([...sels, ...sels.filter((s) => STATE.test(s)).map(freeze)].map((s) => '.rm ' + s), x.style.cssText);
+    }
+  }
+})();
+
+const COLS = [['', 'רגיל'], ['is-hover', 'מעבר עכבר'], ['is-active', 'לחיצה'], ['is-focus', 'מקלדת (Tab)'], ['off', 'לא זמין']];
+const opts = '<option>English</option><option>עברית</option><option>Español</option><option>Português</option><option>Français</option><option>Deutsch</option><option>Русский</option>';
+const ROWS = [
+  ['לחצן ראשי', 'Support CapeWatch · Save · Redeem · Wiki page', (c, d) => `<button class="btn ${c}" ${d} type="button">Support CapeWatch</button>`],
+  ['לחצן משני', 'Details · Close', (c, d) => `<button class="btn ghost ${c}" ${d} type="button">Details</button>`],
+  ['Show elytra', 'מתחת לתמונה בכרטיס', (c, d) => `<div style="width:150px"><button class="btn ghost ely-btn ${c}" ${d} type="button">Show elytra</button></div>`],
+  ['הגדרות', 'ליד הכותרת', (c, d) => `<button class="btn ghost ${c}" ${d} type="button">⚙ Settings</button>`],
+  ['בחירת שפה', 'ליד הכותרת', (c, d) => `<select class="${c}" ${d} aria-label="Language">${opts}</select>`],
+  ['סגירת חלון הפרטים', '✕ בפינה', (c, d) => `<button class="btn ghost ${c}" ${d} type="button" aria-label="Close">✕</button>`],
+  ['איפוס הדמות', '⟲ בפינת הדמות', (c, d) => `<div class="mini-logo"><button class="view-reset ${c}" ${d} type="button" aria-label="Reset view">⟲</button></div>`],
+  ['תמונת גלימה', 'לחיצה פותחת את הפרטים', (c, d) => `<button class="slot mini-slot ${c}" ${d} type="button" aria-label="Details"><span class="cape"></span></button>`],
+  ['תיבת סימון', 'בהגדרות: סוגי התראות', (c, d) => `<div class="stack"><label class="cw-opt"><input type="checkbox" class="cw-box ${c}" ${d}> <span>New cape</span></label><label class="cw-opt"><input type="checkbox" class="cw-box ${c}" ${d} checked> <span>Ending soon</span></label></div>`],
+  ['מתג', 'בהגדרות: הפעלה עם Windows, צליל, היפוך', (c, d) => `<div class="stack"><label class="cw-opt"><input type="checkbox" role="switch" class="cw-switch ${c}" ${d}> <span>Off</span></label><label class="cw-opt"><input type="checkbox" role="switch" class="cw-switch ${c}" ${d} checked> <span>On</span></label></div>`],
+];
+for (const t of document.querySelectorAll('[data-table]')) {
+  let html = '<div class="h">סוג</div>' + COLS.map(([, n]) => `<div class="h">${n}</div>`).join('');
+  for (const [name, where, make] of ROWS) {
+    html += `<div class="name"><b>${name}</b>${where}</div>`;
+    for (const [c] of COLS) html += `<div>${make(c === 'off' ? '' : c, c === 'off' ? 'disabled' : '')}</div>`;
+  }
+  t.innerHTML = html;
+}
+// frozen cells are for looking at: keep Tab on the live column only
+document.querySelectorAll('.is-hover, .is-active, .is-focus, .theme [disabled]').forEach((el) => el.setAttribute('tabindex', '-1'));
+
+const rm = document.getElementById('rm-toggle'), sys = matchMedia('(prefers-reduced-motion: reduce)');
+rm.addEventListener('change', () => document.documentElement.classList.toggle('rm', rm.checked));
+const showSys = () => { document.getElementById('rm-system').textContent = 'ההגדרה ב-Windows כרגע: ' + (sys.matches ? 'פעילה' : 'כבויה'); };
+sys.addEventListener('change', showSys); showSys();
+</script>
+</body>
+</html>

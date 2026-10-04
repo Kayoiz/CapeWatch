@@ -2,6 +2,7 @@
 // Closing the window hides it to the tray; the app quits only from the tray menu.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::sync::Mutex;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
@@ -11,6 +12,7 @@ fn show_main(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
         let _ = w.unminimize();
+        let _ = app.emit("window-visible", true);
         // Queued after show/unminimize, so the window is visible by the time it is pulled to the front.
         let win = w.clone();
         let _ = app.run_on_main_thread(move || {
@@ -24,11 +26,35 @@ fn show_main(app: &AppHandle) {
     }
 }
 
-// Windows lets a program take the foreground only in some cases (for example not right after a click on
-// its notification, which belongs to the shell). These are the usual, documented-in-practice ways around it.
+// The opening effect (title effect and sound) plays once per run of CapeWatch: the first time the user sees the
+// window. Started by the user: right away. Started with Windows (hidden): the first time the window is opened
+// from the tray. Closing with X and opening again does not replay it, and a notification click never plays it.
+static GREETED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+fn open_for_user(app: &AppHandle) {
+    show_main(app);
+    if !GREETED.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        log::info!("window: first opened by the user in this run, greeting");
+        let _ = app.emit("greet", ());
+    }
+}
+
+// How the page starts: "greet" (play the effect now), "wait" (started hidden: keep the title hidden until the
+// first open), "none" (opened by a notification click: show the title as is).
+struct Greet(Mutex<&'static str>);
+
+#[tauri::command]
+fn take_greeting(state: tauri::State<Greet>) -> &'static str {
+    state.0.lock().map(|g| *g).unwrap_or("none")
+}
+
 #[cfg(windows)]
 mod win32 {
+    use windows::core::{HSTRING, PCWSTR};
+    use windows::Data::Xml::Dom::XmlDocument;
+    use windows::UI::Notifications::{ToastNotification, ToastNotificationManager};
     use windows::Win32::Foundation::HWND;
+    use windows::Win32::System::Registry::{RegSetKeyValueW, HKEY_CURRENT_USER, REG_SZ};
     use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
     use windows::Win32::UI::Input::KeyboardAndMouse::{
         SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VK_MENU,
@@ -39,6 +65,54 @@ mod win32 {
         SW_RESTORE, SW_SHOW,
     };
 
+    // ---------- notifications ----------
+    fn xml_escape(s: &str) -> String {
+        s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;").replace('\'', "&apos;")
+    }
+
+    /// Shows a notification whose click opens `launch`. Protocol activation works also when the app is closed:
+    /// Windows starts the program registered for the address.
+    pub fn toast(app_id: &str, title: &str, body: &str, launch: &str) -> windows::core::Result<()> {
+        let xml = format!(
+            r#"<toast activationType="protocol" launch="{}"><visual><binding template="ToastGeneric"><text>{}</text><text>{}</text></binding></visual></toast>"#,
+            xml_escape(launch), xml_escape(title), xml_escape(body)
+        );
+        let doc = XmlDocument::new()?;
+        doc.LoadXml(&HSTRING::from(xml))?;
+        let toast = ToastNotification::CreateToastNotification(&doc)?;
+        ToastNotificationManager::CreateToastNotifierWithId(&HSTRING::from(app_id))?.Show(&toast)
+    }
+
+    // ---------- the capewatch:// address ----------
+    fn reg_set(key: &str, name: Option<&str>, value: &str) -> windows::core::Result<()> {
+        let data: Vec<u16> = value.encode_utf16().chain(Some(0)).collect();
+        let name = name.map(HSTRING::from);
+        unsafe {
+            RegSetKeyValueW(
+                HKEY_CURRENT_USER,
+                &HSTRING::from(key),
+                name.as_ref().map(|n| PCWSTR(n.as_ptr())).unwrap_or(PCWSTR::null()),
+                REG_SZ.0,
+                Some(data.as_ptr() as *const _),
+                (data.len() * 2) as u32,
+            )
+            .ok()
+        }
+    }
+
+    /// Registers capewatch:// for this user, pointing at this exe. The installer does the same; doing it at every
+    /// start also repairs it if the app was moved.
+    pub fn register_scheme() -> windows::core::Result<()> {
+        let exe = std::env::current_exe().map_err(|_| windows::core::Error::empty())?;
+        let exe = exe.to_string_lossy();
+        reg_set(r"Software\Classes\capewatch", None, "URL:CapeWatch")?;
+        reg_set(r"Software\Classes\capewatch", Some("URL Protocol"), "")?;
+        reg_set(r"Software\Classes\capewatch\DefaultIcon", None, &format!("{exe},0"))?;
+        reg_set(r"Software\Classes\capewatch\shell\open\command", None, &format!("\"{exe}\" \"%1\""))
+    }
+
+    // ---------- bringing the window to the front ----------
+    // Windows lets a program take the foreground only in some cases. These are the usual ways around it.
     fn alt_tap() {
         let key = |flags| INPUT {
             r#type: INPUT_KEYBOARD,
@@ -73,26 +147,32 @@ mod win32 {
     }
 }
 
-// A Windows notification about one cape. Clicking it opens the window on that cape's details.
-// (The notification plugin on Windows does not report clicks, so the app sends this one itself.)
+// A click on a CapeWatch notification opens capewatch://cape/<id>. Windows starts CapeWatch with that address
+// when it is closed; when it is running, the new start hands the address to the running app (single instance).
+const SCHEME: &str = "capewatch://cape/";
+
+fn cape_from_args(args: &[String]) -> Option<String> {
+    args.iter()
+        .find_map(|a| a.strip_prefix(SCHEME))
+        .map(|id| id.trim_end_matches('/').to_string())
+        .filter(|id| !id.is_empty() && id.len() <= 80 && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'))
+}
+
+// The cape asked for at a cold start. The page takes it once its data is on screen.
+struct Pending(Mutex<Option<String>>);
+
+#[tauri::command]
+fn take_pending_cape(state: tauri::State<Pending>) -> Option<String> {
+    state.0.lock().ok().and_then(|mut p| p.take())
+}
+
+// A Windows notification about one cape; clicking it opens CapeWatch on that cape, also when CapeWatch is closed.
 #[tauri::command]
 fn notify_cape(app: AppHandle, title: String, body: String, cape_id: String) -> Result<(), String> {
     #[cfg(windows)]
     {
-        use tauri_winrt_notification::Toast;
-        let handle = app.clone();
-        let id = cape_id.clone();
-        Toast::new(&app.config().identifier)
-            .title(&title)
-            .text1(&body)
-            .on_activated(move |_| {
-                log::info!("notification clicked: {id}");
-                show_main(&handle);
-                let _ = handle.emit("open-cape", id.clone());
-                Ok(())
-            })
-            .show()
-            .map_err(|e| e.to_string())?;
+        let launch = format!("{SCHEME}{cape_id}");
+        win32::toast(&app.config().identifier, &title, &body, &launch).map_err(|e| e.to_string())?;
         log::info!("notification shown: {cape_id}");
         Ok(())
     }
@@ -123,10 +203,16 @@ async fn check_update(app: AppHandle) {
 
 fn main() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            // Also how Windows opens the app when a notification is clicked later in the notification centre.
-            show_main(app);
-            let _ = app.emit("second-start", ());
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            // A second start: the user opened CapeWatch again, or clicked a notification (capewatch://cape/<id>).
+            if let Some(id) = cape_from_args(&args) {
+                log::info!("notification click (app running): {id}");
+                GREETED.store(true, std::sync::atomic::Ordering::SeqCst);   // the window has been seen
+                show_main(app);
+                let _ = app.emit("open-cape", id);
+            } else {
+                open_for_user(app);
+            }
         }))
         .plugin(
             tauri_plugin_log::Builder::new()
@@ -146,8 +232,26 @@ fn main() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
-            let minimized = std::env::args().any(|a| a == "--minimized");
+            let args: Vec<String> = std::env::args().collect();
+            let minimized = args.iter().any(|a| a == "--minimized");
             log::info!("CapeWatch {} starting (minimized: {minimized})", app.package_info().version);
+            let pending = cape_from_args(&args);
+            if let Some(id) = &pending { log::info!("notification click (app was closed): {id}"); }
+            // Diagnostics: `capewatch.exe --test-notification=<cape id>` shows a sample notification for that cape.
+            #[cfg(windows)]
+            if let Some(id) = args.iter().find_map(|a| a.strip_prefix("--test-notification=")) {
+                let launch = format!("{SCHEME}{id}");
+                match win32::toast(&app.config().identifier, "CapeWatch", "Test notification. Click it to open the cape.", &launch) {
+                    Ok(()) => log::info!("test notification shown: {launch}"),
+                    Err(e) => log::error!("test notification failed: {e}"),
+                }
+            }
+            app.manage(Pending(Mutex::new(pending)));
+            #[cfg(windows)]
+            match win32::register_scheme() {
+                Ok(()) => log::info!("capewatch:// registered"),
+                Err(e) => log::warn!("capewatch:// not registered: {e}"),
+            }
 
             let open = MenuItem::with_id(app, "open", "Open CapeWatch", true, None::<&str>)?;
             let check = MenuItem::with_id(app, "check", "Check now", true, None::<&str>)?;
@@ -162,30 +266,50 @@ fn main() {
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {
-                    "open" => show_main(app),
+                    "open" => open_for_user(app),
                     "check" => { let _ = app.emit("check-now", ()); }
-                    "settings" => { show_main(app); let _ = app.emit("open-settings", ()); }
+                    "settings" => { open_for_user(app); let _ = app.emit("open-settings", ()); }
                     "quit" => { log::info!("quit from tray"); app.exit(0); }
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
                     if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
-                        show_main(tray.app_handle());
+                        open_for_user(tray.app_handle());
                     }
                 })
                 .build(app)?;
 
-            if !minimized { show_main(app.handle()); }
+            // Started with Windows (--minimized): nothing but the tray icon, no window, no glow, no sound.
+            // A notification click always shows the window (on its cape, without the greeting).
+            let from_click = app.state::<Pending>().0.lock().map(|p| p.is_some()).unwrap_or(false);
+            let mode = if from_click { "none" } else if minimized { "wait" } else { "greet" };
+            if mode != "wait" { GREETED.store(true, std::sync::atomic::Ordering::SeqCst); }
+            log::info!("opening effect: {mode}");
+            app.manage(Greet(Mutex::new(mode)));
+            if minimized && !from_click {
+                log::info!("window: stays hidden (started with Windows), tray icon only");
+            } else {
+                show_main(app.handle());
+            }
 
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move { check_update(handle).await });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![notify_cape])
+        .invoke_handler(tauri::generate_handler![notify_cape, take_pending_cape, take_greeting])
         .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
-                let _ = window.hide();
+            match event {
+                WindowEvent::CloseRequested { api, .. } => {
+                    api.prevent_close();
+                    let _ = window.hide();
+                    let _ = window.emit("window-visible", false);   // hidden in the tray: the page stops drawing
+                }
+                // minimizing and restoring both come as a resize
+                WindowEvent::Resized(_) => {
+                    let seen = window.is_visible().unwrap_or(false) && !window.is_minimized().unwrap_or(false);
+                    let _ = window.emit("window-visible", seen);
+                }
+                _ => {}
             }
         })
         .run(tauri::generate_context!())
