@@ -28,10 +28,13 @@ How to continue after a stop: read the table, pick the first task that is not "d
 | 18 | More ideas | not started | |
 | E | README, change list draft, morning summary | not started | |
 
-## Skipped: needs the owner
+## Owner's answers (2026-10-04, morning)
 
-
-- Needs the owner: (1) visible fix for French '(estimation)' at 400 px; (2) pixel font lacks Cyrillic, Spanish í, Portuguese á; (3) optionally ship the Google fonts inside the app (tools/security.md); (4) merge the robot fixes to main (robot on GitHub unchanged until then).
+- French '(estimation)' touching the border: fixed (6f8ab0d).
+- Pixel font missing Russian, í, á: letters added (543e8db).
+- Google fonts: shipped inside the app (e1fb1b9).
+- Merge night-work into main: after the owner checks (not done).
+- Then continue: Part B, Part C, README, change list draft.
 
 ## Log
 
@@ -48,3 +51,4 @@ How to continue after a stop: read the table, pick the first task that is not "d
 - Task 6 verified.
 - Task 7 verified.
 - Task 5 done. STOPPED HERE (usage limit). Not started: tasks 11-18, README, change-list draft. Next: task 11.
+- Owner approved the three fixes; done and tested (81/81). Continuing with task 11.
