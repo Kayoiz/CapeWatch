@@ -115,6 +115,16 @@ export async function launch({ headless = true } = {}) {
         if (!box) throw new Error('no element ' + selector);
         for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) await s('Input.dispatchMouseEvent', { type, x: box.x, y: box.y, button: 'left', clickCount: 1 });
       },
+      // A real key press (Tab, Shift+Tab, Enter, Space, Escape), as the keyboard sends it.
+      async key(name, { shift = false } = {}) {
+        const K = { Tab: [9, 'Tab'], Enter: [13, 'Enter', '\r'], Escape: [27, 'Escape'], ' ': [32, 'Space', ' '] }[name];
+        if (!K) throw new Error('no key ' + name);
+        const [keyCode, code, text] = K, base = { key: name, code, windowsVirtualKeyCode: keyCode, modifiers: shift ? 8 : 0 };
+        await s('Input.dispatchKeyEvent', { type: 'keyDown', ...base, ...(text ? { text, unmodifiedText: text } : {}) });
+        await s('Input.dispatchKeyEvent', { type: 'keyUp', ...base });
+      },
+      // Text typed into the focused field.
+      type: (text) => s('Input.insertText', { text }),
       close: () => send('Target.closeTarget', { targetId })
     };
     return page;

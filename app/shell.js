@@ -6,6 +6,8 @@
 // - Notifications: Windows notifications for new events, filtered by the three settings checkboxes.
 // - Settings: notifications, start with Windows, sound on open, reverse drag, and the figure's skin by
 //   Minecraft username.
+// - Players: looks a Minecraft player up by name at Mojang (skin, and the cape they are wearing) for the
+//   figure's skin and the page's "Owned capes" section.
 // - Opening effect and window state: main.rs says when the window is first seen (greet) and when it is
 //   hidden or shown (the page stops all work while hidden).
 window.__CAPEWATCH_APP__ = true;
@@ -166,6 +168,9 @@ document.documentElement.classList.add('cw-title-wait');
   // ---------- notifications ----------
   const settings = Object.assign({ notifyNew: true, notifyOpen: false, notifyEnding: false, autostart: true, soundOnOpen: true, invertDrag: false, skinName: '' }, store.get('settings', {}));
   const saveSettings = () => store.set('settings', settings);
+  // The page's "Owned capes" section looks players up through the shell (cape-radar.html), and starts with the
+  // skin name from Settings.
+  Object.assign(window.CapeWatchShell, { player: (name) => player(name), playerById: (id, name) => playerById(id, name), skinName: () => settings.skinName || '' });
   // "Reverse drag direction": the 3D figure turns the other way when dragged sideways (cape-radar.html).
   const applyDrag = () => window.CapeWatchPage?.cape3d?.setInvertDrag?.(settings.invertDrag);
   const SETTING_FOR = { new: 'notifyNew', announced: 'notifyNew', available: 'notifyOpen', ending: 'notifyEnding' };
@@ -203,19 +208,82 @@ document.documentElement.classList.add('cw-title-wait');
     } catch (err) { log('error', 'notify: failed', e.capeId, err.message || err); }
   }
 
-  // ---------- skin by Minecraft username (through the app's HTTP plugin: these APIs have no CORS) ----------
-  async function skinUrlFor(name) {
+  // ---------- players by Minecraft name (through the app's HTTP plugin: these APIs have no CORS) ----------
+  // Mojang answers with the player's id, skin and the one cape they are wearing (never the other capes they own).
+  // One answer serves both the figure's skin (Settings) and the "Owned capes" section of the page. Mojang allows
+  // about one request a minute for the same player, so an answer is kept for a minute, two lookups at the same
+  // moment share one request, and when Mojang says "too many" the last answer is used if there is one.
+  // Failures carry a code for the page: invalid, notfound, rate, network.
+  const PLAYER_NAME = /^[A-Za-z0-9_]{1,16}$/;
+  const PLAYER_KEEP_MS = 60e3;
+  const playerAnswers = new Map(), playerAsks = new Map();   // lower-case name -> { at, value } / the request on its way
+  const playerError = (code, detail) => Object.assign(new Error(code + (detail ? ' (' + detail + ')' : '')), { code });
+  // Only Mojang's own texture server, always https (the answers give http addresses).
+  const textureUrl = (u) => { const m = /^https?:\/\/textures\.minecraft\.net\/texture\/([0-9a-f]{1,64})$/i.exec(String(u || '')); return m ? 'https://textures.minecraft.net/texture/' + m[1] : null; };
+  async function mojangGet(url, what) {
     const http = T?.http?.fetch;
-    if (!http) throw new Error('http API missing');
-    const p = await http('https://api.mojang.com/users/profiles/minecraft/' + encodeURIComponent(name));
-    if (!p.ok) throw new Error('profile ' + p.status);
-    const { id } = await p.json();
-    const s = await http('https://sessionserver.mojang.com/session/minecraft/profile/' + id);
-    if (!s.ok) throw new Error('session ' + s.status);
-    const prop = (await s.json()).properties?.find((x) => x.name === 'textures');
-    const url = JSON.parse(atob(prop.value)).textures?.SKIN?.url;
-    if (!url) throw new Error('no skin');
-    return url.replace(/^http:/, 'https:');
+    if (!http) throw playerError('network', 'http API missing');
+    let r;
+    try { r = await http(url); } catch (e) { throw playerError('network', e.message || String(e)); }
+    if (r.status === 404 || r.status === 204 || r.status === 400) throw playerError('notfound', what + ' ' + r.status);
+    if (r.status === 429) throw playerError('rate', what + ' 429');
+    if (!r.ok) throw playerError('network', what + ' ' + r.status);
+    return r;
+  }
+  // By id: the player's name now (it may have changed), skin and the cape being worn.
+  async function askProfile(id, nameBefore) {
+    const s = await mojangGet('https://sessionserver.mojang.com/session/minecraft/profile/' + id, 'session');
+    let body, tex;
+    try { body = await s.json(); const prop = body.properties.find((x) => x.name === 'textures'); tex = JSON.parse(atob(prop.value)).textures || {}; }
+    catch { throw playerError('network', 'unexpected session answer'); }
+    const name = typeof body.name === 'string' && PLAYER_NAME.test(body.name) ? body.name : nameBefore;
+    return { id, name, skin: textureUrl(tex.SKIN?.url), cape: textureUrl(tex.CAPE?.url) };
+  }
+  // By name: the id first, then the rest.
+  async function askMojang(name) {
+    const p = await mojangGet('https://api.mojang.com/users/profiles/minecraft/' + encodeURIComponent(name), 'profile');
+    const prof = await p.json().catch(() => null);
+    const id = String(prof?.id || '').toLowerCase();
+    if (!/^[0-9a-f]{32}$/.test(id)) throw playerError('network', 'unexpected profile answer');
+    const out = await askProfile(id, name);
+    if (typeof prof.name === 'string' && PLAYER_NAME.test(prof.name)) out.name = prof.name;
+    return out;
+  }
+  // One answer is kept under the player's name and id, so a lookup by either one finds it.
+  function remembered(key, ask, who) {
+    const last = playerAnswers.get(key);
+    if (last && Date.now() - last.at < PLAYER_KEEP_MS) return Promise.resolve(last.value);
+    if (playerAsks.has(key)) return playerAsks.get(key);
+    const asking = ask().then((value) => {
+      const kept = { at: Date.now(), value };
+      playerAnswers.set('id:' + value.id, kept);
+      if (value.name) playerAnswers.set('name:' + value.name.toLowerCase(), kept);
+      log('info', 'player: ' + (value.name || who) + ' found, ' + (value.cape ? 'wearing a cape' : 'no cape on'));
+      return value;
+    }, (e) => {
+      if (e.code === 'rate' && last) { log('warn', 'player: ' + who + ': too many requests, using the answer from ' + Math.round((Date.now() - last.at) / 60e3) + ' min ago'); return last.value; }
+      log('warn', 'player: ' + who + ': ' + e.message);
+      throw e;
+    }).finally(() => playerAsks.delete(key));
+    playerAsks.set(key, asking);
+    return asking;
+  }
+  function player(name) {
+    name = String(name ?? '').trim();
+    if (!PLAYER_NAME.test(name)) return Promise.reject(playerError('invalid'));
+    return remembered('name:' + name.toLowerCase(), () => askMojang(name), name);
+  }
+  // The page checks the player it shows again by id: a new name is picked up, and a name that now belongs to
+  // someone else never swaps the player.
+  function playerById(id, nameBefore) {
+    id = String(id ?? '').toLowerCase();
+    if (!/^[0-9a-f]{32}$/.test(id)) return Promise.reject(playerError('invalid'));
+    return remembered('id:' + id, () => askProfile(id, PLAYER_NAME.test(String(nameBefore || '')) ? nameBefore : null), nameBefore || id);
+  }
+  async function skinUrlFor(name) {
+    const p = await player(name);
+    if (!p.skin) throw new Error('no skin');
+    return p.skin;
   }
   async function applySkin(name) {
     const page = window.CapeWatchPage;

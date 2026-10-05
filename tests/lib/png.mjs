@@ -25,3 +25,12 @@ export function makePng(width, height, pixel) {
 
 // A 64x32 cape texture in two flat colours, with an elytra part (so the figure also shows wings).
 export const testCape = (r = 40, g = 120, b = 200) => makePng(64, 32, (x, y) => (x < 46 && y < 22 ? [r, g, b, 255] : [0, 0, 0, 0]));
+
+// A 64x64 skin in made-up flat colours: a face with two eyes, and a hat layer that covers only the top row
+// (so a drawn head shows the face with a band of the hat over it).
+export const testSkin = () => makePng(64, 64, (x, y) => {
+  if (x >= 8 && x < 16 && y >= 8 && y < 16) return y === 12 && (x === 10 || x === 13) ? [30, 30, 60, 255] : [214, 170, 120, 255];   // face
+  if (x >= 40 && x < 48 && y === 8) return [180, 40, 40, 255];                                                                        // hat: top row only
+  if (y < 16) return [0, 0, 0, 0];
+  return [90, 110, 160, 255];
+});

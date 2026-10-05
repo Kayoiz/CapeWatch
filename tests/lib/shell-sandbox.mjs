@@ -49,7 +49,8 @@ export function dataServer(state) {
 }
 
 // Loads one copy of the shell. Returns what it did: notifications, log lines, what the page was given.
-export async function loadShell({ storage = makeStorage(), fetch, file = SHELL, source, autostart = false, page = true } = {}) {
+// http: the app's HTTP plugin (the Mojang lookups), else every request through it fails. clock: Date.now() for the shell.
+export async function loadShell({ storage = makeStorage(), fetch, http, clock, file = SHELL, source, autostart = false, page = true } = {}) {
   const out = { notifications: [], logs: [], invokes: [], snapshots: { capes: [], events: [], status: [] }, intervals: [], timeouts: [], errors: [], file: [] };
   const listeners = new Map();
   const target = new EventTarget();
@@ -69,7 +70,7 @@ export async function loadShell({ storage = makeStorage(), fetch, file = SHELL, 
     clearTimeout: (t) => { if (t) clearTimeout(t); },
     setInterval: (fn, ms) => { out.intervals.push({ fn, ms }); return out.intervals.length; },
     clearInterval: () => {},
-    performance, atob, btoa, Date, Math, JSON, Promise, Map, Set, URL, Error, TypeError, Object, Array, String, Number, Boolean, RegExp, Symbol,
+    performance, atob, btoa, Date: clock ? class extends Date { static now() { return clock(); } } : Date, Math, JSON, Promise, Map, Set, URL, Error, TypeError, Object, Array, String, Number, Boolean, RegExp, Symbol,
     Event, CustomEvent,
     addEventListener: (type, fn, opts) => { target.addEventListener(type, fn, opts); (listeners.get(type) || listeners.set(type, []).get(type)).push(fn); },
     removeEventListener: (type, fn) => target.removeEventListener(type, fn),
@@ -94,7 +95,7 @@ export async function loadShell({ storage = makeStorage(), fetch, file = SHELL, 
       },
       event: { listen: (name, cb) => { tauriListeners[name] = cb; return Promise.resolve(() => {}); } },
       autostart: { isEnabled: async () => autostartState.on, enable: async () => { autostartState.on = true; }, disable: async () => { autostartState.on = false; } },
-      http: { fetch: async () => { throw new Error('no network in tests'); } }
+      http: { fetch: http || (async () => { throw new Error('no network in tests'); }) }
     }
   };
   ctx.window = ctx;

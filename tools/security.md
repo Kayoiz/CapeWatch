@@ -9,7 +9,7 @@ Every address the installed app reaches. The page is held to this list by its se
 | `api.github.com` (repos/Kayoiz/CapeWatch/contents/data/capewatch.json) | page | The cape data, every 30 minutes and on "Check now" |
 | `raw.githubusercontent.com` (Kayoiz/CapeWatch/main/...) | page | The same data file when the GitHub API limit is reached; textures CapeWatch drew itself (assets/own-capes/) |
 | `textures.minecraft.net` | page | Cape textures for the figure and the card pictures, the user's skin. Pictures only, never sent anything |
-| `api.mojang.com`, `sessionserver.mojang.com` | app (HTTP plugin, only these two) | "My skin": turns a Minecraft name into its skin address |
+| `api.mojang.com`, `sessionserver.mojang.com` | app (HTTP plugin, only these two) | "My skin" and "Owned capes": turns a Minecraft name into its id, skin address and the cape being worn. Only names the user types (or saved before) are sent |
 | `github.com/Kayoiz/CapeWatch/releases/...` | app (updater) | Checks for an update at start; updates are signed and refused without the right signature |
 
 Opened in the user's own browser or mail app, never inside CapeWatch (and only these):
