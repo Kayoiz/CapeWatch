@@ -1,7 +1,15 @@
-# Release notes: CapeWatch 1.0.6
+# Release notes
 
-The release notes of CapeWatch 1.0.6, as published on GitHub (Releases, v1.0.6) on 2026-10-06. Written for users,
-in English like the other release notes.
+The release notes of CapeWatch, newest first, written for users in English like the other release notes. 1.0.6 is
+as published on GitHub (Releases, v1.0.6) on 2026-10-06; the next version is not released yet.
+
+---
+
+## CapeWatch (next version, not released yet)
+
+### New
+- **CapeWatch keeps its own record of capes.** Under Owned capes, CapeWatch checks the player shown at start, every 10 minutes while it runs and when you open its window, and every cape it sees them wear joins the list by itself and stays there, also for players capes.me does not know. Wear each of your capes once and they are all listed. Kept on your computer, and removed by Delete my data.
+- **Licenses.** THIRD-PARTY-NOTICES.txt, next to CapeWatch in the folder it is installed in, names everything by other people inside CapeWatch (Tauri and the other Rust components, Microsoft's WebView2 loader, the 3D library, the fonts, the installer), each with its license text.
 
 ---
 

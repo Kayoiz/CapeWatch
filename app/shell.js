@@ -7,7 +7,8 @@
 // - Settings: notifications, start with Windows, sound on open, reverse drag, and the figure's skin by
 //   Minecraft username.
 // - Players: looks a Minecraft player up by name at Mojang (skin, and the cape they are wearing) for the
-//   figure's skin and the page's "Owned capes" section, which also asks capes.me for the capes seen on them before.
+//   figure's skin and the page's "Owned capes" section, which also asks capes.me for the capes seen on them before
+//   and checks the player again every 10 minutes and when the window is opened (CapeWatch's own record).
 // - Opening effect and window state: main.rs says when the window is first seen (greet) and when it is
 //   hidden or shown (the page stops all work while hidden).
 window.__CAPEWATCH_APP__ = true;
@@ -33,7 +34,7 @@ document.documentElement.classList.add('cw-title-wait');
   // The app's security policy (tauri.conf.json, "csp") lets the page reach only the addresses it needs. Anything
   // it blocks is written to the log, so a blocked address shows up at once instead of as a silent gap.
   addEventListener('securitypolicyviolation', (e) => log('warn', 'blocked by the security policy: ' + e.effectiveDirective + ' ' + (e.blockedURI || '(inline)')));
-  // Mirror the page's own [Cape3D]/[Title]/[Cards]/[Sound] console lines into the log file too. The routine ones
+  // Mirror the page's own [Cape3D]/[Title]/[Cards]/[Sound]/[Owned] console lines into the log file too. The routine ones
   // (every cape swap, every texture load, the frame rate every 5 seconds) stay in the console only, so the log
   // file covers weeks instead of hours; a low frame rate (under 30) and every error still go to the file.
   const routine = (line) => /^\[Cape3D\] (swap:|cape: loading|cape: loaded)/.test(line) || +(line.match(/^\[Cape3D\] fps ([\d.]+)/) || [])[1] >= 30;
@@ -41,7 +42,7 @@ document.documentElement.classList.add('cw-title-wait');
     const orig = console[k].bind(console);
     console[k] = (...a) => {
       orig(...a);
-      if (typeof a[0] !== 'string' || !/^\[(Cape3D|Title|Cards|Sound)\]/.test(a[0])) return;
+      if (typeof a[0] !== 'string' || !/^\[(Cape3D|Title|Cards|Sound|Owned)\]/.test(a[0])) return;
       const line = a.map(String).join(' ');
       if (k === 'info' && routine(line)) return;
       try { invoke('plugin:log|log', { level: LEVEL[k], message: line })?.catch(() => {}); } catch {}
@@ -152,13 +153,13 @@ document.documentElement.classList.add('cw-title-wait');
 
   // ---------- texts the shell shows (7 languages) ----------
   const UI = {
-    en: { invertDrag: 'Reverse the figure’s drag direction', soundOnOpen: 'Sound when CapeWatch opens', settings: 'Settings', notif: 'Notifications', nNew: 'New cape', nOpen: 'Promotion opened', nEnding: 'Promotion ending soon', autostart: 'Start CapeWatch with Windows', skin: 'My skin (Minecraft username)', skinHint: 'Empty = the default skin.', close: 'Close', saved: 'Saved.', dataTitle: 'Your data', dataHint: 'Your settings, the players you looked up and the capes you ticked are kept on this computer only.', deleteData: 'Delete my data', deleteAsk: 'Delete all of it from this computer? This can’t be undone.', deleteYes: 'Delete', deleteNo: 'Cancel', skinOk: 'Skin loaded.', skinBad: 'Username not found.', EV: { new: 'New cape', announced: 'Announced', available: 'Promotion opened', ending: 'Ending soon' } },
-    he: { invertDrag: 'היפוך כיוון הסיבוב של הדמות בגרירה', soundOnOpen: 'צליל כשפותחים את CapeWatch', settings: 'הגדרות', notif: 'התראות', nNew: 'גלימה חדשה', nOpen: 'מבצע שנפתח', nEnding: 'מבצע שעומד להיגמר', autostart: 'להפעיל את CapeWatch עם Windows', skin: 'הסקין שלי (שם משתמש ב-Minecraft)', skinHint: 'ריק = הסקין המקורי.', close: 'סגירה', saved: 'נשמר.', dataTitle: 'הנתונים שלך', dataHint: 'ההגדרות שלך, השחקנים שחיפשת והגלימות שסימנת נשמרים רק במחשב הזה.', deleteData: 'מחיקת הנתונים שלי', deleteAsk: 'למחוק את כל זה מהמחשב? אי אפשר לבטל את זה.', deleteYes: 'מחיקה', deleteNo: 'ביטול', skinOk: 'הסקין נטען.', skinBad: 'שם המשתמש לא נמצא.', EV: { new: 'גלימה חדשה', announced: 'הוכרזה', available: 'המבצע נפתח', ending: 'עומד להיגמר' } },
-    es: { invertDrag: 'Invertir el giro de la figura al arrastrar', soundOnOpen: 'Sonido al abrir CapeWatch', settings: 'Ajustes', notif: 'Notificaciones', nNew: 'Capa nueva', nOpen: 'Promoción abierta', nEnding: 'Promoción por terminar', autostart: 'Iniciar CapeWatch con Windows', skin: 'Mi skin (usuario de Minecraft)', skinHint: 'Vacío = la skin por defecto.', close: 'Cerrar', saved: 'Guardado.', dataTitle: 'Tus datos', dataHint: 'Tus ajustes, los jugadores que buscaste y las capas que marcaste se guardan solo en este equipo.', deleteData: 'Borrar mis datos', deleteAsk: '¿Borrar todo esto de este equipo? No se puede deshacer.', deleteYes: 'Borrar', deleteNo: 'Cancelar', skinOk: 'Skin cargada.', skinBad: 'No se encontró el usuario.', EV: { new: 'Capa nueva', announced: 'Anunciada', available: 'Promoción abierta', ending: 'Termina pronto' } },
-    pt: { invertDrag: 'Inverter o giro da figura ao arrastar', soundOnOpen: 'Som ao abrir o CapeWatch', settings: 'Configurações', notif: 'Notificações', nNew: 'Capa nova', nOpen: 'Promoção aberta', nEnding: 'Promoção acabando', autostart: 'Iniciar o CapeWatch com o Windows', skin: 'Minha skin (usuário do Minecraft)', skinHint: 'Vazio = a skin padrão.', close: 'Fechar', saved: 'Salvo.', dataTitle: 'Seus dados', dataHint: 'Suas configurações, os jogadores que você buscou e as capas que marcou ficam só neste computador.', deleteData: 'Apagar meus dados', deleteAsk: 'Apagar tudo isso deste computador? Não dá para desfazer.', deleteYes: 'Apagar', deleteNo: 'Cancelar', skinOk: 'Skin carregada.', skinBad: 'Usuário não encontrado.', EV: { new: 'Capa nova', announced: 'Anunciada', available: 'Promoção aberta', ending: 'Acaba em breve' } },
-    fr: { invertDrag: 'Inverser la rotation du personnage au glisser', soundOnOpen: 'Son à l’ouverture de CapeWatch', settings: 'Réglages', notif: 'Notifications', nNew: 'Nouvelle cape', nOpen: 'Promotion ouverte', nEnding: 'Promotion bientôt finie', autostart: 'Lancer CapeWatch avec Windows', skin: 'Mon skin (pseudo Minecraft)', skinHint: 'Vide = le skin par défaut.', close: 'Fermer', saved: 'Enregistré.', dataTitle: 'Vos données', dataHint: 'Vos réglages, les joueurs recherchés et les capes cochées restent uniquement sur cet ordinateur.', deleteData: 'Supprimer mes données', deleteAsk: 'Tout supprimer de cet ordinateur\u00a0? C’est définitif.', deleteYes: 'Supprimer', deleteNo: 'Annuler', skinOk: 'Skin chargé.', skinBad: 'Pseudo introuvable.', EV: { new: 'Nouvelle cape', announced: 'Annoncée', available: 'Promotion ouverte', ending: 'Bientôt terminée' } },
-    de: { invertDrag: 'Drehrichtung der Figur beim Ziehen umkehren', soundOnOpen: 'Ton beim Öffnen von CapeWatch', settings: 'Einstellungen', notif: 'Benachrichtigungen', nNew: 'Neuer Umhang', nOpen: 'Aktion gestartet', nEnding: 'Aktion endet bald', autostart: 'CapeWatch mit Windows starten', skin: 'Mein Skin (Minecraft-Name)', skinHint: 'Leer = der Standard-Skin.', close: 'Schließen', saved: 'Gespeichert.', dataTitle: 'Deine Daten', dataHint: 'Deine Einstellungen, die gesuchten Spieler und die angehakten Umhänge bleiben nur auf diesem Computer.', deleteData: 'Meine Daten löschen', deleteAsk: 'Alles von diesem Computer löschen? Das lässt sich nicht rückgängig machen.', deleteYes: 'Löschen', deleteNo: 'Abbrechen', skinOk: 'Skin geladen.', skinBad: 'Name nicht gefunden.', EV: { new: 'Neuer Umhang', announced: 'Angekündigt', available: 'Aktion gestartet', ending: 'Endet bald' } },
-    ru: { invertDrag: 'Обратное вращение фигуры при перетаскивании', soundOnOpen: 'Звук при открытии CapeWatch', settings: 'Настройки', notif: 'Уведомления', nNew: 'Новый плащ', nOpen: 'Акция открыта', nEnding: 'Акция скоро закончится', autostart: 'Запускать CapeWatch с Windows', skin: 'Мой скин (ник в Minecraft)', skinHint: 'Пусто = скин по умолчанию.', close: 'Закрыть', saved: 'Сохранено.', dataTitle: 'Ваши данные', dataHint: 'Ваши настройки, найденные игроки и отмеченные плащи хранятся только на этом компьютере.', deleteData: 'Удалить мои данные', deleteAsk: 'Удалить всё это с этого компьютера? Отменить будет нельзя.', deleteYes: 'Удалить', deleteNo: 'Отмена', skinOk: 'Скин загружен.', skinBad: 'Ник не найден.', EV: { new: 'Новый плащ', announced: 'Анонс', available: 'Акция открыта', ending: 'Скоро закончится' } }
+    en: { invertDrag: 'Reverse the figure’s drag direction', soundOnOpen: 'Sound when CapeWatch opens', settings: 'Settings', notif: 'Notifications', nNew: 'New cape', nOpen: 'Promotion opened', nEnding: 'Promotion ending soon', autostart: 'Start CapeWatch with Windows', skin: 'My skin (Minecraft username)', skinHint: 'Empty = the default skin.', close: 'Close', saved: 'Saved.', dataTitle: 'Your data', dataHint: 'Your settings, the players you looked up, the capes seen on them and the capes you ticked are kept on this computer only.', deleteData: 'Delete my data', deleteAsk: 'Delete all of it from this computer? This can’t be undone.', deleteYes: 'Delete', deleteNo: 'Cancel', skinOk: 'Skin loaded.', skinBad: 'Username not found.', EV: { new: 'New cape', announced: 'Announced', available: 'Promotion opened', ending: 'Ending soon' } },
+    he: { invertDrag: 'היפוך כיוון הסיבוב של הדמות בגרירה', soundOnOpen: 'צליל כשפותחים את CapeWatch', settings: 'הגדרות', notif: 'התראות', nNew: 'גלימה חדשה', nOpen: 'מבצע שנפתח', nEnding: 'מבצע שעומד להיגמר', autostart: 'להפעיל את CapeWatch עם Windows', skin: 'הסקין שלי (שם משתמש ב-Minecraft)', skinHint: 'ריק = הסקין המקורי.', close: 'סגירה', saved: 'נשמר.', dataTitle: 'הנתונים שלך', dataHint: 'ההגדרות שלך, השחקנים שחיפשת, הגלימות שנראו עליהם והגלימות שסימנת נשמרים רק במחשב הזה.', deleteData: 'מחיקת הנתונים שלי', deleteAsk: 'למחוק את כל זה מהמחשב? אי אפשר לבטל את זה.', deleteYes: 'מחיקה', deleteNo: 'ביטול', skinOk: 'הסקין נטען.', skinBad: 'שם המשתמש לא נמצא.', EV: { new: 'גלימה חדשה', announced: 'הוכרזה', available: 'המבצע נפתח', ending: 'עומד להיגמר' } },
+    es: { invertDrag: 'Invertir el giro de la figura al arrastrar', soundOnOpen: 'Sonido al abrir CapeWatch', settings: 'Ajustes', notif: 'Notificaciones', nNew: 'Capa nueva', nOpen: 'Promoción abierta', nEnding: 'Promoción por terminar', autostart: 'Iniciar CapeWatch con Windows', skin: 'Mi skin (usuario de Minecraft)', skinHint: 'Vacío = la skin por defecto.', close: 'Cerrar', saved: 'Guardado.', dataTitle: 'Tus datos', dataHint: 'Tus ajustes, los jugadores que buscaste, las capas vistas en ellos y las capas que marcaste se guardan solo en este equipo.', deleteData: 'Borrar mis datos', deleteAsk: '¿Borrar todo esto de este equipo? No se puede deshacer.', deleteYes: 'Borrar', deleteNo: 'Cancelar', skinOk: 'Skin cargada.', skinBad: 'No se encontró el usuario.', EV: { new: 'Capa nueva', announced: 'Anunciada', available: 'Promoción abierta', ending: 'Termina pronto' } },
+    pt: { invertDrag: 'Inverter o giro da figura ao arrastar', soundOnOpen: 'Som ao abrir o CapeWatch', settings: 'Configurações', notif: 'Notificações', nNew: 'Capa nova', nOpen: 'Promoção aberta', nEnding: 'Promoção acabando', autostart: 'Iniciar o CapeWatch com o Windows', skin: 'Minha skin (usuário do Minecraft)', skinHint: 'Vazio = a skin padrão.', close: 'Fechar', saved: 'Salvo.', dataTitle: 'Seus dados', dataHint: 'Suas configurações, os jogadores que você buscou, as capas vistas neles e as capas que marcou ficam só neste computador.', deleteData: 'Apagar meus dados', deleteAsk: 'Apagar tudo isso deste computador? Não dá para desfazer.', deleteYes: 'Apagar', deleteNo: 'Cancelar', skinOk: 'Skin carregada.', skinBad: 'Usuário não encontrado.', EV: { new: 'Capa nova', announced: 'Anunciada', available: 'Promoção aberta', ending: 'Acaba em breve' } },
+    fr: { invertDrag: 'Inverser la rotation du personnage au glisser', soundOnOpen: 'Son à l’ouverture de CapeWatch', settings: 'Réglages', notif: 'Notifications', nNew: 'Nouvelle cape', nOpen: 'Promotion ouverte', nEnding: 'Promotion bientôt finie', autostart: 'Lancer CapeWatch avec Windows', skin: 'Mon skin (pseudo Minecraft)', skinHint: 'Vide = le skin par défaut.', close: 'Fermer', saved: 'Enregistré.', dataTitle: 'Vos données', dataHint: 'Vos réglages, les joueurs recherchés, les capes vues sur eux et les capes cochées restent uniquement sur cet ordinateur.', deleteData: 'Supprimer mes données', deleteAsk: 'Tout supprimer de cet ordinateur\u00a0? C’est définitif.', deleteYes: 'Supprimer', deleteNo: 'Annuler', skinOk: 'Skin chargé.', skinBad: 'Pseudo introuvable.', EV: { new: 'Nouvelle cape', announced: 'Annoncée', available: 'Promotion ouverte', ending: 'Bientôt terminée' } },
+    de: { invertDrag: 'Drehrichtung der Figur beim Ziehen umkehren', soundOnOpen: 'Ton beim Öffnen von CapeWatch', settings: 'Einstellungen', notif: 'Benachrichtigungen', nNew: 'Neuer Umhang', nOpen: 'Aktion gestartet', nEnding: 'Aktion endet bald', autostart: 'CapeWatch mit Windows starten', skin: 'Mein Skin (Minecraft-Name)', skinHint: 'Leer = der Standard-Skin.', close: 'Schließen', saved: 'Gespeichert.', dataTitle: 'Deine Daten', dataHint: 'Deine Einstellungen, die gesuchten Spieler, die an ihnen gesehenen Umhänge und die angehakten Umhänge bleiben nur auf diesem Computer.', deleteData: 'Meine Daten löschen', deleteAsk: 'Alles von diesem Computer löschen? Das lässt sich nicht rückgängig machen.', deleteYes: 'Löschen', deleteNo: 'Abbrechen', skinOk: 'Skin geladen.', skinBad: 'Name nicht gefunden.', EV: { new: 'Neuer Umhang', announced: 'Angekündigt', available: 'Aktion gestartet', ending: 'Endet bald' } },
+    ru: { invertDrag: 'Обратное вращение фигуры при перетаскивании', soundOnOpen: 'Звук при открытии CapeWatch', settings: 'Настройки', notif: 'Уведомления', nNew: 'Новый плащ', nOpen: 'Акция открыта', nEnding: 'Акция скоро закончится', autostart: 'Запускать CapeWatch с Windows', skin: 'Мой скин (ник в Minecraft)', skinHint: 'Пусто = скин по умолчанию.', close: 'Закрыть', saved: 'Сохранено.', dataTitle: 'Ваши данные', dataHint: 'Ваши настройки, найденные игроки, замеченные на них плащи и отмеченные плащи хранятся только на этом компьютере.', deleteData: 'Удалить мои данные', deleteAsk: 'Удалить всё это с этого компьютера? Отменить будет нельзя.', deleteYes: 'Удалить', deleteNo: 'Отмена', skinOk: 'Скин загружен.', skinBad: 'Ник не найден.', EV: { new: 'Новый плащ', announced: 'Анонс', available: 'Акция открыта', ending: 'Скоро закончится' } }
   };
   const lang = () => (window.CapeWatchPage?.lang?.() || store.get('lang', 'en'));
   const ui = () => UI[lang()] || UI.en;
@@ -564,18 +565,19 @@ document.documentElement.classList.add('cw-title-wait');
     window.CapeWatchPage?.lockLayout?.(d, fill);
   }
 
-  // "Delete my data" (Settings): everything CapeWatch keeps on this computer goes: the settings, the players looked up
-  // and the capes ticked ("Owned capes"), the language and filters, the saved copy of the cape list, which news was
+  // "Delete my data" (Settings): everything CapeWatch keeps on this computer goes: the settings, the players looked up,
+  // the capes seen on them and the capes ticked ("Owned capes"), the language and filters, the saved copy of the cape list, which news was
   // already seen, and the log files (main.rs, clear_logs). CapeWatch has no account and nothing about the user is kept
   // anywhere else. Only "Start with Windows" keeps its value: it is a Windows setting, and it would otherwise turn
   // itself back on. Then the page starts again, as on a first start (news already out is not notified again).
   async function deleteMyData() {
     const autostart = settings.autostart;
-    try { localStorage.clear(); } catch {}
-    store.set('settings', { autostart });
+    const wipe = () => { try { localStorage.clear(); } catch {} store.set('settings', { autostart }); };
+    wipe();
     let files = 0;
     try { files = (await invoke('clear_logs')) || 0; } catch (e) { console.error('[App] data: the logs were not cleared: ' + (e?.message || e)); }
     log('info', 'data: deleted by the user (' + files + ' log files cleared)');
+    wipe();   // once more: a check of the player under "Owned capes" that ended meanwhile may have saved what it saw
     location.reload();
   }
 
@@ -623,15 +625,23 @@ document.documentElement.classList.add('cw-title-wait');
   }
   T?.event?.listen?.('greet', () => greet('window opened for the first time in this run'));
   // The window is hidden in the tray, minimized or shown again (main.rs): the 3D figure only draws while it can be seen.
+  // When it comes back, the player under "Owned capes" is checked again (a cape may have been changed meanwhile;
+  // the page checks at most once a minute).
   const setVisible = (v) => window.CapeWatchPage?.cape3d?.setVisible?.(v);
-  T?.event?.listen?.('window-visible', (ev) => setVisible(!!ev.payload));
+  let shown = true;
+  T?.event?.listen?.('window-visible', (ev) => {
+    const v = !!ev.payload;
+    setVisible(v);
+    if (v && !shown) window.CapeWatchPage?.checkOwned?.('window opened');
+    shown = v;
+  });
   // As early as the page is ready (not after every picture has loaded): the effect waits only for the title image.
   addEventListener('DOMContentLoaded', async () => {
     let mode = 'none';
     try { mode = (await invoke('take_greeting')) || 'none'; } catch (e) { log('warn', 'greet: ' + (e.message || e)); }
     if (!T) mode = 'none';
     log('info', 'opening effect: ' + mode);
-    if (mode === 'wait') setTimeout(() => setVisible(false), 0);   // started hidden with Windows: nothing to draw yet
+    if (mode === 'wait') { shown = false; setTimeout(() => setVisible(false), 0); }   // started hidden with Windows: nothing to draw yet
     if (settings.soundOnOpen && mode !== 'none') window.CapeWatchFX?.prepareSound(window.CapeWatchFX.SCENE.sound);
     if (mode === 'greet') greet('CapeWatch started by the user');
     else { releasePictures(); if (mode !== 'wait') revealTitle(); }   // 'wait': title hidden until the first open

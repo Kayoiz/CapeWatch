@@ -1,7 +1,8 @@
 // "Owned capes": a Minecraft player's capes by name, in the installed app. Runs the built page (app/dist) in
 // headless Edge with the app faked (tests/lib/fake-tauri.mjs), Mojang and capes.me included: made-up players, the
-// real data file. Mojang only tells which cape a player is wearing and capes.me which capes it has seen them wear:
-// those join the list by themselves, the rest are ticked in "Choose capes".
+// real data file. Mojang only tells which cape a player is wearing and capes.me which capes it has seen them wear,
+// and CapeWatch keeps its own record of every cape it sees on the player at its checks (at start, every 10 minutes,
+// when the window opens): those join the list by themselves, the rest are ticked in "Choose capes".
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -30,6 +31,7 @@ const NEW_TEX = 'tex:' + 'e'.repeat(64);
 // the list then: the cape being worn first, then the newest first (one the data file does not know has no date)
 const KAY_LIST = ['cherry-blossom*', '15th-anniversary', 'migrator', 'minecon-2011', NEW_TEX];
 const CAPES_ME_USER = (p) => 'https://capes.me/api/user/' + p.id;
+const UNKNOWN_KAY = 'capes.me has no record of Kayoiz yet. While CapeWatch runs, it checks the cape they wear every 10 minutes and adds each one it sees; add the rest with “Choose capes”.';
 // Kayoiz as saved on this computer: wearing Cherry Blossom, Migrator and Christmas 2010 ticked by hand
 const SAVED = JSON.stringify({ current: KAY.id, players: { [KAY.id]: { name: 'Kayoiz', skin: TEX + SKIN, worn: 'cherry-blossom', tex: {}, show: ['cherry-blossom', 'migrator', 'christmas-2010'], hide: [] } } });
 const skip = !EDGE && 'Microsoft Edge not found';
@@ -48,6 +50,10 @@ async function open({ lang = 'en', width = 1200, storage = {}, url = APP_PAGE, p
   const seed = Object.entries({ 'caperadar:lang': lang, ...storage }).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(v)});`).join(' ');
   await page.init(`try { if (!sessionStorage.getItem('__seeded')) { localStorage.clear(); ${seed} sessionStorage.setItem('__seeded', '1'); } } catch {}`);
   if (url === APP_PAGE) await page.init(fakeTauri({ data: DATA, players, capesMe }));
+  // the page's timers (the check every 10 minutes is run by hand) and its clock (__later(ms) moves it on)
+  await page.init(`(() => { const si = window.setInterval.bind(window), now = Date.now.bind(Date); let shift = 0;
+    window.__intervals = []; window.setInterval = (fn, ms, ...a) => { window.__intervals.push({ fn, ms }); return si(fn, ms, ...a); };
+    Date.now = () => now() + shift; window.__later = (ms) => { shift += ms; }; })()`);
   await page.goto(url);
   if (url === APP_PAGE) await page.waitFor(`document.querySelectorAll('#grid .tile').length > 10`, 30000);
   await page.eval('document.fonts.ready.then(() => 1)');
@@ -88,8 +94,8 @@ test('keyboard only: type a name, Enter; the cape being worn is listed; Tab to "
   assert.equal(await page.eval(`document.getElementById('o-name').value`), 'Kayoiz', 'the name as Mojang writes it');
   assert.deepEqual(await tiles(page), ['cherry-blossom*']);
   assert.equal(await text(page, 'o-msg'), 'Kayoiz is wearing the Cherry Blossom Cape.');
-  assert.equal(await text(page, 'o-src'), 'capes.me has no record of Kayoiz yet. Add their other capes with “Choose capes”.');
-  await page.waitFor(`document.getElementById('o-live').textContent === 'Kayoiz is wearing the Cherry Blossom Cape. capes.me has no record of Kayoiz yet. Add their other capes with “Choose capes”.'`);   // said to screen readers
+  assert.equal(await text(page, 'o-src'), 'capes.me has no record of Kayoiz yet. While CapeWatch runs, it checks the cape they wear every 10 minutes and adds each one it sees; add the rest with “Choose capes”.');
+  await page.waitFor(`document.getElementById('o-live').textContent === 'Kayoiz is wearing the Cherry Blossom Cape. capes.me has no record of Kayoiz yet. While CapeWatch runs, it checks the cape they wear every 10 minutes and adds each one it sees; add the rest with “Choose capes”.'`);   // said to screen readers
   await page.waitFor(`document.querySelector('#o-msg img.o-head')?.src.startsWith('data:image/png')`);              // the player's face
   assert.equal(await page.eval(`document.getElementById('o-choose').disabled`), false);
   // Tab: "Show capes", then "Choose capes"; Enter opens it with the search box ready
@@ -289,8 +295,8 @@ test('the capes capes.me has seen join the list by themselves; the line under it
   assert.equal(await page.eval(`document.querySelector('#owned [data-owned="${NEW_TEX}"] .o-name').textContent`), 'Unknown cape');
   await page.waitFor(`document.querySelector('#owned [data-owned="${NEW_TEX}"] img.gen')`, 20000);   // drawn from Mojang's texture
   assert.equal(await text(page, 'o-msg'), 'Kayoiz is wearing the Cherry Blossom Cape.');
-  assert.equal(await text(page, 'o-src'), 'The capes Kayoiz wore before come from capes.me.');
-  await page.waitFor(`document.getElementById('o-live').textContent === 'Kayoiz is wearing the Cherry Blossom Cape. The capes Kayoiz wore before come from capes.me.'`);
+  assert.equal(await text(page, 'o-src'), 'Capes Kayoiz wore before come from capes.me and from CapeWatch’s own checks.');
+  await page.waitFor(`document.getElementById('o-live').textContent === 'Kayoiz is wearing the Cherry Blossom Cape. Capes Kayoiz wore before come from capes.me and from CapeWatch’s own checks.'`);
   assert.equal(await page.eval(`document.querySelector('#o-src a').href`), 'https://capes.me/Kayoiz');
   await page.click('#o-src a');
   assert.equal(await page.eval('__test.opened'), 'https://capes.me/Kayoiz', 'opens in the browser, not in CapeWatch');
@@ -302,7 +308,7 @@ test('the capes capes.me has seen join the list by themselves; the line under it
   await page.reload();
   await page.waitFor(`document.querySelectorAll('#owned .o-tile').length === ${KAY_LIST.length}`, 20000);
   assert.deepEqual(await tiles(page), KAY_LIST);
-  assert.equal(await text(page, 'o-src'), 'The capes Kayoiz wore before come from capes.me.');
+  assert.equal(await text(page, 'o-src'), 'Capes Kayoiz wore before come from capes.me and from CapeWatch’s own checks.');
   assert.deepEqual(page.exceptions, []);
   await page.close();
 });
@@ -330,7 +336,7 @@ test('a cape capes.me has seen, taken off the list by hand, stays off: after the
 test('capes.me has no record of the player, or does not answer: the cape being worn is listed, and the line says why others may be missing', { skip }, async () => {
   const page = await open();
   await lookUp(page, 'Plain'); await settled(page);
-  assert.equal(await text(page, 'o-src'), 'capes.me has no record of Plain yet. Add their other capes with “Choose capes”.');
+  assert.equal(await text(page, 'o-src'), 'capes.me has no record of Plain yet. While CapeWatch runs, it checks the cape they wear every 10 minutes and adds each one it sees; add the rest with “Choose capes”.');
   assert.equal(await page.eval(`document.querySelector('#owned .empty').textContent`), 'Nothing to show yet. Use “Choose capes” to add the capes Plain owns.');
   await page.eval(`__test.cfg.capesMe = 'offline'`);
   await lookUp(page, 'Kayoiz'); await settled(page);
@@ -368,14 +374,14 @@ test('the check at start asks capes.me again: a cape it has seen since joins; wh
   const page = await open({ storage: { 'caperadar:owned': JSON.stringify(saved) }, players: [{ ...KAY, seen: ['cherry-blossom', 'migrator', 'mojang-office'] }] });
   await page.waitFor(`document.querySelector('#owned [data-owned="mojang-office"]')`, 20000);
   assert.deepEqual(await tiles(page), ['cherry-blossom*', 'mojang-office', 'migrator', 'christmas-2010']);
-  assert.equal(await text(page, 'o-src'), 'The capes Kayoiz wore before come from capes.me.');
+  assert.equal(await text(page, 'o-src'), 'Capes Kayoiz wore before come from capes.me and from CapeWatch’s own checks.');
   assert.equal(await text(page, 'o-note'), '', 'no message of its own');
   await page.eval(`sessionStorage.setItem('__capesMe', 'offline')`);   // the next start: capes.me does not answer
   await page.reload();
   await answered(page, CAPES_ME_USER(KAY)); await settled(page);
   await new Promise((r) => setTimeout(r, 300));
   assert.deepEqual(await tiles(page), ['cherry-blossom*', 'mojang-office', 'migrator', 'christmas-2010']);
-  assert.equal(await text(page, 'o-src'), 'The capes Kayoiz wore before come from capes.me.');
+  assert.equal(await text(page, 'o-src'), 'Capes Kayoiz wore before come from capes.me and from CapeWatch’s own checks.');
   assert.deepEqual(page.exceptions, []);
   await page.close();
 });
@@ -393,4 +399,144 @@ test('the longest lines under the list (no record, no answer) in 7 languages at 
     await page.close();
   }
   assert.deepEqual(problems, []);
+});
+
+// ---------- CapeWatch's own record ----------
+const saved = (page) => page.eval(`JSON.parse(localStorage.getItem('caperadar:owned'))`);
+const mojangAsked = (page) => page.eval(`(__test.http || []).filter((u) => u.includes('sessionserver.mojang.com')).length`);
+const capesMeAsked = (page) => page.eval(`(__test.http || []).filter((u) => u.includes('capes.me')).length`);
+const wearing = (page, cape) => page.eval(`__test.cfg.players = [${JSON.stringify({ ...KAY, cape })}]`);
+const tenMinutes = (page) => page.eval(`(() => { __later(10 * 60e3); const t = __intervals.filter((i) => i.ms === 10 * 60e3); t.forEach((i) => i.fn()); return t.length; })()`);
+
+test('CapeWatch’s own record: every 10 minutes it checks the player shown, and each cape it sees joins the list, with when it saw it', { skip }, async () => {
+  // Kayoiz as saved before CapeWatch kept a record, last seen in the Cherry Blossom Cape; capes.me does not know them
+  const before = JSON.parse(SAVED); before.players[KAY.id].at = Date.parse('2026-10-01T12:00:00Z');
+  const page = await open({ storage: { 'caperadar:owned': JSON.stringify(before) } });
+  await answered(page, CAPES_ME_USER(KAY)); await settled(page);   // the check at start: Mojang, then capes.me
+  await page.waitFor(`JSON.parse(localStorage.getItem('caperadar:owned')).players['${KAY.id}'].saw?.['cherry-blossom']?.[1] > ${before.players[KAY.id].at}`);
+  let rec = (await saved(page)).players[KAY.id].saw;
+  assert.deepEqual(Object.keys(rec), ['cherry-blossom']);
+  assert.equal(rec['cherry-blossom'][0], before.players[KAY.id].at, 'the cape seen before the record began is its first entry');
+  assert.equal(await text(page, 'o-src'), UNKNOWN_KAY);
+  const asked = { mojang: await mojangAsked(page), capesMe: await capesMeAsked(page) };
+  // Kayoiz puts on the Vanilla Cape; ten minutes later CapeWatch sees it
+  await wearing(page, tex('vanilla'));
+  assert.equal(await tenMinutes(page), 1, 'one check every 10 minutes');
+  await page.waitFor(`document.querySelector('#owned [data-owned="vanilla"] .pill.wearing')`);
+  assert.deepEqual(await tiles(page), ['vanilla*', 'cherry-blossom', 'migrator', 'christmas-2010']);
+  assert.equal(await text(page, 'o-msg'), 'Kayoiz is wearing the Vanilla Cape.');
+  assert.equal(await text(page, 'o-note'), '', 'quietly: no message of its own');
+  // then a cape the data file does not know
+  await wearing(page, 'f'.repeat(64));
+  await tenMinutes(page);
+  await page.waitFor(`document.querySelector('#owned [data-owned="tex:${'f'.repeat(64)}"] .pill.wearing')`);
+  assert.deepEqual(await tiles(page), ['tex:' + 'f'.repeat(64) + '*', 'cherry-blossom', 'vanilla', 'migrator', 'christmas-2010'], 'the Vanilla Cape stays: CapeWatch saw it');
+  rec = (await saved(page)).players[KAY.id].saw;
+  assert.deepEqual(Object.keys(rec).sort(), ['cherry-blossom', 'tex:' + 'f'.repeat(64), 'vanilla']);
+  assert.ok(rec.vanilla[0] > rec['cherry-blossom'][0] && rec['tex:' + 'f'.repeat(64)][0] > rec.vanilla[0], 'each kept with when it was first seen');
+  assert.equal(await mojangAsked(page), asked.mojang + 2, 'Mojang once per check');
+  assert.equal(await capesMeAsked(page), asked.capesMe, 'capes.me only at start and on "Show capes"');
+  assert.ok((await page.eval('__test.logs')).some((l) => l === '[Owned] Kayoiz: wearing vanilla, the first time CapeWatch sees it on them (every 10 minutes)'), 'written to the log file');
+  // kept on this computer
+  await page.reload();
+  await page.waitFor(`document.querySelectorAll('#owned .o-tile').length === 5`, 20000);
+  assert.deepEqual((await tiles(page)).map((k) => k.replace('*', '')).sort(), ['cherry-blossom', 'christmas-2010', 'migrator', 'tex:' + 'f'.repeat(64), 'vanilla']);
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('the window coming back checks the player again; never twice within a minute, and a resize is not a return', { skip }, async () => {
+  const page = await open({ storage: { 'caperadar:owned': SAVED } });
+  await answered(page, CAPES_ME_USER(KAY)); await settled(page);
+  const n = await mojangAsked(page), at = (await saved(page)).players[KAY.id].at;
+  await wearing(page, tex('vanilla'));
+  // right after the check at start: no check at all (Mojang's answer of a moment ago is not even looked at again)
+  await page.eval(`__test.emit('window-visible', false); __test.emit('window-visible', true)`);
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(await mojangAsked(page), n, 'not within a minute of the last check');
+  assert.equal((await saved(page)).players[KAY.id].at, at, 'nothing checked, nothing saved');
+  // a minute later, hidden in the tray and opened again: checked
+  await page.eval(`__later(61e3); __test.emit('window-visible', false); __test.emit('window-visible', true)`);
+  await page.waitFor(`document.querySelector('#owned [data-owned="vanilla"] .pill.wearing')`);
+  assert.equal(await mojangAsked(page), n + 1);
+  // the window resized while open (main.rs says "visible" then too): no check
+  await page.eval(`__later(61e3); __test.emit('window-visible', true); __test.emit('window-visible', true)`);
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(await mojangAsked(page), n + 1);
+  assert.equal(await capesMeAsked(page), 2, 'capes.me: only the check at start (the player and its list of capes)');
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('a cape taken off the list by hand stays off when CapeWatch sees it again, and stays in the record', { skip }, async () => {
+  const page = await open({ storage: { 'caperadar:owned': SAVED } });
+  await answered(page, CAPES_ME_USER(KAY)); await settled(page);
+  await page.click('#o-choose');
+  await page.waitFor(`document.getElementById('pick').open`);
+  await page.click('#pick-list input[value="cherry-blossom"]');
+  await page.click('#pick-done');
+  await page.waitFor(`!document.getElementById('pick').open && document.querySelectorAll('#owned .o-tile').length === 2`);
+  const first = (await saved(page)).players[KAY.id].saw['cherry-blossom'];
+  await tenMinutes(page);   // still wearing it
+  await page.waitFor(`JSON.parse(localStorage.getItem('caperadar:owned')).players['${KAY.id}'].saw['cherry-blossom'][1] > ${first[1]}`);
+  assert.deepEqual(await tiles(page), ['migrator', 'christmas-2010']);
+  assert.deepEqual((await saved(page)).players[KAY.id].saw['cherry-blossom'][0], first[0], 'seen again: first seen stays, last seen moves on');
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('no player shown yet, or no answer: the checks ask no one, or change nothing', { skip }, async () => {
+  let page = await open();
+  await tenMinutes(page);
+  await page.eval(`__later(61e3); __test.emit('window-visible', false); __test.emit('window-visible', true)`);
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(await page.eval(`(__test.http || []).length`), 0, 'no player to check');
+  await page.close();
+  page = await open({ storage: { 'caperadar:owned': SAVED } });
+  await answered(page, CAPES_ME_USER(KAY)); await settled(page);
+  const was = await saved(page);
+  await page.eval(`__test.cfg.players = 'offline'`);
+  await tenMinutes(page);
+  await page.waitFor(`(__test.logs || []).some((l) => l.startsWith('[Owned] check (every 10 minutes): '))`);
+  assert.deepEqual(await saved(page), was, 'the list and the record as they were');
+  assert.deepEqual(await tiles(page), ['cherry-blossom*', 'migrator', 'christmas-2010']);
+  assert.equal(await text(page, 'o-note'), '');
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('a broken or odd record on this computer is left out, the rest of the player kept', { skip }, async () => {
+  const odd = JSON.parse(SAVED);
+  odd.players[KAY.id].saw = { vanilla: [1, 2], 'tex:zz': [1, 2], migrator: 'yesterday', 'mojang-office': [5], ['x'.repeat(90)]: [1, 2], 'tex:abc': [3, Infinity] };
+  const page = await open({ storage: { 'caperadar:owned': JSON.stringify(odd) }, players: [{ ...KAY, hold: true }] });   // Mojang holds its answer: what was loaded
+  await page.waitFor(`document.querySelectorAll('#owned .o-tile').length === 3`, 20000);
+  await page.eval(`__test.cfg.players = [${JSON.stringify(KAY)}]`);
+  await page.eval(`__test.release()`);
+  await page.waitFor(`JSON.parse(localStorage.getItem('caperadar:owned') || '{}').players?.['${KAY.id}']?.saw?.['cherry-blossom']`, 15000);
+  assert.deepEqual(Object.keys((await saved(page)).players[KAY.id].saw).sort(), ['cherry-blossom', 'vanilla']);
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('"Delete my data" while a check of the player is under way: what that check saw does not come back', { skip }, async () => {
+  const page = await open({ storage: { 'caperadar:owned': SAVED } });
+  await answered(page, CAPES_ME_USER(KAY)); await settled(page);
+  // the next check goes out, and Mojang holds its answer; then the user deletes their data, and the log files take a moment
+  await page.eval(`__test.cfg.players = [${JSON.stringify({ ...KAY, cape: tex('vanilla'), hold: true })}]; __test.cfg.holdClear = true`);
+  await tenMinutes(page);
+  await page.waitFor(`(__test.http || []).filter((u) => u.includes('sessionserver')).length === 2`);
+  await page.click('#cw-open-settings');
+  await page.waitFor(`document.getElementById('cw-settings')?.open`);
+  await page.click('#cw-settings [value=delete]');
+  await page.click('#cw-settings [value=delete-yes]');
+  await page.waitFor(`localStorage.getItem('caperadar:owned') === null && typeof __test.releaseClear === 'function'`);
+  await page.eval(`__test.release()`);   // the check ends while the logs are being cleared, and saves what it saw
+  await page.waitFor(`JSON.parse(localStorage.getItem('caperadar:owned') || 'null')?.players?.['${KAY.id}']?.worn === 'vanilla'`);
+  await page.eval(`__test.releaseClear()`);
+  await page.waitFor(`document.querySelectorAll('#grid .tile').length > 10 && sessionStorage.getItem('__clearedLogs') === '1'`, 30000);   // started again
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(await page.eval(`localStorage.getItem('caperadar:owned')`), null, 'nothing of the player is left');
+  assert.equal(await page.eval(`document.querySelector('#owned .empty').textContent`), 'Type a Minecraft name and press “Show capes”.');
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
 });

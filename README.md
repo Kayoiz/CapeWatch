@@ -10,8 +10,9 @@ appears, a promotion opens or a promotion is about to end.
 - Open promotions first, with a countdown and how to get each cape.
 - Windows notifications you choose: new cape, promotion opened, promotion ending soon. Click one to open that cape.
 - A 3D figure wearing the capes and their elytra; your own skin by Minecraft username.
-- Owned capes: type a Minecraft name to see that player's capes: the one they are wearing (from Mojang) and the ones
-  [capes.me](https://capes.me) has seen them wear before. Tick any others they own, and they stay listed.
+- Owned capes: type a Minecraft name to see that player's capes: the one they are wearing (from Mojang), the ones
+  [capes.me](https://capes.me) has seen them wear before, and every cape CapeWatch itself sees them wear (it checks
+  again every 10 minutes while it runs, and when you open its window). Tick any others they own, and they stay listed.
 - Starts quietly with Windows and waits in the tray; checks for news every 30 minutes and works offline with the last list it has.
 - 7 languages: English, עברית, Español, Português, Français, Deutsch, Русский.
 - Accessible: works with the keyboard alone and with screen readers, checked against WCAG 2.1 AA; see the
@@ -40,10 +41,12 @@ entry and everything it registered. Your settings stay unless you tick **Delete 
 CapeWatch has no account and sends nothing about you. It downloads the cape list from this repository, cape
 textures from Minecraft's texture server (the three that were never there, Christmas 2010, New Year 2011 and
 Progress Pride, from the Minecraft Wiki), and (only if you enter a Minecraft username, for your skin or under
-Owned capes) that player's skin and worn cape from Mojang. Under Owned capes it also asks capes.me, a public cape
-database, which capes it has seen that player wear; only the player's Minecraft id is sent there. The names you look
-up and the capes you tick stay on your computer, and **Settings → Delete my data** removes all of it (settings,
-players looked up, capes ticked, the saved cape list and the log files). No ads, no affiliate links, no tracking.
+Owned capes) that player's skin and worn cape from Mojang. Under Owned capes it checks the player shown again at
+Mojang every 10 minutes while it runs and when you open its window, and keeps its own record of the capes it sees
+on them. It also asks capes.me, a public cape database, which capes it has seen that player wear; only the player's
+Minecraft id is sent there. The names you look up, the capes seen on them and the capes you tick stay on your
+computer, and **Settings → Delete my data** removes all of it (settings, players looked up, the capes seen on them,
+capes ticked, the saved cape list and the log files). No ads, no affiliate links, no tracking.
 The full list of addresses, and why, is in [tools/security.md](tools/security.md).
 
 ## How it works
@@ -70,4 +73,6 @@ are loaded from the Minecraft Wiki when shown and never stored: cape textures ©
 
 © Kayoiz. All rights reserved. Included third-party parts keep their own licences: skinview3d and three.js
 (MIT, `vendor/skinview3d/`), the Assistant, Secular One and Pixelify Sans fonts (SIL Open Font License,
-`assets/fonts/google/`).
+`assets/fonts/google/`), and Tauri and the other Rust crates the app is built from. Every one of them, with its
+license text, is in [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt), which is also installed next to CapeWatch
+(made by `tools/make-licenses.mjs`).
