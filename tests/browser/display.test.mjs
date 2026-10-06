@@ -139,23 +139,22 @@ test('Christmas 2010, New Year 2011 and Progress Pride: drawn from their wiki te
   await page.waitFor(`document.querySelector('#dlg-slot img.gen')`);
   await page.eval(`document.getElementById('dlg').close()`);
   assert.equal(await page.eval(`document.getElementById('foot-tex').hidden`), false);
-  assert.equal(await page.eval(`document.getElementById('foot-tex').textContent`),
-    'The Christmas 2010, New Year 2011 and Progress Pride cape textures load from minecraft.wiki when shown and are not stored. The wiki marks them © Mojang Studios; its content is under CC BY-NC-SA 3.0.');
-  assert.deepEqual(await page.eval(`[...document.querySelectorAll('#foot-tex a')].map((a) => a.href)`), ['https://minecraft.wiki/w/Cape', 'https://creativecommons.org/licenses/by-nc-sa/3.0/']);
-  await page.click('#foot-tex a[href^="https://creativecommons.org/"]');
-  assert.equal(await page.eval('__test.opened'), 'https://creativecommons.org/licenses/by-nc-sa/3.0/', 'opens in the browser');
+  assert.equal(await page.eval(`document.getElementById('foot-tex').textContent`), 'Cape textures © Mojang Studios, via the Minecraft Wiki');
+  assert.deepEqual(await page.eval(`[...document.querySelectorAll('#foot-tex a')].map((a) => a.href)`), ['https://minecraft.wiki/']);
+  await page.click('#foot-tex a');
+  assert.equal(await page.eval('__test.opened'), 'https://minecraft.wiki/', 'opens in the browser');
   assert.ok(!page.console.some((l) => /no texture, skipped (christmas-2010|new-year-2011|progress-pride)/.test(l)), 'the figure wears them too');
   assert.deepEqual(page.exceptions, []);
   await page.close();
 });
 
-test('the credit line in all 7 languages: both links, in the same place', { skip }, async () => {
+test('the credit line in all 7 languages: © Mojang Studios and the link to the wiki, no other licence', { skip }, async () => {
   for (const lang of LANGS) {
     const page = await open(lang, 400);
     const r = await page.eval(`(() => { const e = document.getElementById('foot-tex'); return { text: e.textContent, links: [...e.querySelectorAll('a')].map((a) => a.textContent), shown: !e.hidden && e.getBoundingClientRect().height > 0 }; })()`);
     assert.ok(r.shown, lang);
-    assert.deepEqual(r.links.sort(), ['CC BY-NC-SA 3.0', 'minecraft.wiki'], lang);
-    assert.ok(/Christmas 2010.*New Year 2011.*Progress Pride/.test(r.text) && r.text.includes('Mojang Studios') && !/\{\w+\}/.test(r.text), lang + ': ' + r.text);
+    assert.deepEqual(r.links, ['Minecraft Wiki'], lang);
+    assert.ok(r.text.includes('© Mojang Studios') && !/CC BY|\{\w+\}/.test(r.text), lang + ': ' + r.text);
     await page.close();
   }
 });

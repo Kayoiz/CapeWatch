@@ -62,8 +62,7 @@ If CapeWatch is useful to you, you can support it: https://paypal.me/Kayoiz
 NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
 Minecraft is a trademark of Microsoft. Cape facts come from public sources (minecraft.wiki and official Mojang
 announcements) and may contain mistakes. The textures of the Christmas 2010, New Year 2011 and Progress Pride capes
-are loaded from the Minecraft Wiki when shown and never stored; the wiki marks them © Mojang Studios, and its own
-content is under CC BY-NC-SA 3.0.
+are loaded from the Minecraft Wiki when shown and never stored: cape textures © Mojang Studios, via the Minecraft Wiki.
 
 © Kayoiz. All rights reserved. Included third-party parts keep their own licences: skinview3d and three.js
 (MIT, `vendor/skinview3d/`), the Assistant, Secular One and Pixelify Sans fonts (SIL Open Font License,
