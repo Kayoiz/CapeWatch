@@ -1,7 +1,7 @@
-# Draft: what's new in the combined update (not published)
+# Release notes: CapeWatch 1.0.6
 
-Draft for the release notes of the next version (after 1.0.5). The version number is not set yet; nothing is
-released until the owner says so. Written for users, in English like the other release notes.
+The release notes of CapeWatch 1.0.6, as published on GitHub (Releases, v1.0.6) on 2026-10-06. Written for users,
+in English like the other release notes.
 
 ---
 
