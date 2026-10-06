@@ -14,6 +14,8 @@ released until the owner says so. Written for users, in English like the other r
 - **Turn the figure by hand.** Drag the 3D figure to turn it, scroll to zoom, double-click or ⟲ to reset. Settings has an option to reverse the drag direction.
 - **New buttons.** Every button, menu, checkbox and switch reacts in CapeWatch's pixel style (hover, press, keyboard focus). With "reduce animations" on in Windows, nothing moves.
 - **A new icon,** sharp at every size.
+- **Accessibility statement.** At the bottom of the window, in all 7 languages: what CapeWatch does for accessibility, how it was checked, and who to write to.
+- **Delete my data.** In Settings: removes everything CapeWatch keeps on your computer (settings, the players you looked up, the capes you ticked, the logs).
 
 ### Better
 - **Starts quietly with Windows.** Only the tray icon; the window, the effect and the sound wait until you open it.
@@ -28,6 +30,9 @@ released until the owner says so. Written for users, in English like the other r
 - **Tighter security.** The app may only contact the addresses it needs, and opens links only to minecraft.wiki, minecraft.net, capes.me, PayPal and e-mail.
 - **Logs stay small.** At most about 3 MB, with the older history kept instead of deleted every few hours.
 - **Clean uninstall.** Uninstalling removes everything CapeWatch registered in Windows.
+- **Settings save themselves.** Every change is kept the moment you make it; there is no Save button any more.
+- **Easier to read and to use.** Small coloured text has more contrast in the light theme, every picture button says what it shows to screen readers, and Ctrl and + or − zooms the window (Ctrl+0 resets it). Checked against WCAG 2.1 AA.
+- **Even safer.** The browser inside CapeWatch now refuses any text that would turn into code (Trusted Types), and CapeWatch asks Mojang and capes.me at most 20 times a minute.
 
 ### Fixed
 - Clicks on buttons sometimes did nothing while the card pictures were being drawn.

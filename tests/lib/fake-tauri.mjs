@@ -28,6 +28,8 @@ export function fakeTauri({ data = null, mode = 'ok', greeting = 'none', pending
       if (cmd === 'take_greeting') return cfg.greeting;
       if (cmd === 'take_pending_cape') { const p = cfg.pendingCape; cfg.pendingCape = null; return p; }
       if (cmd === 'plugin:opener|open_url') { test.opened = args.url; return; }
+      // "Delete my data" empties the log files; the page starts again right after, so the count is kept for the next load
+      if (cmd === 'clear_logs') { try { sessionStorage.setItem('__clearedLogs', String(+(sessionStorage.getItem('__clearedLogs') || 0) + 1)); } catch {} return 2; }
       return null;
     } },
     event: { listen: (name, cb) => { (test.listeners[name] ||= []).push(cb); return Promise.resolve(() => {}); } },

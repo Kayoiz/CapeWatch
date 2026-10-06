@@ -5,6 +5,7 @@
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { LANGS, NEW_OBTAIN, NEW_SHORT, EVENT, fill } from './templates.mjs';
+import { offensive, allow } from './offensive.mjs';
 
 // The tests (tests/robot/) point CAPEWATCH_DATA at a copy; on GitHub it is always the repo's data file.
 const DATA = process.env.CAPEWATCH_DATA ? pathToFileURL(process.env.CAPEWATCH_DATA) : new URL('../data/capewatch.json', import.meta.url);
@@ -103,9 +104,11 @@ export function addEvent(data, type, cape, id, at) {
 
 // One check: new capes from the wiki, then promotions opening / ending from the known dates, then the status line.
 // Changes `data` in place and returns the result line. `at` and `now` are the check's time (the tests set them).
-export async function check(data, { at = nowIso(), now = Date.now() } = {}) {
+// `replaced` collects every text the word filter replaced ({ id, cape, field, word }), for the owner's message.
+export async function check(data, { at = nowIso(), now = Date.now(), replaced = [] } = {}) {
   data.capes ||= {};
   data.events ||= {};
+  allow(Object.values(data.capes).flatMap((c) => [c.name, (c.wikiTitle || '').split('#')[0]]));   // capes' names are never marked
   const problems = [];
   let added = 0, changed = 0;
 
@@ -123,6 +126,17 @@ export async function check(data, { at = nowIso(), now = Date.now() } = {}) {
     const id = slug(title);
     if (data.capes[id]) continue;
     const written = await writeTexts(title, plain(text));
+    // The word filter (robot/offensive.mjs) reads only the model's texts, never the cape's name: a text with a word on
+    // its lists is replaced by the fixed template sentence, and the cape goes out as usual. Each one is logged.
+    allow([title]);
+    const marked = {};
+    for (const l of LANGS) for (const k of ['obtain' + l, 'short' + l]) {
+      const hit = written ? offensive(written[k], l) : null;
+      if (!hit) continue;
+      marked[k] = true;
+      replaced.push({ id, cape: title, field: k, word: hit.word });
+      log('filter: ' + k + ' of ' + id + ' replaced by the template (word: "' + hit.word + '")');
+    }
     // The model's answer is checked before it goes into the file: a value the app does not know is dropped.
     const AVAIL = ['available', 'announced', 'ended', 'exclusive', 'permanent'];
     const day = (v) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
@@ -134,8 +148,8 @@ export async function check(data, { at = nowIso(), now = Date.now() } = {}) {
       cost: ['free', 'paid'].includes(written?.cost) ? written.cost : undefined, releaseDate: at.slice(0, 10), source: 'robot', detectedAt: at
     };
     for (const l of LANGS) {
-      cape['obtain' + l] = written ? written['obtain' + l] : fill(NEW_OBTAIN[l], title);
-      cape['short' + l] = written ? written['short' + l] : NEW_SHORT[l];
+      cape['obtain' + l] = written && !marked['obtain' + l] ? written['obtain' + l] : fill(NEW_OBTAIN[l], title);
+      cape['short' + l] = written && !marked['short' + l] ? written['short' + l] : NEW_SHORT[l];
     }
     data.capes[id] = JSON.parse(JSON.stringify(cape));   // drops undefined fields
     addEvent(data, 'new', cape, id, at);
@@ -162,9 +176,23 @@ export async function check(data, { at = nowIso(), now = Date.now() } = {}) {
   return result;
 }
 
+// The message: which cape, which field, which word. If the word was a mistake, the text can be written by hand in
+// data/capewatch.json, and the word or name added to robot/allowed-words.json.
+export function filterReport(replaced) {
+  return 'The robot’s word filter replaced texts written by the language model with the fixed template sentence. The capes were published as usual.\n\n'
+    + replaced.map((r) => '- **' + r.cape + '** (`' + r.id + '`), `' + r.field + '`: the word “' + r.word + '”').join('\n')
+    + '\n\nIf a word was not offensive here, write the text by hand in `data/capewatch.json` and add the name to `robot/allowed-words.json`.\n';
+}
+
 async function main() {
   const data = JSON.parse(await fs.readFile(DATA, 'utf8'));
-  await check(data);
+  const replaced = [];
+  await check(data, { replaced });
+  // The owner's message about texts the word filter replaced (robot.yml turns this file into a GitHub issue).
+  if (replaced.length && process.env.CAPEWATCH_FILTER_REPORT) {
+    await fs.writeFile(process.env.CAPEWATCH_FILTER_REPORT, filterReport(replaced));
+    log('filter: report written for the owner (' + replaced.length + ' texts)');
+  }
   if (DRY) { log('dry run: file not written'); return; }
   await fs.writeFile(DATA, JSON.stringify(data, null, 1) + '\n');
   log('wrote', DATA.pathname);

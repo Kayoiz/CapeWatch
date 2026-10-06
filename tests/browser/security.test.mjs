@@ -80,7 +80,10 @@ test('under the app security policy everything works and nothing is blocked', { 
   await page.click('#cw-open-settings');                                          // the dialog's own styles are added at run time
   await page.waitFor(`document.getElementById('cw-settings')?.open`);
   assert.equal(await page.eval(`getComputedStyle(document.querySelector('.cw-set')).display`), 'grid', 'the settings dialog has its styles');
-  await page.click('#cw-settings [value=save]');
+  await page.click('#cw-settings input[name=notifyOpen]');                       // kept at once
+  await page.click('#cw-settings [value=delete]'); await page.click('#cw-settings [value=delete-no]');
+  await page.click('#cw-settings [value=close]');
+  await page.click('#a11y-open'); await page.waitFor(`document.getElementById('a11y').open`); await page.click('#a11y-close');
   await page.click('#donate');
   assert.equal(await page.eval('__test.opened'), 'https://paypal.me/Kayoiz', 'links open in the browser');
   assert.equal(await page.eval(`getComputedStyle(document.querySelector('.live-name')).fontFamily.includes('CapeWatch Pixel')`), true);
@@ -136,5 +139,37 @@ test('the wiki: only the three texture files are loaded, under the policy; nothi
   assert.ok(blocked.some((b) => /^img-src https:\/\/minecraft\.wiki\/w\/Special/.test(b)), 'a wiki page outside its images folder is blocked: ' + blocked.join(', '));
   assert.equal(f, 'blocked', 'the page cannot fetch from the wiki, only show its images');
   assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('Trusted Types: under the app policy no text can become HTML or code anywhere, and the app still does everything', { skip }, async () => {
+  const page = await open(sampleData());
+  await page.waitFor(`document.querySelectorAll('#grid .tile').length === 2`);
+  // every way text could turn into markup or script is refused by the browser itself (tried from the page's own timer:
+  // code sent through the debugging connection may use eval by default)
+  const tries = await page.eval(`new Promise((done) => setTimeout(() => {
+    const out = {};
+    const t = (k, f) => { try { f(); out[k] = 'allowed'; } catch (e) { out[k] = e.name; } };
+    t('innerHTML', () => { document.body.insertAdjacentElement('beforeend', document.createElement('div')).innerHTML = '<img src=x onerror="window.__pwned=9">'; });
+    t('outerHTML', () => { const d = document.createElement('div'); document.body.append(d); d.outerHTML = '<b>x</b>'; });
+    t('insertAdjacentHTML', () => { document.body.insertAdjacentHTML('beforeend', '<b>x</b>'); });
+    t('document.write', () => { document.write('<b>x</b>'); });
+    t('script text', () => { const s = document.createElement('script'); s.textContent = 'window.__pwned=10'; document.body.append(s); });
+    t('script src', () => { const s = document.createElement('script'); s.src = 'data:text/javascript,window.__pwned=11'; });
+    t('a new policy', () => { trustedTypes.createPolicy('mine', { createHTML: (x) => x }); });
+    t('eval', () => { eval('window.__pwned = 12'); });
+    done(out);
+  }, 0))`);
+  await new Promise((r) => setTimeout(r, 300));
+  assert.deepEqual(tries, { innerHTML: 'TypeError', outerHTML: 'TypeError', insertAdjacentHTML: 'TypeError', 'document.write': 'TypeError',
+    'script text': 'TypeError', 'script src': 'TypeError', 'a new policy': 'TypeError', eval: 'EvalError' });
+  assert.equal(await page.eval('window.__pwned ?? null'), null, 'nothing ran');
+  assert.ok((await page.eval('window.__csp')).some((b) => /^require-trusted-types-for/.test(b)), 'the browser reported the refusals');
+  assert.ok((await page.eval('__test.logs')).some((l) => /blocked by the security policy: require-trusted-types-for/.test(l)), 'and they are written to the app log');
+  // the parts built from fixed pieces still work: the settings window, the plain outline, the accessibility statement
+  await page.click('#cw-open-settings');
+  await page.waitFor(`document.getElementById('cw-settings')?.open && document.querySelectorAll('#cw-settings input').length === 7`);
+  await page.click('#cw-settings [value=close]');
+  assert.deepEqual(page.exceptions.filter((e) => !/TrustedHTML|TrustedScript|Trusted Type|EvalError|unsafe-eval/i.test(e)), []);
   await page.close();
 });

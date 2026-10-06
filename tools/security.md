@@ -17,10 +17,30 @@ Every address the installed app reaches. The page is held to this list by its se
 Opened in the user's own browser or mail app, never inside CapeWatch (and only these):
 `minecraft.wiki`, `www.minecraft.net` (redeem page), `capes.me` (a player's page there, from "Owned capes"), `paypal.me` (donate), `mailto:` (contact).
 
+Everything is encrypted: every address above is https (the only "http" name, `http://ipc.localhost`, is Tauri's own
+channel inside the app, never the network), the HTTP plugin and the links are https only, and Mojang's http texture
+links are turned into https before anything is loaded. Checked by `tests/unit/https.test.mjs`.
+
+Lookups are limited on CapeWatch's side too: at most 20 a minute at Mojang and at capes.me, whatever is typed, so the
+app never floods them from the user's computer; answers are kept for a minute (`tests/unit/player.test.mjs`).
+
+There is no account, no sign-in and no server of CapeWatch's own: nothing to break into, no database (so no SQL),
+no forms sent anywhere, no sessions. **Settings → Delete my data** removes everything the app keeps on the computer
+(localStorage and the log files, through the `clear_logs` command in main.rs); only "Start with Windows" keeps its value.
+
 Data text can never run as code: the page only ever puts data into the page as text (never as HTML),
 links are built by the page itself (the wiki link always starts with `https://minecraft.wiki/w/`), the
 Windows notification text is escaped, and the `capewatch://cape/<id>` address only accepts letters, digits,
 `-` and `_`. `tests/browser/security.test.mjs` fills every text field with HTML and script tricks to check.
+On top of that the security policy turns on **Trusted Types** (`require-trusted-types-for 'script'; trusted-types 'none'`):
+the browser itself refuses any text that would become HTML or script (innerHTML, document.write, script text or
+addresses, new policies), so even a future mistake in the code cannot open that door. The page and the shell build
+everything element by element; eval is refused too. Checked under the real policy in `tests/browser/security.test.mjs`.
+
+The data robot (robot/robot.mjs) checks the texts the language model writes for a new cape against a list of
+offensive words in the 7 languages (robot/offensive.mjs; whole words only, never a name on robot/allowed-words.json,
+never a cape's official name). A text with such a word is replaced by the fixed template sentence, the cape goes out
+as usual, and the owner gets a GitHub issue saying which cape, field and word.
 
 Fonts: Assistant, Secular One and Pixelify Sans ship inside the app (assets/fonts/google/, SIL Open Font
 License, licence files next to them), so CapeWatch never contacts Google and looks the same offline.

@@ -15,7 +15,7 @@
         "title": "CapeWatch",
         "width": 1200,
         "height": 880,
-        "minWidth": 400,
+        "minWidth": 400, "zoomHotkeysEnabled": true,
         "minHeight": 500,
         "visible": false,
         "center": true,
@@ -33,7 +33,9 @@
         "media-src": "'self' data: blob:",
         "object-src": "'none'",
         "base-uri": "'none'",
-        "frame-src": "'none'"
+        "frame-src": "'none'",
+        "require-trusted-types-for": "'script'",
+        "trusted-types": "'none'"
       },
       "dangerousDisableAssetCspModification": ["style-src"]
     }

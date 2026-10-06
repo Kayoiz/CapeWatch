@@ -14,6 +14,8 @@ appears, a promotion opens or a promotion is about to end.
   [capes.me](https://capes.me) has seen them wear before. Tick any others they own, and they stay listed.
 - Starts quietly with Windows and waits in the tray; checks for news every 30 minutes and works offline with the last list it has.
 - 7 languages: English, עברית, Español, Português, Français, Deutsch, Русский.
+- Accessible: works with the keyboard alone and with screen readers, checked against WCAG 2.1 AA; see the
+  [accessibility statement](ACCESSIBILITY.md) (also in the app, at the bottom of the window).
 
 ## Install
 
@@ -40,7 +42,9 @@ textures from Minecraft's texture server (the three that were never there, Chris
 Progress Pride, from the Minecraft Wiki), and (only if you enter a Minecraft username, for your skin or under
 Owned capes) that player's skin and worn cape from Mojang. Under Owned capes it also asks capes.me, a public cape
 database, which capes it has seen that player wear; only the player's Minecraft id is sent there. The names you look
-up and the capes you tick stay on your computer. The full list of addresses, and why, is in [tools/security.md](tools/security.md).
+up and the capes you tick stay on your computer, and **Settings → Delete my data** removes all of it (settings,
+players looked up, capes ticked, the saved cape list and the log files). No ads, no affiliate links, no tracking.
+The full list of addresses, and why, is in [tools/security.md](tools/security.md).
 
 ## How it works
 

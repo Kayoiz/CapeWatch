@@ -171,3 +171,17 @@ test('one minute of memory: lookups at the same moment share one request; a fail
   assert.equal((await seen(s, JEB, 'jeb_')).state, 'found', 'right after a failure: asked again');
   assert.equal(asks(), 3);
 });
+
+test('at most 20 lookups a minute at capes.me: the 21st is not sent, a minute later it is', async () => {
+  let now = 1_800_000_000_000;
+  const accounts = Object.fromEntries(Array.from({ length: 21 }, (_, i) => [(i + 1).toString(16).padStart(32, '0'), { name: 'p' + i, capes: [{ type: 'migrator_cape' }] }]));
+  const http = capesMe(accounts), s = await start(http, { clock: () => now });
+  const ids = Object.keys(accounts), users = () => http.urls().filter((u) => u.includes('/user/')).length;
+  for (let i = 0; i < 20; i++) assert.equal((await seen(s, ids[i], 'p' + i)).state, 'found');
+  assert.equal(users(), 20);
+  assert.deepEqual(await seen(s, ids[20], 'p20'), { state: 'failed', capes: [] });
+  assert.equal(users(), 20, 'not sent');
+  assert.ok(s.out.file.some((l) => /capes\.me: p20: not asked, 20 lookups in the last minute/.test(l)));
+  now += 60e3;
+  assert.equal((await seen(s, ids[20], 'p20')).state, 'found');
+});

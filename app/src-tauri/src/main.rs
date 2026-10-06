@@ -48,6 +48,28 @@ fn take_greeting(state: tauri::State<Greet>) -> &'static str {
     state.0.lock().map(|g| *g).unwrap_or("none")
 }
 
+// "Delete my data" (Settings, app/shell.js): the log files go too, since they name the players looked up. Only
+// CapeWatch's own files in its log folder: the current one is emptied (the logger keeps writing to it), the older
+// ones (capewatch_<date>.log) are deleted. Returns how many files were cleared.
+#[tauri::command]
+fn clear_logs(app: AppHandle) -> Result<u32, String> {
+    let dir = app.path().app_log_dir().map_err(|e| e.to_string())?;
+    let mut cleared = 0;
+    for entry in std::fs::read_dir(&dir).map_err(|e| e.to_string())?.flatten() {
+        let path = entry.path();
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_owned();
+        if !path.is_file() || !name.starts_with("capewatch") || !name.ends_with(".log") { continue; }
+        if name == "capewatch.log" {
+            std::fs::OpenOptions::new().write(true).truncate(true).open(&path).map_err(|e| e.to_string())?;
+        } else {
+            std::fs::remove_file(&path).map_err(|e| e.to_string())?;
+        }
+        cleared += 1;
+    }
+    log::info!("logs: cleared {cleared} files (Delete my data)");
+    Ok(cleared)
+}
+
 #[cfg(windows)]
 mod win32 {
     use windows::core::{HSTRING, PCWSTR};
@@ -300,7 +322,7 @@ fn main() {
             tauri::async_runtime::spawn(async move { check_update(handle).await });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![notify_cape, take_pending_cape, take_greeting])
+        .invoke_handler(tauri::generate_handler![notify_cape, take_pending_cape, take_greeting, clear_logs])
         .on_window_event(|window, event| {
             match event {
                 WindowEvent::CloseRequested { api, .. } => {

@@ -16,7 +16,7 @@
   --line: #CDD0C6;
   --accent: #3C8527;      /* Minecraft button green */
   --accent-fg: #FFFFFF;
-  --live: #2F7A1F;
+  --live: #2D741D;
   --live-bg: #DCEFD2;
   --soon: #A3470B;
   --soon-bg: #FBE3D2;
@@ -26,8 +26,9 @@
   --ended-bg: #DFE1DA;
   --exclusive: #6B3FB8;   /* enchant purple */
   --exclusive-bg: #E9E0F8;
-  --java: #B8641B;
-  --bedrock: #2D6FA8;
+  --java: #9B5417;
+  --bedrock: #2B6AA0;
+  --link: #347322;        /* links: the accent green, dark enough for small text */
   --font-display: "Secular One", "Assistant", "Arial Hebrew", system-ui, sans-serif;
   --font-body: "Assistant", "Segoe UI", "Arial Hebrew", system-ui, sans-serif;
   --font-pixel: "CapeWatch Pixel", "Pixelify Sans", "Assistant", ui-monospace, monospace;
@@ -46,7 +47,7 @@
     --fg: #E8EBE3; --muted: #A2A99C; --line: #343831; --accent: #6CC349; --accent-fg: #0F1A0B;
     --live: #86D866; --live-bg: #1F3319; --soon: #FF9B5C; --soon-bg: #3A2415;
     --announced: #E9C15C; --announced-bg: #332913; --ended: #9EA497; --ended-bg: #2A2D28;
-    --exclusive: #BC98FF; --exclusive-bg: #2C2140; --java: #F0A05A; --bedrock: #6FB3F0;
+    --exclusive: #BC98FF; --exclusive-bg: #2C2140; --java: #F0A05A; --bedrock: #6FB3F0; --link: #6CC349;
     --title-plate: transparent;
     color-scheme: dark;
   }
@@ -56,7 +57,7 @@
   --fg: #E8EBE3; --muted: #A2A99C; --line: #343831; --accent: #6CC349; --accent-fg: #0F1A0B;
   --live: #86D866; --live-bg: #1F3319; --soon: #FF9B5C; --soon-bg: #3A2415;
   --announced: #E9C15C; --announced-bg: #332913; --ended: #9EA497; --ended-bg: #2A2D28;
-  --exclusive: #BC98FF; --exclusive-bg: #2C2140; --java: #F0A05A; --bedrock: #6FB3F0;
+  --exclusive: #BC98FF; --exclusive-bg: #2C2140; --java: #F0A05A; --bedrock: #6FB3F0; --link: #6CC349;
   --title-plate: transparent;
   color-scheme: dark;
 }
@@ -74,7 +75,7 @@ h1 { font-size: var(--step-3); }
 h2 { font-size: var(--step-2); }
 h3 { font-size: var(--step-1); }
 p { margin: 0; }
-a { color: var(--accent); }
+a { color: var(--link); }
 a:focus-visible, button:focus-visible, input:focus-visible, .slot:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 /* Chrome keeps a menu's focus ring after a mouse pick, so menus show it only while the keyboard is in use */
 html[data-kbd] select:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
@@ -265,7 +266,7 @@ button.slot { cursor: pointer; }
 .pick-list { list-style: none; margin: 0; padding: 4px; display: grid; gap: 2px; align-content: start; height: min(46vh, 420px); overflow: auto;
   background: var(--bg); box-shadow: inset 2px 2px 0 var(--bevel-lo), inset -2px -2px 0 var(--bevel-hi); }
 .pick-row { display: flex; align-items: center; gap: 10px; padding: 4px 8px; }
-.pick-row:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.pick-row:hover { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }   /* a frame, not a tint: the small coloured text keeps its contrast */
 .pick-thumb { width: 32px; height: 40px; flex: none; display: grid; place-items: center; overflow: hidden; background: var(--slot); color: var(--muted); }
 .pick-thumb img { width: 100%; height: 100%; }
 .pick-thumb svg { width: 40%; height: auto; shape-rendering: crispEdges; }
@@ -289,6 +290,14 @@ dialog::backdrop { background: rgba(10, 12, 9, .55); }
 .dlg-close { position: absolute; top: 10px; right: 10px; }   /* fixed corners: the layout never mirrors */
 
 footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid var(--line); padding-top: 16px; display: grid; gap: 4px; }
+/* The accessibility statement (a window from the footer) */
+#a11y { max-width: min(640px, calc(100vw - 32px)); }
+.a11y { display: grid; gap: 8px; padding: 20px; padding-inline-end: 56px; }
+.a11y h3 { margin: 0; }
+.a11y h4 { margin: 8px 0 0; font-size: 1rem; }
+.a11y p { margin: 0; }
+.a11y ul { margin: 0; padding-inline-start: 20px; display: grid; gap: 4px; }
+.a11y-date { color: var(--muted); font-size: var(--text-sm); margin-top: 6px !important; }
 
 /* Hebrew (the layout never mirrors): paragraphs run from the right of their box; short labels, numbers and headings
    sit on the left, next to what they belong to (the checkbox, the number, the value under them). */
@@ -485,6 +494,7 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       <div class="foot-actions">
         <a class="btn" id="donate" href="https://paypal.me/Kayoiz" target="_blank" rel="noopener" data-i18n="support">Support CapeWatch</a>
         <span><span data-i18n="contact">Contact</span>: <a href="mailto:kayoiz.dev@gmail.com">kayoiz.dev@gmail.com</a></span>
+        <button class="btn ghost" type="button" id="a11y-open" data-i18n="a11yLink" aria-haspopup="dialog"></button>
       </div>
     </div>
     <p class="legal" data-i18n="legal"></p>
@@ -503,6 +513,23 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     </div>
   </div>
   <button class="btn ghost dlg-close" id="dlg-close" type="button" data-i18n-aria="close" autofocus>✕</button>
+</dialog>
+
+<dialog id="a11y" aria-labelledby="a11y-title">
+  <div class="a11y" id="a11y-inner">
+    <h3 id="a11y-title" data-i18n="a11yTitle"></h3>
+    <p data-i18n="a11yIntro"></p>
+    <h4 data-i18n="a11yDoesTitle"></h4>
+    <ul><li data-i18n="a11yDoes1"></li><li data-i18n="a11yDoes2"></li><li data-i18n="a11yDoes3"></li><li data-i18n="a11yDoes4"></li><li data-i18n="a11yDoes5"></li><li data-i18n="a11yDoes6"></li></ul>
+    <h4 data-i18n="a11yCheckedTitle"></h4>
+    <p data-i18n="a11yChecked"></p>
+    <h4 data-i18n="a11yLimitsTitle"></h4>
+    <p data-i18n="a11yLimits"></p>
+    <h4 data-i18n="a11yContactTitle"></h4>
+    <p id="a11y-contact"></p>
+    <p class="a11y-date" data-i18n="a11yUpdated"></p>
+  </div>
+  <button class="btn ghost dlg-close" id="a11y-close" type="button" data-i18n-aria="close" autofocus>✕</button>
 </dialog>
 
 <dialog id="pick" aria-labelledby="pick-title" aria-describedby="pick-intro">
@@ -555,6 +582,15 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       left: '{x} left', lessHour: 'Less than an hour left',
       noExact: 'No exact date. Estimate: {x}', fFrom: 'Starts', fUntil: 'Ends', est: 'estimate', more: 'Details', showElytra: 'Show elytra', showCape: 'Show cape', resetView: 'Reset view', unofficialTr: '', support: 'Support CapeWatch', contact: 'Contact', foot1App: 'Cape facts from {wiki} and official Mojang announcements. Pictures are drawn by CapeWatch from Minecraft textures.',
       footTex: 'Cape textures © Mojang Studios, via the {wiki}',
+      a11yLink: 'Accessibility', a11yTitle: 'Accessibility statement',
+      a11yIntro: 'CapeWatch is made to be usable by everyone, including people with disabilities. It aims to meet level AA of the Web Content Accessibility Guidelines (WCAG 2.1), on which the Israeli standard IS 5568 is based.', a11yDoesTitle: 'What CapeWatch does',
+      a11yDoes1: 'Everything works with the keyboard alone, with a clearly visible focus.', a11yDoes2: 'Buttons, pictures and windows have names for screen readers, and the results of a lookup are read out.',
+      a11yDoes3: 'Text and colours have enough contrast in both the light and the dark theme.', a11yDoes4: 'Ctrl and + or − makes everything bigger or smaller; Ctrl+0 resets it.',
+      a11yDoes5: 'With animation effects turned off in Windows, nothing moves.', a11yDoes6: 'Seven languages; Hebrew reads right to left, and nothing moves when the language changes.',
+      a11yCheckedTitle: 'How it was checked', a11yChecked: 'Automatic checks (axe-core: WCAG 2.0, 2.1 and 2.2, levels A and AA) of every screen and window, in English and Hebrew, in the light and the dark theme, in a narrow and a wide window; and tests that use only the keyboard.',
+      a11yLimitsTitle: 'Known limits', a11yLimits: 'The 3D figure turns only with the mouse; the same capes are on the page as pictures and names. Cape pictures are drawn from the game’s textures and have no text of their own: each cape’s name is written next to its picture.',
+      a11yContactTitle: 'Accessibility contact', a11yContact: 'Kayoiz, the developer of CapeWatch: {mail}. Tell me what you were doing and what went wrong, and I will answer and fix it as soon as I can.',
+      a11yUpdated: 'Statement updated: October 2026.',
       free: 'Completely free', paid: 'Requires a purchase', freeTip: 'Only a Minecraft account is needed. Nothing else to buy.',
       fCost: 'Cost', costAll: 'Any cost', stFree: 'Free right now',
       hOwned: 'Owned capes', ownedNote: 'The cape worn now comes from Mojang, the ones worn before from capes.me. Add any others with “Choose capes”.', oName: 'Minecraft name', oShow: 'Show capes', oChoose: 'Choose capes',
@@ -590,6 +626,15 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       left: 'נותרו {x}', lessHour: 'נותרה פחות משעה',
       noExact: 'אין תאריך מדויק. הערכה: {x}', fFrom: 'מתחיל', fUntil: 'מסתיים', est: 'הערכה', more: 'פירוט מלא', showElytra: 'הצג אליטרה', showCape: 'הצג גלימה', resetView: 'איפוס תצוגה', unofficialTr: 'זה לא מוצר רשמי של Minecraft. לא אושר על ידי Mojang או Microsoft ואין לו קשר אליהן.', support: 'תמיכה ב-CapeWatch', contact: 'יצירת קשר', foot1App: 'העובדות על הגלימות מ-{wiki} ומהודעות רשמיות של Mojang. התמונות מצוירות על ידי CapeWatch מהטקסטורות של Minecraft.',
       footTex: 'טקסטורות הגלימות © Mojang Studios, דרך {wiki}',
+      a11yLink: 'נגישות', a11yTitle: 'הצהרת נגישות',
+      a11yIntro: 'CapeWatch נבנתה כדי שכל אחד יוכל להשתמש בה, כולל אנשים עם מוגבלות. היא שואפת לעמוד ברמה AA של הנחיות הנגישות לתוכן אינטרנט (WCAG 2.1), שעליהן מבוסס התקן הישראלי ת"י 5568.', a11yDoesTitle: 'מה CapeWatch עושה',
+      a11yDoes1: 'הכל עובד גם במקלדת בלבד, עם סימון פוקוס ברור.', a11yDoes2: 'לכפתורים, לתמונות ולחלונות יש שמות לקוראי מסך, ותוצאות החיפוש מוקראות.',
+      a11yDoes3: 'לטקסט ולצבעים יש ניגודיות מספקת גם בערכה הבהירה וגם בכהה.', a11yDoes4: 'Ctrl עם + או − מגדיל או מקטין הכל, ו-Ctrl+0 מחזיר לגודל הרגיל.',
+      a11yDoes5: 'כשאפקטי האנימציה כבויים ב-Windows, שום דבר לא זז.', a11yDoes6: 'שבע שפות; עברית נקראת מימין לשמאל, ושום דבר לא זז כשמחליפים שפה.',
+      a11yCheckedTitle: 'איך זה נבדק', a11yChecked: 'בדיקות אוטומטיות בכלי axe-core, לפי WCAG 2.0, 2.1 ו-2.2 ברמות A ו-AA, של כל מסך וחלון, בעברית ובאנגלית, בערכה הבהירה ובכהה, בחלון צר ורחב; וגם בדיקות שמשתמשות במקלדת בלבד.',
+      a11yLimitsTitle: 'מגבלות ידועות', a11yLimits: 'את הדמות התלת-ממדית מסובבים רק בעכבר; אותן גלימות מופיעות בדף גם בתמונות ובשמות. התמונות של הגלימות מצוירות מהטקסטורות של המשחק ואין בהן טקסט: השם של כל גלימה כתוב ליד התמונה שלה.',
+      a11yContactTitle: 'פנייה בנושא נגישות', a11yContact: 'Kayoiz, המפתח של CapeWatch: {mail}. כתבו מה עשיתם ומה לא עבד, ואענה ואתקן בהקדם האפשרי.',
+      a11yUpdated: 'ההצהרה עודכנה: אוקטובר 2026.',
       free: 'חינמי לחלוטין', paid: 'דורש רכישה', freeTip: 'צריך רק חשבון Minecraft, בלי לקנות שום דבר נוסף.',
       fCost: 'עלות', costAll: 'כל העלויות', stFree: 'חינמיות עכשיו',
       hOwned: 'גלימות בבעלות', ownedNote: 'הגלימה שבשימוש עכשיו מגיעה מ-Mojang, ואלה שנלבשו בעבר מ-capes.me. את השאר מוסיפים ב"בחירת גלימות".', oName: 'שם ב-Minecraft', oShow: 'הצג גלימות', oChoose: 'בחירת גלימות',
@@ -625,6 +670,15 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       left: 'Quedan {x}', lessHour: 'Queda menos de una hora',
       noExact: 'Sin fecha exacta. Estimación: {x}', fFrom: 'Empieza', fUntil: 'Termina', est: 'estimación', more: 'Detalles', showElytra: 'Ver élitros', showCape: 'Ver capa', resetView: 'Restablecer vista', unofficialTr: 'No es un producto oficial de Minecraft. No está aprobado por Mojang ni Microsoft ni asociado con ellas.', support: 'Apoyar a CapeWatch', contact: 'Contacto', foot1App: 'Datos de las capas de {wiki} y de anuncios oficiales de Mojang. CapeWatch dibuja las imágenes a partir de las texturas de Minecraft.',
       footTex: 'Texturas de las capas © Mojang Studios, a través de la {wiki}',
+      a11yLink: 'Accesibilidad', a11yTitle: 'Declaración de accesibilidad',
+      a11yIntro: 'CapeWatch está hecho para que todo el mundo pueda usarlo, también las personas con discapacidad. Busca cumplir el nivel AA de las Pautas de Accesibilidad para el Contenido Web (WCAG 2.1), en las que se basa la norma israelí IS 5568.', a11yDoesTitle: 'Qué hace CapeWatch',
+      a11yDoes1: 'Todo funciona solo con el teclado, con el foco bien visible.', a11yDoes2: 'Los botones, las imágenes y las ventanas tienen nombre para los lectores de pantalla, y los resultados de una búsqueda se leen en voz alta.',
+      a11yDoes3: 'El texto y los colores tienen suficiente contraste tanto en el tema claro como en el oscuro.', a11yDoes4: 'Ctrl y + o − agranda o reduce todo; Ctrl+0 lo restablece.',
+      a11yDoes5: 'Con los efectos de animación desactivados en Windows, nada se mueve.', a11yDoes6: 'Siete idiomas; el hebreo se lee de derecha a izquierda, y nada se mueve al cambiar de idioma.',
+      a11yCheckedTitle: 'Cómo se comprobó', a11yChecked: 'Comprobaciones automáticas (axe-core: WCAG 2.0, 2.1 y 2.2, niveles A y AA) de cada pantalla y ventana, en inglés y hebreo, con el tema claro y el oscuro, en una ventana estrecha y en una ancha; y pruebas que usan solo el teclado.',
+      a11yLimitsTitle: 'Límites conocidos', a11yLimits: 'La figura 3D solo gira con el ratón; las mismas capas están en la página como imágenes y nombres. Las imágenes de las capas se dibujan a partir de las texturas del juego y no tienen texto propio: el nombre de cada capa está escrito junto a su imagen.',
+      a11yContactTitle: 'Contacto sobre accesibilidad', a11yContact: 'Kayoiz, el desarrollador de CapeWatch: {mail}. Cuéntame qué hacías y qué falló, y te responderé y lo arreglaré lo antes posible.',
+      a11yUpdated: 'Declaración actualizada: octubre de 2026.',
       free: 'Totalmente gratis', paid: 'Requiere una compra', freeTip: 'Solo necesitas una cuenta de Minecraft. Nada más que comprar.',
       fCost: 'Coste', costAll: 'Cualquier coste', stFree: 'Gratis ahora',
       hOwned: 'Capas obtenidas', ownedNote: 'La capa que lleva ahora viene de Mojang; las que llevó antes, de capes.me. Añade las demás con «Elegir capas».', oName: 'Nombre en Minecraft', oShow: 'Ver capas', oChoose: 'Elegir capas',
@@ -660,6 +714,15 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       left: 'Faltam {x}', lessHour: 'Falta menos de uma hora',
       noExact: 'Sem data exata. Estimativa: {x}', fFrom: 'Começa', fUntil: 'Termina', est: 'estimativa', more: 'Detalhes', showElytra: 'Ver élitros', showCape: 'Ver capa', resetView: 'Redefinir visualização', unofficialTr: 'Não é um produto oficial do Minecraft. Não é aprovado nem associado à Mojang ou à Microsoft.', support: 'Apoiar o CapeWatch', contact: 'Contato', foot1App: 'Dados das capas de {wiki} e de anúncios oficiais da Mojang. O CapeWatch desenha as imagens a partir das texturas do Minecraft.',
       footTex: 'Texturas das capas © Mojang Studios, via {wiki}',
+      a11yLink: 'Acessibilidade', a11yTitle: 'Declaração de acessibilidade',
+      a11yIntro: 'O CapeWatch foi feito para que todos possam usá-lo, inclusive pessoas com deficiência. Ele busca atender ao nível AA das Diretrizes de Acessibilidade para Conteúdo Web (WCAG 2.1), nas quais se baseia a norma israelense IS 5568.', a11yDoesTitle: 'O que o CapeWatch faz',
+      a11yDoes1: 'Tudo funciona só com o teclado, com o foco bem visível.', a11yDoes2: 'Botões, imagens e janelas têm nomes para leitores de tela, e os resultados de uma busca são lidos em voz alta.',
+      a11yDoes3: 'Texto e cores têm contraste suficiente tanto no tema claro quanto no escuro.', a11yDoes4: 'Ctrl e + ou − aumenta ou diminui tudo; Ctrl+0 volta ao normal.',
+      a11yDoes5: 'Com os efeitos de animação desativados no Windows, nada se move.', a11yDoes6: 'Sete idiomas; o hebraico é lido da direita para a esquerda, e nada se move quando o idioma muda.',
+      a11yCheckedTitle: 'Como foi verificado', a11yChecked: 'Verificações automáticas (axe-core: WCAG 2.0, 2.1 e 2.2, níveis A e AA) de cada tela e janela, em inglês e hebraico, no tema claro e no escuro, em janela estreita e larga; e testes que usam só o teclado.',
+      a11yLimitsTitle: 'Limites conhecidos', a11yLimits: 'A figura 3D só gira com o mouse; as mesmas capas estão na página como imagens e nomes. As imagens das capas são desenhadas a partir das texturas do jogo e não têm texto próprio: o nome de cada capa está escrito ao lado da imagem.',
+      a11yContactTitle: 'Contato sobre acessibilidade', a11yContact: 'Kayoiz, o desenvolvedor do CapeWatch: {mail}. Conte o que você estava fazendo e o que deu errado, e eu respondo e corrijo o quanto antes.',
+      a11yUpdated: 'Declaração atualizada: outubro de 2026.',
       free: 'Totalmente grátis', paid: 'Requer uma compra', freeTip: 'Só precisa de uma conta Minecraft. Nada mais para comprar.',
       fCost: 'Custo', costAll: 'Qualquer custo', stFree: 'Grátis agora',
       hOwned: 'Capas obtidas', ownedNote: 'A capa em uso agora vem da Mojang; as usadas antes, do capes.me. Adicione as outras em “Escolher capas”.', oName: 'Nome no Minecraft', oShow: 'Ver capas', oChoose: 'Escolher capas',
@@ -695,6 +758,15 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       left: 'Encore {x}', lessHour: 'Moins d’une heure restante',
       noExact: 'Pas de date exacte. Estimation : {x}', fFrom: 'Début', fUntil: 'Fin', est: 'estimation', more: 'Détails', showElytra: 'Voir les élytres', showCape: 'Voir la cape', resetView: 'Réinitialiser la vue', unofficialTr: 'Ce n’est pas un produit officiel Minecraft. Il n’est ni approuvé par Mojang ou Microsoft, ni associé à eux.', support: 'Soutenir CapeWatch', contact: 'Contact', foot1App: 'Infos sur les capes : {wiki} et annonces officielles de Mojang. Les images sont dessinées par CapeWatch à partir des textures de Minecraft.',
       footTex: 'Textures des capes © Mojang Studios, via le {wiki}',
+      a11yLink: 'Accessibilité', a11yTitle: 'Déclaration d’accessibilité',
+      a11yIntro: 'CapeWatch est conçu pour que tout le monde puisse l’utiliser, y compris les personnes en situation de handicap. Il vise le niveau AA des Règles pour l’accessibilité des contenus Web (WCAG 2.1), sur lesquelles repose la norme israélienne IS 5568.', a11yDoesTitle: 'Ce que fait CapeWatch',
+      a11yDoes1: 'Tout fonctionne au clavier seul, avec un focus bien visible.', a11yDoes2: 'Les boutons, les images et les fenêtres ont un nom pour les lecteurs d’écran, et les résultats d’une recherche sont lus à voix haute.',
+      a11yDoes3: 'Le texte et les couleurs ont un contraste suffisant, en thème clair comme en thème sombre.', a11yDoes4: 'Ctrl et + ou − agrandit ou réduit tout\u00a0; Ctrl+0 rétablit la taille normale.',
+      a11yDoes5: 'Quand les effets d’animation sont désactivés dans Windows, rien ne bouge.', a11yDoes6: 'Sept langues\u00a0; l’hébreu se lit de droite à gauche, et rien ne bouge quand la langue change.',
+      a11yCheckedTitle: 'Comment cela a été vérifié', a11yChecked: 'Des contrôles automatiques (axe-core\u00a0: WCAG 2.0, 2.1 et 2.2, niveaux A et AA) de chaque écran et de chaque fenêtre, en anglais et en hébreu, en thème clair et sombre, dans une fenêtre étroite et large\u00a0; et des tests au clavier seul.',
+      a11yLimitsTitle: 'Limites connues', a11yLimits: 'Le personnage 3D ne se tourne qu’à la souris\u00a0; les mêmes capes figurent sur la page en images et en noms. Les images des capes sont dessinées à partir des textures du jeu et n’ont pas de texte\u00a0: le nom de chaque cape est écrit à côté de son image.',
+      a11yContactTitle: 'Contact accessibilité', a11yContact: 'Kayoiz, le développeur de CapeWatch\u00a0: {mail}. Dites-moi ce que vous faisiez et ce qui n’a pas marché\u00a0: je répondrai et corrigerai dès que possible.',
+      a11yUpdated: 'Déclaration mise à jour\u00a0: octobre 2026.',
       free: 'Entièrement gratuite', paid: 'Achat nécessaire', freeTip: 'Un compte Minecraft suffit. Rien d’autre à acheter.',
       fCost: 'Coût', costAll: 'Tous les coûts', stFree: 'Gratuites maintenant',
       hOwned: 'Capes possédées', ownedNote: 'La cape portée maintenant vient de Mojang, celles portées avant de capes.me. Ajoutez les autres avec «\u00a0Choisir les capes\u00a0».', oName: 'Pseudo Minecraft', oShow: 'Voir les capes', oChoose: 'Choisir les capes',
@@ -730,6 +802,15 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       left: 'Noch {x}', lessHour: 'Weniger als eine Stunde',
       noExact: 'Kein genaues Datum. Schätzung: {x}', fFrom: 'Beginn', fUntil: 'Ende', est: 'Schätzung', more: 'Details', showElytra: 'Elytren zeigen', showCape: 'Umhang zeigen', resetView: 'Ansicht zurücksetzen', unofficialTr: 'Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt und nicht mit ihnen verbunden.', support: 'CapeWatch unterstützen', contact: 'Kontakt', foot1App: 'Fakten zu den Umhängen von {wiki} und aus offiziellen Mojang-Ankündigungen. Die Bilder zeichnet CapeWatch aus Minecraft-Texturen.',
       footTex: 'Umhang-Texturen © Mojang Studios, über das {wiki}',
+      a11yLink: 'Barrierefreiheit', a11yTitle: 'Erklärung zur Barrierefreiheit',
+      a11yIntro: 'CapeWatch ist so gemacht, dass alle es nutzen können, auch Menschen mit Behinderungen. Es strebt Stufe AA der Richtlinien für barrierefreie Webinhalte (WCAG 2.1) an, auf denen die israelische Norm IS 5568 beruht.', a11yDoesTitle: 'Was CapeWatch bietet',
+      a11yDoes1: 'Alles funktioniert allein mit der Tastatur, mit gut sichtbarem Fokus.', a11yDoes2: 'Schaltflächen, Bilder und Fenster haben Namen für Screenreader, und die Ergebnisse einer Suche werden vorgelesen.',
+      a11yDoes3: 'Text und Farben haben genug Kontrast, im hellen wie im dunklen Design.', a11yDoes4: 'Strg und + oder − vergrößert oder verkleinert alles; Strg+0 setzt es zurück.',
+      a11yDoes5: 'Sind die Animationseffekte in Windows ausgeschaltet, bewegt sich nichts.', a11yDoes6: 'Sieben Sprachen; Hebräisch läuft von rechts nach links, und beim Sprachwechsel verschiebt sich nichts.',
+      a11yCheckedTitle: 'Wie es geprüft wurde', a11yChecked: 'Automatische Prüfungen (axe-core: WCAG 2.0, 2.1 und 2.2, Stufen A und AA) jedes Bildschirms und Fensters, auf Englisch und Hebräisch, im hellen und dunklen Design, in einem schmalen und einem breiten Fenster; dazu Tests nur mit der Tastatur.',
+      a11yLimitsTitle: 'Bekannte Grenzen', a11yLimits: 'Die 3D-Figur lässt sich nur mit der Maus drehen; dieselben Umhänge stehen als Bilder und Namen auf der Seite. Die Bilder der Umhänge werden aus den Texturen des Spiels gezeichnet und haben keinen eigenen Text: Der Name jedes Umhangs steht neben seinem Bild.',
+      a11yContactTitle: 'Kontakt zur Barrierefreiheit', a11yContact: 'Kayoiz, der Entwickler von CapeWatch: {mail}. Schreib mir, was du gemacht hast und was nicht funktioniert hat – ich antworte und behebe es so schnell wie möglich.',
+      a11yUpdated: 'Erklärung aktualisiert: Oktober 2026.',
       free: 'Komplett kostenlos', paid: 'Kauf erforderlich', freeTip: 'Nur ein Minecraft-Konto nötig. Nichts extra zu kaufen.',
       fCost: 'Kosten', costAll: 'Alle', stFree: 'Jetzt gratis',
       hOwned: 'Umhänge im Besitz', ownedNote: 'Der jetzt getragene Umhang kommt von Mojang, früher getragene von capes.me. Füge die anderen über „Umhänge wählen“ hinzu.', oName: 'Minecraft-Name', oShow: 'Umhänge zeigen', oChoose: 'Umhänge wählen',
@@ -765,6 +846,15 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       left: 'Осталось {x}', lessHour: 'Осталось меньше часа',
       noExact: 'Точной даты нет. Оценка: {x}', fFrom: 'Начало', fUntil: 'Конец', est: 'оценка', more: 'Подробнее', showElytra: 'Показать элитры', showCape: 'Показать плащ', resetView: 'Сбросить вид', unofficialTr: 'Это не официальный продукт Minecraft. Не одобрен Mojang или Microsoft и не связан с ними.', support: 'Поддержать CapeWatch', contact: 'Связаться', foot1App: 'Сведения о плащах — {wiki} и официальные анонсы Mojang. Картинки рисует CapeWatch по текстурам Minecraft.',
       footTex: 'Текстуры плащей © Mojang Studios, через {wiki}',
+      a11yLink: 'Доступность', a11yTitle: 'Заявление о доступности',
+      a11yIntro: 'CapeWatch сделан так, чтобы им могли пользоваться все, в том числе люди с инвалидностью. Он стремится соответствовать уровню AA Руководства по доступности веб-контента (WCAG 2.1), на котором основан израильский стандарт IS 5568.', a11yDoesTitle: 'Что делает CapeWatch',
+      a11yDoes1: 'Всё работает только с клавиатуры, с хорошо заметным фокусом.', a11yDoes2: 'У кнопок, картинок и окон есть названия для программ чтения с экрана, а результаты поиска зачитываются.',
+      a11yDoes3: 'У текста и цветов достаточно контраста и в светлой, и в тёмной теме.', a11yDoes4: 'Ctrl и + или − увеличивает или уменьшает всё; Ctrl+0 возвращает обычный размер.',
+      a11yDoes5: 'Если в Windows выключены эффекты анимации, ничего не двигается.', a11yDoes6: 'Семь языков; иврит читается справа налево, и при смене языка ничего не сдвигается.',
+      a11yCheckedTitle: 'Как это проверялось', a11yChecked: 'Автоматические проверки (axe-core: WCAG 2.0, 2.1 и 2.2, уровни A и AA) каждого экрана и окна, на английском и иврите, в светлой и тёмной теме, в узком и широком окне; и тесты только с клавиатуры.',
+      a11yLimitsTitle: 'Известные ограничения', a11yLimits: '3D-фигуру можно вращать только мышью; те же плащи есть на странице в виде картинок и названий. Картинки плащей рисуются по текстурам игры и не содержат текста: название каждого плаща написано рядом с картинкой.',
+      a11yContactTitle: 'Связь по вопросам доступности', a11yContact: 'Kayoiz, разработчик CapeWatch: {mail}. Напишите, что вы делали и что не сработало, — я отвечу и исправлю как можно скорее.',
+      a11yUpdated: 'Заявление обновлено: октябрь 2026 г.',
       free: 'Полностью бесплатно', paid: 'Нужна покупка', freeTip: 'Нужен только аккаунт Minecraft. Больше ничего покупать не надо.',
       fCost: 'Стоимость', costAll: 'Любая', stFree: 'Бесплатно сейчас',
       hOwned: 'Плащи игрока', ownedNote: 'Надетый сейчас плащ — от Mojang, надетые раньше — от capes.me. Остальные добавьте через «Выбрать плащи».', oName: 'Ник в Minecraft', oShow: 'Показать плащи', oChoose: 'Выбрать плащи',
@@ -835,7 +925,7 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   // The current language's texts in the fixed parts of the page. The layout stays left to right in every
   // language; textDir() turns only the text inside each box right to left in Hebrew.
   function paintTexts() {
-    for (const el of [$('wrap'), $('dlg'), $('dlg-inner'), $('pick'), $('pick-inner')]) { el.dir = 'ltr'; el.lang = lang; }
+    for (const el of [$('wrap'), $('dlg'), $('dlg-inner'), $('pick'), $('pick-inner'), $('a11y'), $('a11y-inner')]) { el.dir = 'ltr'; el.lang = lang; }
     document.documentElement.lang = lang;
     document.title = t('title');
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
@@ -851,6 +941,7 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     $('foot-tex').replaceChildren(...(APP ? pieces(t('footTex'), {
       wiki: h('a', { class: 'nm', href: 'https://minecraft.wiki/', target: '_blank', rel: 'noopener', text: 'Minecraft Wiki' })
     }) : []));
+    $('a11y-contact').replaceChildren(...pieces(t('a11yContact'), { mail: h('a', { class: 'nm', href: 'mailto:kayoiz.dev@gmail.com', text: 'kayoiz.dev@gmail.com' }) }));
     const [f2a, f2b] = t('foot2').split('{url}');
     $('foot2').replaceChildren(f2a, h('span', { class: 'latin', text: 'minecraft.net/redeem' }), f2b ?? '');
     $('f-cat').replaceChildren();   // rebuilt with localized labels on next render
@@ -1081,12 +1172,17 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   // A cape with no texture anywhere (none at Mojang, none of our own): a plain cape outline, the same for each, and
   // its name. It is not a picture of the real cape.
   // A faint blocky figure seen from behind (head, arms, legs) and, clearer, the cape on its back with a light top edge.
-  const CAPE_SHAPE = '<svg viewBox="0 0 16 32" aria-hidden="true"><g fill="currentColor">'
-    + '<path opacity=".14" d="M4 0h8v8H4zM0 8h3v12H0zM13 8h3v12h-3zM4 24h8v8H4z"/><path opacity=".75" d="M3 8h10v1H3z"/>'
-    + '<path opacity=".42" d="M3 9h9v15H3z"/><path opacity=".26" d="M12 9h1v15h-1z"/></g></svg>';
+  const CAPE_PATHS = [['.14', 'M4 0h8v8H4zM0 8h3v12H0zM13 8h3v12h-3zM4 24h8v8H4z'], ['.75', 'M3 8h10v1H3z'], ['.42', 'M3 9h9v15H3z'], ['.26', 'M12 9h1v15h-1z']];
+  function capeShapeSvg() {
+    const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg'), g = document.createElementNS(ns, 'g');
+    svg.setAttribute('viewBox', '0 0 16 32'); svg.setAttribute('aria-hidden', 'true'); g.setAttribute('fill', 'currentColor');
+    for (const [o, d] of CAPE_PATHS) { const p = document.createElementNS(ns, 'path'); p.setAttribute('opacity', o); p.setAttribute('d', d); g.append(p); }
+    svg.append(g);
+    return svg;
+  }
   function capeShape(c) {
     const p = h('span', { class: 'ph shape' });
-    p.innerHTML = CAPE_SHAPE;   // fixed markup, nothing from the data file
+    p.append(capeShapeSvg());
     p.append(h('span', { class: 'ph-name', text: c.name }));
     return p;
   }
@@ -1100,7 +1196,8 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       : texUrl(id) ? h('span', { class: 'ph', text: c.name }) : capeShape(c)];
     if (isNew(c)) kids.push(h('span', { class: 'flag', text: 'NEW' }));
     if (!interactive) return h('div', { class: 'slot' }, kids);
-    return h('button', { class: 'slot', type: 'button', 'aria-label': t('details', { n: c.name }), onclick: () => openDetail(id) }, kids);
+    // its name holds what it shows (the "NEW" flag too), for speech control and screen readers
+    return h('button', { class: 'slot', type: 'button', 'aria-label': t('details', { n: c.name }) + (isNew(c) ? ', NEW' : ''), onclick: () => openDetail(id) }, kids);
   }
   function editions(c) {
     const e = c.editions || [];
@@ -1706,6 +1803,11 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   }
   $('dlg-close').addEventListener('click', () => $('dlg').close?.() ?? $('dlg').removeAttribute('open'));
   $('dlg').addEventListener('click', (e) => { if (e.target === $('dlg')) $('dlg').close(); });
+  // The accessibility statement: opens at its top with the focus on ✕, closes with ✕, Esc or a click outside.
+  $('a11y-open').addEventListener('click', () => { textDir($('a11y'), lang); $('a11y').showModal(); $('a11y').scrollTop = 0; });
+  $('a11y-close').addEventListener('click', () => $('a11y').close());
+  $('a11y').addEventListener('click', (e) => { if (e.target === $('a11y')) $('a11y').close(); });
+  $('a11y').addEventListener('close', () => $('a11y-open').focus());
 
   // ---------- owned capes ----------
   // A player's capes by Minecraft name, in the installed app (the lookups go through app/shell.js; the web page
@@ -1924,7 +2026,7 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   function pickThumb(k, c, p) {
     const src = c ? (S.imgs.get(k) || art(k, 'cape')) : (p.tex[k] ? window.capeArt?.get(k, 'cape', p.tex[k]) : null);
     if (src) return h('img', { src, alt: '', decoding: 'async' });
-    if (c && !texUrl(k)) { const x = h('span'); x.innerHTML = CAPE_SHAPE; return x.firstChild; }   // no texture anywhere: the plain outline
+    if (c && !texUrl(k)) return capeShapeSvg();   // no texture anywhere: the plain outline
     return null;
   }
   function pickRow(p, k, c, on, worn) {

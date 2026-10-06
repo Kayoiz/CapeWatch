@@ -152,13 +152,13 @@ document.documentElement.classList.add('cw-title-wait');
 
   // ---------- texts the shell shows (7 languages) ----------
   const UI = {
-    en: { invertDrag: 'Reverse the figure’s drag direction', soundOnOpen: 'Sound when CapeWatch opens', settings: 'Settings', notif: 'Notifications', nNew: 'New cape', nOpen: 'Promotion opened', nEnding: 'Promotion ending soon', autostart: 'Start CapeWatch with Windows', skin: 'My skin (Minecraft username)', skinHint: 'Empty = the default skin.', save: 'Save', close: 'Close', skinOk: 'Skin loaded.', skinBad: 'Username not found.', EV: { new: 'New cape', announced: 'Announced', available: 'Promotion opened', ending: 'Ending soon' } },
-    he: { invertDrag: 'היפוך כיוון הסיבוב של הדמות בגרירה', soundOnOpen: 'צליל כשפותחים את CapeWatch', settings: 'הגדרות', notif: 'התראות', nNew: 'גלימה חדשה', nOpen: 'מבצע שנפתח', nEnding: 'מבצע שעומד להיגמר', autostart: 'להפעיל את CapeWatch עם Windows', skin: 'הסקין שלי (שם משתמש ב-Minecraft)', skinHint: 'ריק = הסקין המקורי.', save: 'שמירה', close: 'סגירה', skinOk: 'הסקין נטען.', skinBad: 'שם המשתמש לא נמצא.', EV: { new: 'גלימה חדשה', announced: 'הוכרזה', available: 'המבצע נפתח', ending: 'עומד להיגמר' } },
-    es: { invertDrag: 'Invertir el giro de la figura al arrastrar', soundOnOpen: 'Sonido al abrir CapeWatch', settings: 'Ajustes', notif: 'Notificaciones', nNew: 'Capa nueva', nOpen: 'Promoción abierta', nEnding: 'Promoción por terminar', autostart: 'Iniciar CapeWatch con Windows', skin: 'Mi skin (usuario de Minecraft)', skinHint: 'Vacío = la skin por defecto.', save: 'Guardar', close: 'Cerrar', skinOk: 'Skin cargada.', skinBad: 'No se encontró el usuario.', EV: { new: 'Capa nueva', announced: 'Anunciada', available: 'Promoción abierta', ending: 'Termina pronto' } },
-    pt: { invertDrag: 'Inverter o giro da figura ao arrastar', soundOnOpen: 'Som ao abrir o CapeWatch', settings: 'Configurações', notif: 'Notificações', nNew: 'Capa nova', nOpen: 'Promoção aberta', nEnding: 'Promoção acabando', autostart: 'Iniciar o CapeWatch com o Windows', skin: 'Minha skin (usuário do Minecraft)', skinHint: 'Vazio = a skin padrão.', save: 'Salvar', close: 'Fechar', skinOk: 'Skin carregada.', skinBad: 'Usuário não encontrado.', EV: { new: 'Capa nova', announced: 'Anunciada', available: 'Promoção aberta', ending: 'Acaba em breve' } },
-    fr: { invertDrag: 'Inverser la rotation du personnage au glisser', soundOnOpen: 'Son à l’ouverture de CapeWatch', settings: 'Réglages', notif: 'Notifications', nNew: 'Nouvelle cape', nOpen: 'Promotion ouverte', nEnding: 'Promotion bientôt finie', autostart: 'Lancer CapeWatch avec Windows', skin: 'Mon skin (pseudo Minecraft)', skinHint: 'Vide = le skin par défaut.', save: 'Enregistrer', close: 'Fermer', skinOk: 'Skin chargé.', skinBad: 'Pseudo introuvable.', EV: { new: 'Nouvelle cape', announced: 'Annoncée', available: 'Promotion ouverte', ending: 'Bientôt terminée' } },
-    de: { invertDrag: 'Drehrichtung der Figur beim Ziehen umkehren', soundOnOpen: 'Ton beim Öffnen von CapeWatch', settings: 'Einstellungen', notif: 'Benachrichtigungen', nNew: 'Neuer Umhang', nOpen: 'Aktion gestartet', nEnding: 'Aktion endet bald', autostart: 'CapeWatch mit Windows starten', skin: 'Mein Skin (Minecraft-Name)', skinHint: 'Leer = der Standard-Skin.', save: 'Speichern', close: 'Schließen', skinOk: 'Skin geladen.', skinBad: 'Name nicht gefunden.', EV: { new: 'Neuer Umhang', announced: 'Angekündigt', available: 'Aktion gestartet', ending: 'Endet bald' } },
-    ru: { invertDrag: 'Обратное вращение фигуры при перетаскивании', soundOnOpen: 'Звук при открытии CapeWatch', settings: 'Настройки', notif: 'Уведомления', nNew: 'Новый плащ', nOpen: 'Акция открыта', nEnding: 'Акция скоро закончится', autostart: 'Запускать CapeWatch с Windows', skin: 'Мой скин (ник в Minecraft)', skinHint: 'Пусто = скин по умолчанию.', save: 'Сохранить', close: 'Закрыть', skinOk: 'Скин загружен.', skinBad: 'Ник не найден.', EV: { new: 'Новый плащ', announced: 'Анонс', available: 'Акция открыта', ending: 'Скоро закончится' } }
+    en: { invertDrag: 'Reverse the figure’s drag direction', soundOnOpen: 'Sound when CapeWatch opens', settings: 'Settings', notif: 'Notifications', nNew: 'New cape', nOpen: 'Promotion opened', nEnding: 'Promotion ending soon', autostart: 'Start CapeWatch with Windows', skin: 'My skin (Minecraft username)', skinHint: 'Empty = the default skin.', close: 'Close', saved: 'Saved.', dataTitle: 'Your data', dataHint: 'Your settings, the players you looked up and the capes you ticked are kept on this computer only.', deleteData: 'Delete my data', deleteAsk: 'Delete all of it from this computer? This can’t be undone.', deleteYes: 'Delete', deleteNo: 'Cancel', skinOk: 'Skin loaded.', skinBad: 'Username not found.', EV: { new: 'New cape', announced: 'Announced', available: 'Promotion opened', ending: 'Ending soon' } },
+    he: { invertDrag: 'היפוך כיוון הסיבוב של הדמות בגרירה', soundOnOpen: 'צליל כשפותחים את CapeWatch', settings: 'הגדרות', notif: 'התראות', nNew: 'גלימה חדשה', nOpen: 'מבצע שנפתח', nEnding: 'מבצע שעומד להיגמר', autostart: 'להפעיל את CapeWatch עם Windows', skin: 'הסקין שלי (שם משתמש ב-Minecraft)', skinHint: 'ריק = הסקין המקורי.', close: 'סגירה', saved: 'נשמר.', dataTitle: 'הנתונים שלך', dataHint: 'ההגדרות שלך, השחקנים שחיפשת והגלימות שסימנת נשמרים רק במחשב הזה.', deleteData: 'מחיקת הנתונים שלי', deleteAsk: 'למחוק את כל זה מהמחשב? אי אפשר לבטל את זה.', deleteYes: 'מחיקה', deleteNo: 'ביטול', skinOk: 'הסקין נטען.', skinBad: 'שם המשתמש לא נמצא.', EV: { new: 'גלימה חדשה', announced: 'הוכרזה', available: 'המבצע נפתח', ending: 'עומד להיגמר' } },
+    es: { invertDrag: 'Invertir el giro de la figura al arrastrar', soundOnOpen: 'Sonido al abrir CapeWatch', settings: 'Ajustes', notif: 'Notificaciones', nNew: 'Capa nueva', nOpen: 'Promoción abierta', nEnding: 'Promoción por terminar', autostart: 'Iniciar CapeWatch con Windows', skin: 'Mi skin (usuario de Minecraft)', skinHint: 'Vacío = la skin por defecto.', close: 'Cerrar', saved: 'Guardado.', dataTitle: 'Tus datos', dataHint: 'Tus ajustes, los jugadores que buscaste y las capas que marcaste se guardan solo en este equipo.', deleteData: 'Borrar mis datos', deleteAsk: '¿Borrar todo esto de este equipo? No se puede deshacer.', deleteYes: 'Borrar', deleteNo: 'Cancelar', skinOk: 'Skin cargada.', skinBad: 'No se encontró el usuario.', EV: { new: 'Capa nueva', announced: 'Anunciada', available: 'Promoción abierta', ending: 'Termina pronto' } },
+    pt: { invertDrag: 'Inverter o giro da figura ao arrastar', soundOnOpen: 'Som ao abrir o CapeWatch', settings: 'Configurações', notif: 'Notificações', nNew: 'Capa nova', nOpen: 'Promoção aberta', nEnding: 'Promoção acabando', autostart: 'Iniciar o CapeWatch com o Windows', skin: 'Minha skin (usuário do Minecraft)', skinHint: 'Vazio = a skin padrão.', close: 'Fechar', saved: 'Salvo.', dataTitle: 'Seus dados', dataHint: 'Suas configurações, os jogadores que você buscou e as capas que marcou ficam só neste computador.', deleteData: 'Apagar meus dados', deleteAsk: 'Apagar tudo isso deste computador? Não dá para desfazer.', deleteYes: 'Apagar', deleteNo: 'Cancelar', skinOk: 'Skin carregada.', skinBad: 'Usuário não encontrado.', EV: { new: 'Capa nova', announced: 'Anunciada', available: 'Promoção aberta', ending: 'Acaba em breve' } },
+    fr: { invertDrag: 'Inverser la rotation du personnage au glisser', soundOnOpen: 'Son à l’ouverture de CapeWatch', settings: 'Réglages', notif: 'Notifications', nNew: 'Nouvelle cape', nOpen: 'Promotion ouverte', nEnding: 'Promotion bientôt finie', autostart: 'Lancer CapeWatch avec Windows', skin: 'Mon skin (pseudo Minecraft)', skinHint: 'Vide = le skin par défaut.', close: 'Fermer', saved: 'Enregistré.', dataTitle: 'Vos données', dataHint: 'Vos réglages, les joueurs recherchés et les capes cochées restent uniquement sur cet ordinateur.', deleteData: 'Supprimer mes données', deleteAsk: 'Tout supprimer de cet ordinateur\u00a0? C’est définitif.', deleteYes: 'Supprimer', deleteNo: 'Annuler', skinOk: 'Skin chargé.', skinBad: 'Pseudo introuvable.', EV: { new: 'Nouvelle cape', announced: 'Annoncée', available: 'Promotion ouverte', ending: 'Bientôt terminée' } },
+    de: { invertDrag: 'Drehrichtung der Figur beim Ziehen umkehren', soundOnOpen: 'Ton beim Öffnen von CapeWatch', settings: 'Einstellungen', notif: 'Benachrichtigungen', nNew: 'Neuer Umhang', nOpen: 'Aktion gestartet', nEnding: 'Aktion endet bald', autostart: 'CapeWatch mit Windows starten', skin: 'Mein Skin (Minecraft-Name)', skinHint: 'Leer = der Standard-Skin.', close: 'Schließen', saved: 'Gespeichert.', dataTitle: 'Deine Daten', dataHint: 'Deine Einstellungen, die gesuchten Spieler und die angehakten Umhänge bleiben nur auf diesem Computer.', deleteData: 'Meine Daten löschen', deleteAsk: 'Alles von diesem Computer löschen? Das lässt sich nicht rückgängig machen.', deleteYes: 'Löschen', deleteNo: 'Abbrechen', skinOk: 'Skin geladen.', skinBad: 'Name nicht gefunden.', EV: { new: 'Neuer Umhang', announced: 'Angekündigt', available: 'Aktion gestartet', ending: 'Endet bald' } },
+    ru: { invertDrag: 'Обратное вращение фигуры при перетаскивании', soundOnOpen: 'Звук при открытии CapeWatch', settings: 'Настройки', notif: 'Уведомления', nNew: 'Новый плащ', nOpen: 'Акция открыта', nEnding: 'Акция скоро закончится', autostart: 'Запускать CapeWatch с Windows', skin: 'Мой скин (ник в Minecraft)', skinHint: 'Пусто = скин по умолчанию.', close: 'Закрыть', saved: 'Сохранено.', dataTitle: 'Ваши данные', dataHint: 'Ваши настройки, найденные игроки и отмеченные плащи хранятся только на этом компьютере.', deleteData: 'Удалить мои данные', deleteAsk: 'Удалить всё это с этого компьютера? Отменить будет нельзя.', deleteYes: 'Удалить', deleteNo: 'Отмена', skinOk: 'Скин загружен.', skinBad: 'Ник не найден.', EV: { new: 'Новый плащ', announced: 'Анонс', available: 'Акция открыта', ending: 'Скоро закончится' } }
   };
   const lang = () => (window.CapeWatchPage?.lang?.() || store.get('lang', 'en'));
   const ui = () => UI[lang()] || UI.en;
@@ -218,6 +218,10 @@ document.documentElement.classList.add('cw-title-wait');
   const PLAYER_KEEP_MS = 60e3;
   const playerAnswers = new Map(), playerAsks = new Map();   // lower-case name -> { at, value } / the request on its way
   const playerError = (code, detail) => Object.assign(new Error(code + (detail ? ' (' + detail + ')' : '')), { code });
+  // At most 20 lookups a minute at each service, whatever is typed: CapeWatch never floods Mojang or capes.me from
+  // this computer (they answer that by blocking it for a while). Answers kept in memory do not count.
+  const limiter = (max, ms) => { const at = []; return () => { const now = Date.now(); while (at.length && now - at[0] >= ms) at.shift(); if (at.length >= max) return false; at.push(now); return true; }; };
+  const mojangAllowed = limiter(20, 60e3), capesMeAllowed = limiter(20, 60e3);
   // Only Mojang's own texture server, always https (the answers give http addresses).
   const textureUrl = (u) => { const m = /^https?:\/\/textures\.minecraft\.net\/texture\/([0-9a-f]{1,64})$/i.exec(String(u || '')); return m ? 'https://textures.minecraft.net/texture/' + m[1] : null; };
   async function mojangGet(url, what) {
@@ -254,6 +258,10 @@ document.documentElement.classList.add('cw-title-wait');
     const last = playerAnswers.get(key);
     if (last && Date.now() - last.at < PLAYER_KEEP_MS) return Promise.resolve(last.value);
     if (playerAsks.has(key)) return playerAsks.get(key);
+    if (!mojangAllowed()) {
+      log('warn', 'player: ' + who + ': not asked, 20 lookups in the last minute' + (last ? '; using the answer from ' + Math.round((Date.now() - last.at) / 60e3) + ' min ago' : ''));
+      return last ? Promise.resolve(last.value) : Promise.reject(playerError('rate', 'limit'));
+    }
     const asking = ask().then((value) => {
       const kept = { at: Date.now(), value };
       playerAnswers.set('id:' + value.id, kept);
@@ -353,6 +361,7 @@ document.documentElement.classList.add('cw-title-wait');
     const last = seenAnswers.get(id);
     if (last && Date.now() - last.at < SEEN_KEEP_MS) return Promise.resolve(last.value);
     if (seenAsks.has(id)) return seenAsks.get(id);
+    if (!capesMeAllowed()) { log('warn', 'capes.me: ' + who + ': not asked, 20 lookups in the last minute'); return Promise.resolve(last?.value || { state: 'failed', capes: [] }); }
     const ask = askSeen(id, who);
     ask.catch(() => {});   // an answer that comes after the wait is dropped
     let timer = 0;
@@ -466,63 +475,108 @@ document.documentElement.classList.add('cw-title-wait');
   }
 
   // ---------- settings dialog ----------
+  // Every change is kept at once, there is no Save button: a box ticked, a switch turned, and the skin name when
+  // Enter is pressed, the box is left or the window closes. Built element by element, never from HTML text (the app's
+  // security policy, "Trusted Types", allows no HTML text at all).
+  const el = (tag, attrs = {}, ...kids) => {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    e.append(...kids);
+    return e;
+  };
+  const opt = (name, cls, key, role) => el('label', { class: 'cw-opt' }, el('input', { type: 'checkbox', class: cls, name, ...(role ? { role } : {}) }), ' ', el('span', { 'data-k': key }));
   function settingsDialog() {
     let d = document.getElementById('cw-settings');
     if (!d) {
-      d = document.createElement('dialog'); d.id = 'cw-settings';
-      d.innerHTML = `<form method="dialog" class="cw-set">
-        <h3 data-k="settings"></h3>
-        <fieldset><legend data-k="notif"></legend>
-          <label class="cw-opt"><input type="checkbox" class="cw-box" name="notifyNew"> <span data-k="nNew"></span></label>
-          <label class="cw-opt"><input type="checkbox" class="cw-box" name="notifyOpen"> <span data-k="nOpen"></span></label>
-          <label class="cw-opt"><input type="checkbox" class="cw-box" name="notifyEnding"> <span data-k="nEnding"></span></label>
-        </fieldset>
-        <label class="cw-opt"><input type="checkbox" class="cw-switch" role="switch" name="autostart"> <span data-k="autostart"></span></label>
-        <label class="cw-opt"><input type="checkbox" class="cw-switch" role="switch" name="soundOnOpen"> <span data-k="soundOnOpen"></span></label>
-        <label class="cw-opt"><input type="checkbox" class="cw-switch" role="switch" name="invertDrag"> <span data-k="invertDrag"></span></label>
-        <label class="cw-skin"><span data-k="skin"></span><input type="text" name="skinName" maxlength="16" autocomplete="off" spellcheck="false"><small data-k="skinHint"></small></label>
-        <p class="cw-msg" aria-live="polite"></p>
-        <div class="cw-actions"><button type="button" class="btn" data-k="save" value="save"></button><button class="btn ghost" data-k="close" value="close"></button></div>
-      </form>`;
+      d = el('dialog', { id: 'cw-settings', 'aria-labelledby': 'cw-settings-title' }, el('form', { method: 'dialog', class: 'cw-set' },
+        el('h3', { id: 'cw-settings-title', 'data-k': 'settings' }),   // the window's name for screen readers
+        el('fieldset', {}, el('legend', { 'data-k': 'notif' }), opt('notifyNew', 'cw-box', 'nNew'), opt('notifyOpen', 'cw-box', 'nOpen'), opt('notifyEnding', 'cw-box', 'nEnding')),
+        opt('autostart', 'cw-switch', 'autostart', 'switch'), opt('soundOnOpen', 'cw-switch', 'soundOnOpen', 'switch'), opt('invertDrag', 'cw-switch', 'invertDrag', 'switch'),
+        el('label', { class: 'cw-skin' }, el('span', { 'data-k': 'skin' }), el('input', { type: 'text', name: 'skinName', maxlength: '16', autocomplete: 'off', spellcheck: 'false' }), el('small', { 'data-k': 'skinHint' })),
+        el('p', { class: 'cw-msg', 'aria-live': 'polite' }),
+        el('fieldset', { class: 'cw-data' }, el('legend', { 'data-k': 'dataTitle' }), el('small', { 'data-k': 'dataHint' }),
+          el('div', { class: 'cw-actions cw-del' }, el('button', { type: 'button', class: 'btn ghost', 'data-k': 'deleteData', value: 'delete' })),
+          el('div', { class: 'cw-actions cw-ask', hidden: '' }, el('span', { 'data-k': 'deleteAsk' }),
+            el('button', { type: 'button', class: 'btn', 'data-k': 'deleteYes', value: 'delete-yes' }), el('button', { type: 'button', class: 'btn ghost', 'data-k': 'deleteNo', value: 'delete-no' }))),
+        el('div', { class: 'cw-actions' }, el('button', { class: 'btn ghost', 'data-k': 'close', value: 'close' }))));
       document.body.append(d);
       const st = document.createElement('style');
       st.textContent = `#cw-settings{border:0;padding:0;max-width:min(420px,calc(100vw - 32px));background:var(--panel);color:var(--fg);box-shadow:inset 3px 3px 0 var(--bevel-hi),inset -3px -3px 0 var(--bevel-lo),0 20px 60px rgba(0,0,0,.35)}
         #cw-settings::backdrop{background:rgba(10,12,9,.55)} .cw-set{display:grid;gap:14px;padding:20px} .cw-set fieldset{border:0;padding:0;margin:0;display:grid;gap:8px}
         .cw-set legend{font-weight:700;margin-bottom:6px} .cw-set label{display:flex;gap:8px;align-items:center} .cw-skin{display:grid!important;gap:4px!important}
         .cw-skin input{font:inherit;padding:7px 10px;background:var(--bg);color:var(--fg);border:0;box-shadow:inset 2px 2px 0 var(--bevel-lo),inset -2px -2px 0 var(--bevel-hi)}
-        .cw-skin small,.cw-msg{color:var(--muted);font-size:var(--text-sm);margin:0} .cw-actions{display:flex;gap:8px;justify-content:flex-end}
+        .cw-skin small,.cw-msg,.cw-data small{color:var(--muted);font-size:var(--text-sm);margin:0} .cw-actions{display:flex;gap:8px;justify-content:flex-end}
+        .cw-data{border-top:1px dashed var(--line)!important;padding-top:12px!important} .cw-del{justify-content:flex-start} .cw-ask{flex-wrap:wrap;align-items:center;justify-content:flex-start} .cw-ask span{flex:1 1 100%}
 `;
       document.head.append(st);
-      d.querySelector('[value=save]').addEventListener('click', async () => {
-        const f = d.querySelector('form');
-        for (const k of ['notifyNew', 'notifyOpen', 'notifyEnding', 'soundOnOpen', 'invertDrag']) settings[k] = f[k].checked;
-        applyDrag();
-        const name = f.skinName.value.trim(); const changed = name !== settings.skinName; settings.skinName = name; saveSettings();
+      const f = d.querySelector('form'), msg = d.querySelector('.cw-msg'), say = (text) => { msg.textContent = text; };
+      for (const k of ['notifyNew', 'notifyOpen', 'notifyEnding', 'soundOnOpen', 'invertDrag']) {
+        f[k].addEventListener('change', () => {
+          settings[k] = f[k].checked; saveSettings();
+          if (k === 'invertDrag') applyDrag();
+          log('info', 'settings: ' + k + ' ' + (settings[k] ? 'on' : 'off'));
+          say(ui().saved);
+        });
+      }
+      f.autostart.addEventListener('change', async () => {
         settings.autostart = f.autostart.checked; saveSettings();
-        try { const A = T?.autostart; if (A) { const on = await A.isEnabled(); if (f.autostart.checked && !on) await A.enable(); if (!f.autostart.checked && on) await A.disable(); } } catch (e) { log('warn', 'autostart: ' + (e.message || e)); }
-        log('info', 'settings: saved', { notifyNew: settings.notifyNew, notifyOpen: settings.notifyOpen, notifyEnding: settings.notifyEnding, soundOnOpen: settings.soundOnOpen, invertDrag: settings.invertDrag, autostart: f.autostart.checked, skin: name || 'default' });
-        const msg = d.querySelector('.cw-msg'); msg.textContent = '';
-        if (changed) { const ok = await applySkin(name); msg.textContent = ok ? ui().skinOk : ui().skinBad; }
-        if (!changed) d.close();
+        try { const A = T?.autostart; if (A) { const on = await A.isEnabled(); if (settings.autostart && !on) await A.enable(); if (!settings.autostart && on) await A.disable(); } } catch (e) { log('warn', 'autostart: ' + (e.message || e)); }
+        log('info', 'settings: autostart ' + (settings.autostart ? 'on' : 'off'));
+        say(ui().saved);
       });
+      // the skin name: kept, and put on the figure, when Enter is pressed, the box is left or the window closes
+      const commitSkin = async () => {
+        const name = f.skinName.value.trim();
+        if (name === settings.skinName) return;
+        settings.skinName = name; saveSettings();
+        log('info', 'settings: skin ' + (name ? 'set' : 'default'));
+        say('');
+        const ok = await applySkin(name);
+        say(ok ? (name ? ui().skinOk : ui().saved) : ui().skinBad);
+      };
+      f.skinName.addEventListener('change', commitSkin);
+      f.skinName.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); commitSkin(); } });
+      d.addEventListener('close', commitSkin);
+      // "Delete my data" asks once more, in the window itself
+      const del = d.querySelector('.cw-del'), ask = d.querySelector('.cw-ask');
+      const asking = (on) => { ask.hidden = !on; del.hidden = on; (on ? ask.querySelector('[value=delete-no]') : del.querySelector('button')).focus(); };
+      d.querySelector('[value=delete]').addEventListener('click', () => asking(true));
+      d.querySelector('[value=delete-no]').addEventListener('click', () => asking(false));
+      d.querySelector('[value=delete-yes]').addEventListener('click', () => deleteMyData());
     }
     // The layout stays left to right in every language (only the text runs right to left in Hebrew), and every
     // piece keeps the size of its longest translation, so nothing moves when the language changes.
     d.dir = 'ltr';
     const msg = d.querySelector('.cw-msg');
     const fill = (l, measuring) => {
-      const T = UI[l] || UI.en;
-      d.querySelectorAll('[data-k]').forEach((el) => { el.textContent = T[el.dataset.k]; });
-      msg.textContent = measuring ? [T.skinOk, T.skinBad].sort((a, b) => b.length - a.length)[0] : '';   // room for the answer
+      const L = UI[l] || UI.en;
+      d.querySelectorAll('[data-k]').forEach((e) => { e.textContent = L[e.dataset.k]; });
+      msg.textContent = measuring ? [L.skinOk, L.skinBad, L.saved].sort((a, b) => b.length - a.length)[0] : '';   // room for the answer
       window.CapeWatchPage?.textDir?.(d, l);
     };
     fill(lang(), false);
     const f = d.querySelector('form');
     for (const k of ['notifyNew', 'notifyOpen', 'notifyEnding', 'soundOnOpen', 'invertDrag']) f[k].checked = !!settings[k];
     f.skinName.value = settings.skinName || '';
+    d.querySelector('.cw-ask').hidden = true; d.querySelector('.cw-del').hidden = false;
     (T?.autostart?.isEnabled?.() || Promise.resolve(false)).then((on) => { f.autostart.checked = !!on; }).catch(() => {});
     d.showModal();
     window.CapeWatchPage?.lockLayout?.(d, fill);
+  }
+
+  // "Delete my data" (Settings): everything CapeWatch keeps on this computer goes: the settings, the players looked up
+  // and the capes ticked ("Owned capes"), the language and filters, the saved copy of the cape list, which news was
+  // already seen, and the log files (main.rs, clear_logs). CapeWatch has no account and nothing about the user is kept
+  // anywhere else. Only "Start with Windows" keeps its value: it is a Windows setting, and it would otherwise turn
+  // itself back on. Then the page starts again, as on a first start (news already out is not notified again).
+  async function deleteMyData() {
+    const autostart = settings.autostart;
+    try { localStorage.clear(); } catch {}
+    store.set('settings', { autostart });
+    let files = 0;
+    try { files = (await invoke('clear_logs')) || 0; } catch (e) { console.error('[App] data: the logs were not cleared: ' + (e?.message || e)); }
+    log('info', 'data: deleted by the user (' + files + ' log files cleared)');
+    location.reload();
   }
 
   // ---------- wiring ----------

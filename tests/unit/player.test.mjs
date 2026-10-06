@@ -147,3 +147,17 @@ test('by id (the check at start): the name the player has now; one answer serves
   assert.equal(fresh.calls.length, 2, 'looked up by name first: by id needs no request');
   for (const id of ['', 'zz', '../../x', JEB.id + '0']) assert.equal(await t.ctx.CapeWatchShell.playerById(id).then(() => 'ok', (e) => e.code), 'invalid', id);
 });
+
+test('at most 20 lookups a minute at Mojang: the 21st is not sent ("rate"), a kept answer still comes, a minute later it is sent', async () => {
+  let now = 1_000_000;
+  const players = Array.from({ length: 21 }, (_, i) => ({ ...JEB, id: (i + 1).toString(16).padStart(32, '0'), name: 'p' + i }));
+  const http = mojang(players), s = await start(http, { clock: () => now });
+  for (let i = 0; i < 20; i++) assert.ok((await ask(s, 'p' + i)).ok, 'lookup ' + (i + 1));
+  const sent = http.calls.length;
+  assert.equal((await ask(s, 'p20')).code, 'rate');
+  assert.equal(http.calls.length, sent, 'not sent');
+  assert.ok(s.out.file.some((l) => /p20: not asked, 20 lookups in the last minute/.test(l)));
+  assert.ok((await ask(s, 'p3')).ok, 'an answer kept in memory still comes');
+  now += 60e3;
+  assert.ok((await ask(s, 'p20')).ok, 'a minute later it is asked');
+});

@@ -185,6 +185,66 @@ test('same result in every time zone of the computer running it', () => {
   assert.deepEqual(JSON.parse(results[0][1]), ['available:20261005-0030-p-available', 'available:20261019-0200-p-ending', 'ended:20261021-0000-p-ended', 'ended:20261020-1700-p-ended']);
 });
 
+// ---------- the word filter (robot/offensive.mjs), on the owner's rules ----------
+// The wiki answers as usual, plus one more cape page in the category: `title`, with the facts of Sample Sunrise Cape.
+function withExtraCape(title) {
+  const wikiFetch = globalThis.fetch;
+  globalThis.fetch = async (url, opts) => {
+    const u = new URL(String(url));
+    if (u.searchParams.get('list') === 'categorymembers') {
+      const j = JSON.parse(readFileSync(new URL('category.json', FIX), 'utf8'));
+      j.query.categorymembers.push({ ns: 0, title });
+      return new Response(JSON.stringify(j));
+    }
+    if (u.searchParams.get('titles') === title) {
+      const content = readFileSync(new URL('pages/Sample Sunrise Cape.wikitext', FIX), 'utf8');
+      return new Response(JSON.stringify({ query: { pages: [{ title, revisions: [{ slots: { main: { content } } }] }] } }));
+    }
+    return wikiFetch(url, opts);
+  };
+}
+
+test('rule 1: a cape\'s official name is never checked: a name with a listed word is published and notified as usual', async () => {
+  withExtraCape('Sample Sh1t Cape');
+  const data = known(), replaced = [];
+  await robot.check(data, { at: AT, now: NOW, replaced });
+  const c = data.capes['sample-sh1t'];
+  assert.ok(c, 'added');
+  assert.equal(c.name, 'Sample Sh1t Cape');
+  assert.ok(Object.values(data.events).some((e) => e.capeId === 'sample-sh1t' && e.type === 'new'), 'and notified');
+  assert.deepEqual(replaced, [], 'its texts (the templates, with its name) are not replaced either');
+});
+
+test('rules 2 and 6: a model text with a listed word becomes the template sentence, only that one; the cape goes out; logged with the word and field', async () => {
+  process.env.GITHUB_TOKEN = 'test-token';
+  const answer = { availability: 'available', availableFrom: '2026-10-01', availableUntil: '2026-10-31', cost: 'free' };
+  for (const l of ['En', 'He', 'Es', 'Pt', 'Fr', 'De', 'Ru']) { answer['obtain' + l] = 'Text ' + l; answer['short' + l] = 'Short ' + l; }
+  answer.obtainEs = 'Consíguela antes de que termine, hijo de puta.';
+  answer.shortEn = 'Get the Zombie Horse cape at the Trial Chambers.';   // names from the game: never marked
+  const wikiFetch = globalThis.fetch;
+  globalThis.fetch = async (url, opts) => String(url).startsWith('https://models.github.ai/')
+    ? new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(answer) } }] }))
+    : wikiFetch(url, opts);
+  const lines = [];
+  console.log = (...a) => lines.push(a.join(' '));
+  try {
+    const data = known(), replaced = [];
+    await robot.check(data, { at: AT, now: NOW, replaced });
+    const c = data.capes['sample-sunrise'];
+    assert.ok(c, 'published');
+    assert.notEqual(c.obtainEs, answer.obtainEs, 'the marked text is not used');
+    assert.match(c.obtainEs, /Sample Sunrise Cape/, 'the template sentence, with the cape\'s name');
+    assert.equal(c.obtainEn, 'Text En', 'the other texts are the model\'s');
+    assert.equal(c.shortEn, answer.shortEn);
+    assert.equal(c.availability, 'available', 'and its facts are kept');
+    assert.ok(Object.values(data.events).some((e) => e.capeId === 'sample-sunrise' && e.type === 'new'), 'notified as usual');
+    assert.deepEqual(replaced.filter((r) => r.id === 'sample-sunrise'), [{ id: 'sample-sunrise', cape: 'Sample Sunrise Cape', field: 'obtainEs', word: 'hijo de puta' }]);
+    assert.ok(lines.some((l) => /filter: obtainEs of sample-sunrise replaced by the template \(word: "hijo de puta"\)/.test(l)), 'in the log: the word and the field');
+    const msg = robot.filterReport(replaced);
+    assert.match(msg, /Sample Sunrise Cape.*obtainEs.*hijo de puta/);
+  } finally { delete process.env.GITHUB_TOKEN; }
+});
+
 // ---------- texts written by GitHub Models ----------
 test('answers from GitHub Models with wrong values are cleaned before they reach the data file', async () => {
   process.env.GITHUB_TOKEN = 'test-token';
