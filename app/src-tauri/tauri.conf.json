@@ -28,7 +28,7 @@
         "script-src": "'self'",
         "style-src": "'self' 'unsafe-inline'",
         "font-src": "'self'",
-        "img-src": "'self' data: blob: https://textures.minecraft.net https://raw.githubusercontent.com",
+        "img-src": "'self' data: blob: https://textures.minecraft.net https://raw.githubusercontent.com https://minecraft.wiki/images/",
         "connect-src": "'self' ipc: http://ipc.localhost https://api.github.com https://raw.githubusercontent.com",
         "media-src": "'self' data: blob:",
         "object-src": "'none'",

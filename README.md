@@ -36,7 +36,8 @@ entry and everything it registered. Your settings stay unless you tick **Delete 
 ## Privacy
 
 CapeWatch has no account and sends nothing about you. It downloads the cape list from this repository, cape
-textures from Minecraft's texture server, and (only if you enter a Minecraft username, for your skin or under
+textures from Minecraft's texture server (the three that were never there, Christmas 2010, New Year 2011 and
+Progress Pride, from the Minecraft Wiki), and (only if you enter a Minecraft username, for your skin or under
 Owned capes) that player's skin and worn cape from Mojang. Under Owned capes it also asks capes.me, a public cape
 database, which capes it has seen that player wear; only the player's Minecraft id is sent there. The names you look
 up and the capes you tick stay on your computer. The full list of addresses, and why, is in [tools/security.md](tools/security.md).
@@ -60,7 +61,9 @@ If CapeWatch is useful to you, you can support it: https://paypal.me/Kayoiz
 
 NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
 Minecraft is a trademark of Microsoft. Cape facts come from public sources (minecraft.wiki and official Mojang
-announcements) and may contain mistakes.
+announcements) and may contain mistakes. The textures of the Christmas 2010, New Year 2011 and Progress Pride capes
+are loaded from the Minecraft Wiki when shown and never stored; the wiki marks them © Mojang Studios, and its own
+content is under CC BY-NC-SA 3.0.
 
 © Kayoiz. All rights reserved. Included third-party parts keep their own licences: skinview3d and three.js
 (MIT, `vendor/skinview3d/`), the Assistant, Secular One and Pixelify Sans fonts (SIL Open Font License,

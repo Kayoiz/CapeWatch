@@ -20,6 +20,7 @@ async function open(data, greeting = 'none') {
   const page = await edge.newPage();
   await page.block(['*mojang.com*']);
   await page.route('https://textures.minecraft.net/*', () => ({ body: testCape(200, 60, 60), type: 'image/png' }));
+  await page.route('https://minecraft.wiki/*', () => ({ body: testCape(60, 60, 200), type: 'image/png' }));   // answered here: never the real wiki
   await page.init(CATCH);
   await page.init(fakeTauri({ data, greeting }));
   await page.goto(server.url + 'index.html');
@@ -112,5 +113,28 @@ test('the page only contacts its own files and the texture server (no Google fon
   const hosts = [...new Set(page.requests.map((u) => { try { const x = new URL(u); return x.protocol === 'data:' ? 'data:' : x.host; } catch { return u; } }))].sort();
   const allowed = new Set([new URL(server.url).host, 'textures.minecraft.net', 'data:']);   // fonts ship with the app
   assert.deepEqual(hosts.filter((h) => !allowed.has(h)), [], 'unexpected: ' + hosts.join(', '));
+  await page.close();
+});
+
+test('the wiki: only the three texture files are loaded, under the policy; nothing else from the wiki can load', { skip }, async () => {
+  const d = sampleData({ capes: {
+    'christmas-2010': { name: 'Christmas 2010 Cape', editions: ['java'], availability: 'ended', category: 'other', releaseDate: '2010-12-24', obtainEn: 'Made up for the tests.' },
+    // a data file pointing at another wiki file: the installed app does not load it
+    'test-gamma': { name: 'Test Gamma Cape', editions: ['java'], availability: 'ended', category: 'other', releaseDate: '2020-01-01', obtainEn: 'Made up.', textureUrl: 'https://minecraft.wiki/images/Other_Cape_%28texture%29.png' }
+  } });
+  const page = await open(d);
+  await page.waitFor(`document.querySelector('#grid .tile[data-cape="christmas-2010"] img.gen')`, 30000);
+  await new Promise((r) => setTimeout(r, 800));
+  assert.deepEqual([...new Set(page.requests.filter((u) => u.includes('minecraft.wiki')))], ['https://minecraft.wiki/images/Christmas_2010_Cape_%28texture%29.png']);
+  assert.equal(await page.eval(`!!document.querySelector('#grid .tile[data-cape="test-gamma"] img.gen')`), false, 'the other wiki file is not used');
+  assert.deepEqual(await page.eval('window.__csp'), [], 'nothing blocked');
+  // the policy itself: wiki images only, nothing else from the wiki
+  await page.eval(`new Promise(r => { const i = new Image(); i.onerror = r; i.onload = r; i.src = 'https://minecraft.wiki/w/Special:FilePath/Cape.png'; })`);
+  const f = await page.eval(`fetch('https://minecraft.wiki/images/Christmas_2010_Cape_%28texture%29.png').then(() => 'reached', () => 'blocked')`);
+  await new Promise((r) => setTimeout(r, 300));
+  const blocked = await page.eval('window.__csp');
+  assert.ok(blocked.some((b) => /^img-src https:\/\/minecraft\.wiki\/w\/Special/.test(b)), 'a wiki page outside its images folder is blocked: ' + blocked.join(', '));
+  assert.equal(f, 'blocked', 'the page cannot fetch from the wiki, only show its images');
+  assert.deepEqual(page.exceptions, []);
   await page.close();
 });

@@ -34,6 +34,7 @@ for (const fixed of [false, true]) {
     await page.viewport(1200, 900, 1);
     await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
     await page.route('https://textures.minecraft.net/*', () => ({ body: testCape(), type: 'image/png' }));
+    await page.route('https://minecraft.wiki/images/*', () => ({ body: testCape(), type: 'image/png' }));
     await page.init(fakeTauri({ data: DATA }));
     await page.goto(fileUrl(root + 'app/dist/index.html'));
     await page.waitFor(`document.querySelectorAll('#grid .tile img.gen').length > 10`, 30000).catch(() => {});

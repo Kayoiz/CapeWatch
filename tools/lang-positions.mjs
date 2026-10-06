@@ -37,6 +37,7 @@ for (const lang of LANGS) {
   await page.viewport(width, 900, 1);
   await page.block(['*mojang.com*']);
   await page.route('https://textures.minecraft.net/*', () => ({ body: testCape(), type: 'image/png' }));
+  await page.route('https://minecraft.wiki/images/*', () => ({ body: testCape(), type: 'image/png' }));
   await page.init(`try { localStorage.setItem('caperadar:lang', ${JSON.stringify(lang)}); } catch {}`);
   await page.init(fakeTauri({ data: DATA }));
   await page.goto(fileUrl(root + 'app/dist/index.html'));

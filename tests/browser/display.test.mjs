@@ -20,13 +20,14 @@ before(async () => { if (!skip) edge = await launch(); });
 after(async () => { await edge?.close(); });
 
 
-async function open(lang, width) {
+async function open(lang, width, data = DATA) {
   const page = await edge.newPage();
   await page.viewport(width, 880, 1);
   await page.block(['*mojang.com*']);
   await page.route('https://textures.minecraft.net/*', () => ({ body: testCape(), type: 'image/png' }));
+  await page.route('https://minecraft.wiki/images/*', () => ({ body: testCape(), type: 'image/png' }));   // the three wiki textures, answered by the test
   await page.init(`try { localStorage.setItem('caperadar:lang', ${JSON.stringify(lang)}); } catch {}`);
-  await page.init(fakeTauri({ data: DATA }));
+  await page.init(fakeTauri({ data }));
   await page.goto(PAGE);
   await page.waitFor(`document.querySelectorAll('#grid .tile').length > 10`);
   await page.eval(`document.fonts.ready.then(() => true)`);
@@ -122,9 +123,50 @@ test('details window: each label is a small line right above its value', { skip 
   }
 });
 
-test('a cape with no texture anywhere: the same plain cape outline with its name, also in its details window', { skip }, async () => {
-  const none = Object.entries(DATA.capes).filter(([, c]) => !c.textureId && !c.textureUrl);
+const WIKI = {
+  'christmas-2010': 'https://minecraft.wiki/images/Christmas_2010_Cape_%28texture%29.png',
+  'new-year-2011': 'https://minecraft.wiki/images/New_Years_2011_Cape_%28texture%29.png',
+  'progress-pride': 'https://minecraft.wiki/images/Progress_Pride_Cape_%28texture%29_rv4.png'
+};
+test('Christmas 2010, New Year 2011 and Progress Pride: drawn from their wiki textures when shown; the footer credits the wiki', { skip }, async () => {
+  assert.deepEqual(Object.keys(WIKI).filter((id) => DATA.capes[id]?.textureId), [], 'Mojang has no texture for them');
   const page = await open('en', 1200);
+  await page.waitFor(`${JSON.stringify(Object.keys(WIKI))}.every((id) => document.querySelector('#grid .tile[data-cape="' + id + '"] img.gen'))`, 30000);
+  assert.equal(await page.eval(`document.querySelectorAll('#grid .ph.shape').length`), 0, 'no plain outline any more');
+  const wiki = [...new Set(page.requests.filter((u) => u.includes('minecraft.wiki')))].sort();
+  assert.deepEqual(wiki, Object.values(WIKI).sort(), 'only these three files, from the images folder');
+  await page.eval(`CapeWatchPage.openDetail('progress-pride')`);
+  await page.waitFor(`document.querySelector('#dlg-slot img.gen')`);
+  await page.eval(`document.getElementById('dlg').close()`);
+  assert.equal(await page.eval(`document.getElementById('foot-tex').hidden`), false);
+  assert.equal(await page.eval(`document.getElementById('foot-tex').textContent`),
+    'The Christmas 2010, New Year 2011 and Progress Pride cape textures load from minecraft.wiki when shown and are not stored. The wiki marks them © Mojang Studios; its content is under CC BY-NC-SA 3.0.');
+  assert.deepEqual(await page.eval(`[...document.querySelectorAll('#foot-tex a')].map((a) => a.href)`), ['https://minecraft.wiki/w/Cape', 'https://creativecommons.org/licenses/by-nc-sa/3.0/']);
+  await page.click('#foot-tex a[href^="https://creativecommons.org/"]');
+  assert.equal(await page.eval('__test.opened'), 'https://creativecommons.org/licenses/by-nc-sa/3.0/', 'opens in the browser');
+  assert.ok(!page.console.some((l) => /no texture, skipped (christmas-2010|new-year-2011|progress-pride)/.test(l)), 'the figure wears them too');
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('the credit line in all 7 languages: both links, in the same place', { skip }, async () => {
+  for (const lang of LANGS) {
+    const page = await open(lang, 400);
+    const r = await page.eval(`(() => { const e = document.getElementById('foot-tex'); return { text: e.textContent, links: [...e.querySelectorAll('a')].map((a) => a.textContent), shown: !e.hidden && e.getBoundingClientRect().height > 0 }; })()`);
+    assert.ok(r.shown, lang);
+    assert.deepEqual(r.links.sort(), ['CC BY-NC-SA 3.0', 'minecraft.wiki'], lang);
+    assert.ok(/Christmas 2010.*New Year 2011.*Progress Pride/.test(r.text) && r.text.includes('Mojang Studios') && !/\{\w+\}/.test(r.text), lang + ': ' + r.text);
+    await page.close();
+  }
+});
+
+test('a cape with no texture anywhere: the same plain cape outline with its name, also in its details window', { skip }, async () => {
+  // made up: two capes with no texture on Mojang's server and none on the wiki
+  const data = JSON.parse(JSON.stringify(DATA));
+  for (const [id, name] of [['test-plain-one', 'Test Plain One Cape'], ['test-plain-two', 'Test Plain Two Cape']]) data.capes[id] = { ...DATA.capes.migrator, name, textureId: null };
+  const none = Object.entries(data.capes).filter(([id, c]) => !c.textureId && !c.textureUrl && !WIKI[id]);
+  assert.equal(none.length, 2);
+  const page = await open('en', 1200, data);
   await page.waitFor(`document.querySelectorAll('#grid .ph.shape').length === ${none.length}`);
   assert.deepEqual(await page.eval(`[...document.querySelectorAll('#grid .ph.shape .ph-name')].map((e) => e.textContent).sort()`), none.map(([, c]) => c.name).sort());
   assert.equal(await page.eval(`new Set([...document.querySelectorAll('#grid .ph.shape svg')].map((e) => e.outerHTML)).size`), 1, 'one outline for all');

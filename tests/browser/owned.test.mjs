@@ -42,6 +42,7 @@ async function open({ lang = 'en', width = 1200, storage = {}, url = APP_PAGE, p
   await page.viewport(width, 900, 1);
   await page.route('https://textures.minecraft.net/texture/' + SKIN, () => ({ body: testSkin(), type: 'image/png' }));
   await page.route('https://textures.minecraft.net/*', () => ({ body: testCape(), type: 'image/png' }));
+  await page.route('https://minecraft.wiki/images/*', () => ({ body: testCape(), type: 'image/png' }));   // the three wiki textures, answered by the test
   await page.block(['*mojang.com*', '*capes.me*']);   // the page itself never reaches Mojang or capes.me: only through the app (faked here)
   // a fresh computer for every test; a reload keeps what was saved
   const seed = Object.entries({ 'caperadar:lang': lang, ...storage }).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(v)});`).join(' ');

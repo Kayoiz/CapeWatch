@@ -23,9 +23,9 @@ released until the owner says so. Written for users, in English like the other r
 - **Fonts included.** CapeWatch no longer downloads its fonts from Google; it looks the same with or without internet.
 - **Nothing moves when you change language.** Every button, label and box keeps its place and size in all 7 languages. In Hebrew only the text runs right to left; the layout stays the same.
 - **Easier to read details.** In a cape's details window each fact has its label as a small line above the value, and in the status strip the labels sit on one line.
-- **Capes with no picture** now show a plain cape outline with their name, the same for each, instead of the name alone.
+- **Christmas 2010, New Year 2011 and Progress Pride look like they do in Minecraft,** drawn from their textures on the Minecraft Wiki (loaded when shown, never stored, credited at the bottom of the window). A cape with no texture anywhere shows a plain cape outline with its name.
 - **Every language in the pixel font.** Russian and the accented letters of Spanish, Portuguese, French and German now appear in CapeWatch's pixel font instead of switching to another font mid-word.
-- **Tighter security.** The app may only contact the addresses it needs, and opens links only to minecraft.wiki, minecraft.net, PayPal and e-mail.
+- **Tighter security.** The app may only contact the addresses it needs, and opens links only to minecraft.wiki, minecraft.net, capes.me, the Creative Commons licence page, PayPal and e-mail.
 - **Logs stay small.** At most about 3 MB, with the older history kept instead of deleted every few hours.
 - **Clean uninstall.** Uninstalling removes everything CapeWatch registered in Windows.
 

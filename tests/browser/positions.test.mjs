@@ -38,6 +38,7 @@ async function places(lang, width) {
   await page.viewport(width, 900, 1);
   await page.block(['*mojang.com*', '*capes.me*']);
   await page.route('https://textures.minecraft.net/*', () => ({ body: testCape(), type: 'image/png' }));
+  await page.route('https://minecraft.wiki/images/*', () => ({ body: testCape(), type: 'image/png' }));   // the three wiki textures, answered by the test
   await page.init(`try { localStorage.setItem('caperadar:lang', ${JSON.stringify(lang)}); localStorage.setItem('caperadar:owned', ${JSON.stringify(SAVED)}); } catch {} Date.now = () => 1791100000000;`);
   await page.init(fakeTauri({ data: DATA, players: [KAY] }));
   await page.goto(PAGE);
