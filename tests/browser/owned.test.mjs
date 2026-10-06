@@ -1,6 +1,7 @@
 // "Owned capes": a Minecraft player's capes by name, in the installed app. Runs the built page (app/dist) in
-// headless Edge with the app faked (tests/lib/fake-tauri.mjs), Mojang included: made-up players, the real data file.
-// Mojang only tells which cape a player is wearing: that one is found by itself, the rest are ticked in "Choose capes".
+// headless Edge with the app faked (tests/lib/fake-tauri.mjs), Mojang and capes.me included: made-up players, the
+// real data file. Mojang only tells which cape a player is wearing and capes.me which capes it has seen them wear:
+// those join the list by themselves, the rest are ticked in "Choose capes".
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -22,6 +23,13 @@ const MYSTERY = { id: 'fedcba9876543210fedcba9876543210', name: 'Mystery', skin:
 const PLAIN = { id: '00000000000000000000000000000abc', name: 'Plain', skin: SKIN };                            // wears no cape
 const EVIL = { id: '11111111111111111111111111111111', name: 'Evil', answerName: '<img src=x onerror=window.__pwned=1>', skin: SKIN };
 const PLAYERS = [KAY, MYSTERY, PLAIN, EVIL];
+// What capes.me has seen on Kayoiz (made up): a cape the data file does not know, Minecon 2011 (capes.me knows it
+// by an older texture, the data file's one is its alternative) and the Vanilla Cape, taken off the account since.
+const KAY_SEEN = { ...KAY, seen: ['cherry-blossom', 'migrator', '15th-anniversary', 'not-in-data', 'minecon-2011', { type: 'vanilla', removed: true }] };
+const NEW_TEX = 'tex:' + 'e'.repeat(64);
+// the list then: the cape being worn first, then the newest first (one the data file does not know has no date)
+const KAY_LIST = ['cherry-blossom*', '15th-anniversary', 'migrator', 'minecon-2011', NEW_TEX];
+const CAPES_ME_USER = (p) => 'https://capes.me/api/user/' + p.id;
 // Kayoiz as saved on this computer: wearing Cherry Blossom, Migrator and Christmas 2010 ticked by hand
 const SAVED = JSON.stringify({ current: KAY.id, players: { [KAY.id]: { name: 'Kayoiz', skin: TEX + SKIN, worn: 'cherry-blossom', tex: {}, show: ['cherry-blossom', 'migrator', 'christmas-2010'], hide: [] } } });
 const skip = !EDGE && 'Microsoft Edge not found';
@@ -29,16 +37,16 @@ let edge;
 before(async () => { if (!skip) edge = await launch(); });
 after(async () => { await edge?.close(); });
 
-async function open({ lang = 'en', width = 1200, storage = {}, url = APP_PAGE, players = PLAYERS } = {}) {
+async function open({ lang = 'en', width = 1200, storage = {}, url = APP_PAGE, players = PLAYERS, capesMe = 'ok' } = {}) {
   const page = await edge.newPage();
   await page.viewport(width, 900, 1);
   await page.route('https://textures.minecraft.net/texture/' + SKIN, () => ({ body: testSkin(), type: 'image/png' }));
   await page.route('https://textures.minecraft.net/*', () => ({ body: testCape(), type: 'image/png' }));
-  await page.block(['*mojang.com*']);   // the page itself never reaches Mojang: only through the app (faked here)
+  await page.block(['*mojang.com*', '*capes.me*']);   // the page itself never reaches Mojang or capes.me: only through the app (faked here)
   // a fresh computer for every test; a reload keeps what was saved
   const seed = Object.entries({ 'caperadar:lang': lang, ...storage }).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(v)});`).join(' ');
   await page.init(`try { if (!sessionStorage.getItem('__seeded')) { localStorage.clear(); ${seed} sessionStorage.setItem('__seeded', '1'); } } catch {}`);
-  if (url === APP_PAGE) await page.init(fakeTauri({ data: DATA, players }));
+  if (url === APP_PAGE) await page.init(fakeTauri({ data: DATA, players, capesMe }));
   await page.goto(url);
   if (url === APP_PAGE) await page.waitFor(`document.querySelectorAll('#grid .tile').length > 10`, 30000);
   await page.eval('document.fonts.ready.then(() => 1)');
@@ -49,6 +57,7 @@ const settled = (page) => page.waitFor(`!document.getElementById('owned').hasAtt
 const tiles = (page) => page.eval(`[...document.querySelectorAll('#owned .o-tile')].map((t) => t.dataset.owned + (t.querySelector('.pill.wearing') ? '*' : ''))`);
 const text = (page, id) => page.eval(`document.getElementById(${JSON.stringify(id)}).textContent`);
 const httpCalls = (page) => page.eval(`(__test.http || []).length`);
+const answered = (page, u, ms = 15000) => page.waitFor(`(__test.httpDone || []).includes(${JSON.stringify(u)})`, ms);
 
 test('the web page (no app) has no "Owned capes": it cannot reach Mojang', { skip }, async () => {
   const page = await open({ url: WEB_PAGE });
@@ -78,7 +87,8 @@ test('keyboard only: type a name, Enter; the cape being worn is listed; Tab to "
   assert.equal(await page.eval(`document.getElementById('o-name').value`), 'Kayoiz', 'the name as Mojang writes it');
   assert.deepEqual(await tiles(page), ['cherry-blossom*']);
   assert.equal(await text(page, 'o-msg'), 'Kayoiz is wearing the Cherry Blossom Cape.');
-  await page.waitFor(`document.getElementById('o-live').textContent === 'Kayoiz is wearing the Cherry Blossom Cape.'`);   // said to screen readers
+  assert.equal(await text(page, 'o-src'), 'capes.me has no record of Kayoiz yet. Add their other capes with “Choose capes”.');
+  await page.waitFor(`document.getElementById('o-live').textContent === 'Kayoiz is wearing the Cherry Blossom Cape. capes.me has no record of Kayoiz yet. Add their other capes with “Choose capes”.'`);   // said to screen readers
   await page.waitFor(`document.querySelector('#o-msg img.o-head')?.src.startsWith('data:image/png')`);              // the player's face
   assert.equal(await page.eval(`document.getElementById('o-choose').disabled`), false);
   // Tab: "Show capes", then "Choose capes"; Enter opens it with the search box ready
@@ -181,7 +191,8 @@ test('a player who wears no cape, and "Show capes" pressed twice quickly: one lo
   const page = await open();
   await page.eval(`(() => { const i = document.getElementById('o-name'), f = document.getElementById('owned-form'); i.value = 'Plain'; f.requestSubmit(); f.requestSubmit(); })()`);
   await page.waitFor(`document.querySelector('#owned .empty')?.textContent.includes('Plain')`); await settled(page);
-  assert.equal(await httpCalls(page), 2, 'one request for the id, one for the cape: once');
+  assert.deepEqual(await page.eval(`__test.http.map((u) => new URL(u).host)`), ['api.mojang.com', 'sessionserver.mojang.com', 'capes.me', 'capes.me'],
+    'Mojang: one request for the id, one for the cape; capes.me: the player and its list of capes; once');
   assert.equal(await text(page, 'o-msg'), 'Plain isn’t wearing a cape right now.');
   assert.equal(await page.eval(`document.querySelector('#owned .empty').textContent`), 'Nothing to show yet. Use “Choose capes” to add the capes Plain owns.');
   assert.deepEqual(page.exceptions, []);
@@ -205,7 +216,7 @@ test('"Show capes" right at start: not held up by the check of the saved player,
   await page.waitFor(`document.getElementById('o-msg').textContent === 'Plain isn’t wearing a cape right now.'`);
   assert.equal(await page.eval(`(__test.httpDone || []).some((u) => u.endsWith('${KAY.id}'))`), false, 'answered before the check');
   await page.eval(`__test.release()`);                                                       // now Mojang answers the check
-  await page.waitFor(`(__test.httpDone || []).some((u) => u.endsWith('${KAY.id}'))`, 10000);
+  await answered(page, CAPES_ME_USER(KAY), 10000);                                            // ...and capes.me after it
   await new Promise((r) => setTimeout(r, 400));
   assert.equal(await text(page, 'o-msg'), 'Plain isn’t wearing a cape right now.', 'still the player asked for');
   assert.equal(await page.eval(`document.getElementById('o-name').value`), 'Plain');
@@ -254,9 +265,9 @@ test('"Choose capes" search with no match says so', { skip }, async () => {
 test('7 languages at 400 and 1200 px: nothing in "Owned capes" or "Choose capes" is cut off or sticks out', { skip }, async () => {
   const problems = [];
   for (const width of [400, 1200]) for (const lang of LANGS) {
-    const page = await open({ lang, width, storage: { 'caperadar:owned': SAVED } });
-    await page.waitFor(`document.querySelectorAll('#owned .o-tile').length === 3`, 20000);
-    await page.waitFor(`(__test.httpDone || []).some((u) => u.endsWith('${KAY.id}'))`, 15000); await settled(page);   // the check at start is done
+    const page = await open({ lang, width, storage: { 'caperadar:owned': SAVED }, players: [KAY_SEEN] });
+    await answered(page, CAPES_ME_USER(KAY)); await settled(page);   // the check at start is done:
+    await page.waitFor(`document.querySelectorAll('#owned .o-tile').length === 6 && document.querySelector('#o-src a')`);   // 3 more capes seen, and the line under the list
     // the rest of the page is checked in display.test.mjs
     problems.push(...(await page.eval(FIND_PROBLEMS)).filter((p) => /[.#]o-|pick|owned|wearing/.test(p)).map((p) => `${lang} ${width} page: ${p}`));
     await page.click('#o-choose');
@@ -264,6 +275,120 @@ test('7 languages at 400 and 1200 px: nothing in "Owned capes" or "Choose capes"
     await new Promise((r) => setTimeout(r, 300));
     problems.push(...(await page.eval(FIND_PROBLEMS)).map((p) => `${lang} ${width} choose: ${p}`));
     assert.deepEqual(page.exceptions, [], lang + ' ' + width);
+    await page.close();
+  }
+  assert.deepEqual(problems, []);
+});
+
+test('the capes capes.me has seen join the list by themselves; the line under it says so and links to the player there', { skip }, async () => {
+  const page = await open({ players: [KAY_SEEN] });
+  await lookUp(page, 'Kayoiz');
+  await page.waitFor(`document.querySelectorAll('#owned .o-tile').length > 1`); await settled(page);
+  assert.deepEqual(await tiles(page), KAY_LIST, 'the Vanilla Cape was taken off the account: not listed');
+  assert.equal(await page.eval(`document.querySelector('#owned [data-owned="${NEW_TEX}"] .o-name').textContent`), 'Unknown cape');
+  await page.waitFor(`document.querySelector('#owned [data-owned="${NEW_TEX}"] img.gen')`, 20000);   // drawn from Mojang's texture
+  assert.equal(await text(page, 'o-msg'), 'Kayoiz is wearing the Cherry Blossom Cape.');
+  assert.equal(await text(page, 'o-src'), 'The capes Kayoiz wore before come from capes.me.');
+  await page.waitFor(`document.getElementById('o-live').textContent === 'Kayoiz is wearing the Cherry Blossom Cape. The capes Kayoiz wore before come from capes.me.'`);
+  assert.equal(await page.eval(`document.querySelector('#o-src a').href`), 'https://capes.me/Kayoiz');
+  await page.click('#o-src a');
+  assert.equal(await page.eval('__test.opened'), 'https://capes.me/Kayoiz', 'opens in the browser, not in CapeWatch');
+  // what was sent, and to whom: the name to Mojang, the player's id to capes.me (saying who asks), nothing else
+  assert.deepEqual(await page.eval(`__test.http`), ['https://api.mojang.com/users/profiles/minecraft/Kayoiz', 'https://sessionserver.mojang.com/session/minecraft/profile/' + KAY.id,
+    CAPES_ME_USER(KAY), 'https://capes.me/api/capes']);
+  assert.ok(await page.eval(`__test.httpOpts.filter((o) => o.url.includes('capes.me')).every((o) => o.headers?.['User-Agent'] === 'CapeWatch (+https://github.com/Kayoiz/CapeWatch)')`));
+  // kept on this computer, and shown at the next start
+  await page.reload();
+  await page.waitFor(`document.querySelectorAll('#owned .o-tile').length === ${KAY_LIST.length}`, 20000);
+  assert.deepEqual(await tiles(page), KAY_LIST);
+  assert.equal(await text(page, 'o-src'), 'The capes Kayoiz wore before come from capes.me.');
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('a cape capes.me has seen, taken off the list by hand, stays off: after the next lookup and the next start', { skip }, async () => {
+  const page = await open({ players: [KAY_SEEN] });
+  await lookUp(page, 'Kayoiz');
+  await page.waitFor(`document.querySelectorAll('#owned .o-tile').length === ${KAY_LIST.length}`); await settled(page);
+  await page.click('#o-choose');
+  await page.waitFor(`document.getElementById('pick').open`);
+  await page.click('#pick-list input[value="migrator"]');
+  await page.click('#pick-done');
+  const without = KAY_LIST.filter((k) => k !== 'migrator');
+  await page.waitFor(`!document.getElementById('pick').open && document.querySelectorAll('#owned .o-tile').length === ${without.length}`);
+  await lookUp(page, 'Kayoiz'); await settled(page);
+  assert.deepEqual(await tiles(page), without);
+  await page.reload();
+  await answered(page, CAPES_ME_USER(KAY)); await settled(page);   // the check at start asked capes.me again
+  await new Promise((r) => setTimeout(r, 300));
+  assert.deepEqual(await tiles(page), without);
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('capes.me has no record of the player, or does not answer: the cape being worn is listed, and the line says why others may be missing', { skip }, async () => {
+  const page = await open();
+  await lookUp(page, 'Plain'); await settled(page);
+  assert.equal(await text(page, 'o-src'), 'capes.me has no record of Plain yet. Add their other capes with “Choose capes”.');
+  assert.equal(await page.eval(`document.querySelector('#owned .empty').textContent`), 'Nothing to show yet. Use “Choose capes” to add the capes Plain owns.');
+  await page.eval(`__test.cfg.capesMe = 'offline'`);
+  await lookUp(page, 'Kayoiz'); await settled(page);
+  assert.deepEqual(await tiles(page), ['cherry-blossom*'], 'what Mojang said is shown all the same');
+  assert.equal(await text(page, 'o-msg'), 'Kayoiz is wearing the Cherry Blossom Cape.');
+  assert.equal(await text(page, 'o-note'), '', 'not an error: the lookup worked');
+  assert.equal(await text(page, 'o-src'), 'capes.me didn’t answer, so capes worn before may be missing. Try again later.');
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('"Choose capes" lists every cape seen on the player that the data file does not know, the one being worn first', { skip }, async () => {
+  const page = await open({ players: [{ ...MYSTERY, seen: ['not-in-data', 'migrator'] }] });
+  await lookUp(page, 'Mystery');
+  await page.waitFor(`document.querySelectorAll('#owned .o-tile').length === 3`); await settled(page);
+  assert.deepEqual(await tiles(page), ['tex:' + 'f'.repeat(64) + '*', 'migrator', NEW_TEX]);
+  await page.click('#o-choose');
+  await page.waitFor(`document.getElementById('pick').open`);
+  const rows = await page.eval(`[...document.querySelectorAll('#pick-list li')].slice(0, 2).map((r) => [r.dataset.pick, r.querySelector('input').checked, r.textContent])`);
+  assert.deepEqual(rows.map((r) => r.slice(0, 2)), [['tex:' + 'f'.repeat(64), true], [NEW_TEX, true]]);
+  assert.match(rows[0][2], /Unknown cape.*Wearing now/);
+  await page.click(`#pick-list input[value="${NEW_TEX}"]`);   // taken off, still in the window to tick again
+  await page.click('#pick-done');
+  await page.waitFor(`!document.getElementById('pick').open && document.querySelectorAll('#owned .o-tile').length === 2`);
+  await page.click('#o-choose');
+  await page.waitFor(`document.getElementById('pick').open`);
+  assert.equal(await page.eval(`document.querySelector('#pick-list input[value="${NEW_TEX}"]')?.checked`), false);
+  await page.key('Escape');
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('the check at start asks capes.me again: a cape it has seen since joins; when it does not answer, the line keeps what it said before', { skip }, async () => {
+  const saved = JSON.parse(SAVED); saved.players[KAY.id].seen = 'found';
+  const page = await open({ storage: { 'caperadar:owned': JSON.stringify(saved) }, players: [{ ...KAY, seen: ['cherry-blossom', 'migrator', 'mojang-office'] }] });
+  await page.waitFor(`document.querySelector('#owned [data-owned="mojang-office"]')`, 20000);
+  assert.deepEqual(await tiles(page), ['cherry-blossom*', 'mojang-office', 'migrator', 'christmas-2010']);
+  assert.equal(await text(page, 'o-src'), 'The capes Kayoiz wore before come from capes.me.');
+  assert.equal(await text(page, 'o-note'), '', 'no message of its own');
+  await page.eval(`sessionStorage.setItem('__capesMe', 'offline')`);   // the next start: capes.me does not answer
+  await page.reload();
+  await answered(page, CAPES_ME_USER(KAY)); await settled(page);
+  await new Promise((r) => setTimeout(r, 300));
+  assert.deepEqual(await tiles(page), ['cherry-blossom*', 'mojang-office', 'migrator', 'christmas-2010']);
+  assert.equal(await text(page, 'o-src'), 'The capes Kayoiz wore before come from capes.me.');
+  assert.deepEqual(page.exceptions, []);
+  await page.close();
+});
+
+test('the longest lines under the list (no record, no answer) in 7 languages at 400 px: nothing cut off or sticking out', { skip }, async () => {
+  const problems = [];
+  for (const seen of ['unknown', 'failed']) for (const lang of LANGS) {
+    const saved = JSON.parse(SAVED); saved.players[KAY.id].seen = seen;
+    const page = await open({ lang, width: 400, storage: { 'caperadar:owned': JSON.stringify(saved) }, capesMe: seen === 'failed' ? 'offline' : 'ok' });
+    await answered(page, CAPES_ME_USER(KAY)); await settled(page);
+    await new Promise((r) => setTimeout(r, 300));
+    assert.ok((await text(page, 'o-src')).includes('capes.me'), lang + ' ' + seen);
+    problems.push(...(await page.eval(FIND_PROBLEMS)).filter((p) => /[.#]o-|owned/.test(p)).map((p) => `${lang} ${seen}: ${p}`));
+    assert.deepEqual(page.exceptions, [], lang + ' ' + seen);
     await page.close();
   }
   assert.deepEqual(problems, []);

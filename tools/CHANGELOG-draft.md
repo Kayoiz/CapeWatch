@@ -8,7 +8,7 @@ released until the owner says so. Written for users, in English like the other r
 ## CapeWatch 1.0.6
 
 ### New
-- **Owned capes.** Type a Minecraft name to see that player's capes: the cape they are wearing is found by itself (Mojang shares only that one), and you tick the others they own in "Choose capes". Kept on your computer; a cape seen being worn is added by itself.
+- **Owned capes.** Type a Minecraft name to see that player's capes: the one they are wearing (from Mojang) and every cape capes.me, a public cape database, has seen them wear before are listed by themselves; tick any others they own in "Choose capes". Kept on your computer.
 - **Click a notification, see the cape.** Clicking a CapeWatch notification opens that cape, even when CapeWatch was closed.
 - **A new title and opening.** New title art with a short opening effect and sound, played once when you first open the window. The sound can be turned off in Settings.
 - **Turn the figure by hand.** Drag the 3D figure to turn it, scroll to zoom, double-click or ⟲ to reset. Settings has an option to reverse the drag direction.

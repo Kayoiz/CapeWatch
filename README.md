@@ -10,8 +10,8 @@ appears, a promotion opens or a promotion is about to end.
 - Open promotions first, with a countdown and how to get each cape.
 - Windows notifications you choose: new cape, promotion opened, promotion ending soon. Click one to open that cape.
 - A 3D figure wearing the capes and their elytra; your own skin by Minecraft username.
-- Owned capes: type a Minecraft name to see the cape that player is wearing (Mojang shares only that one), tick the
-  other capes you own, and they stay listed.
+- Owned capes: type a Minecraft name to see that player's capes: the one they are wearing (from Mojang) and the ones
+  [capes.me](https://capes.me) has seen them wear before. Tick any others they own, and they stay listed.
 - Starts quietly with Windows and waits in the tray; checks for news every 30 minutes and works offline with the last list it has.
 - 7 languages: English, עברית, Español, Português, Français, Deutsch, Русский.
 
@@ -37,8 +37,9 @@ entry and everything it registered. Your settings stay unless you tick **Delete 
 
 CapeWatch has no account and sends nothing about you. It downloads the cape list from this repository, cape
 textures from Minecraft's texture server, and (only if you enter a Minecraft username, for your skin or under
-Owned capes) that player's skin and worn cape from Mojang. The names you look up and the capes you tick stay on
-your computer. The full list of addresses, and why, is in [tools/security.md](tools/security.md).
+Owned capes) that player's skin and worn cape from Mojang. Under Owned capes it also asks capes.me, a public cape
+database, which capes it has seen that player wear; only the player's Minecraft id is sent there. The names you look
+up and the capes you tick stay on your computer. The full list of addresses, and why, is in [tools/security.md](tools/security.md).
 
 ## How it works
 

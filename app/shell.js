@@ -7,7 +7,7 @@
 // - Settings: notifications, start with Windows, sound on open, reverse drag, and the figure's skin by
 //   Minecraft username.
 // - Players: looks a Minecraft player up by name at Mojang (skin, and the cape they are wearing) for the
-//   figure's skin and the page's "Owned capes" section.
+//   figure's skin and the page's "Owned capes" section, which also asks capes.me for the capes seen on them before.
 // - Opening effect and window state: main.rs says when the window is first seen (greet) and when it is
 //   hidden or shown (the page stops all work while hidden).
 window.__CAPEWATCH_APP__ = true;
@@ -170,7 +170,7 @@ document.documentElement.classList.add('cw-title-wait');
   const saveSettings = () => store.set('settings', settings);
   // The page's "Owned capes" section looks players up through the shell (cape-radar.html), and starts with the
   // skin name from Settings.
-  Object.assign(window.CapeWatchShell, { player: (name) => player(name), playerById: (id, name) => playerById(id, name), skinName: () => settings.skinName || '' });
+  Object.assign(window.CapeWatchShell, { player: (name) => player(name), playerById: (id, name) => playerById(id, name), capesSeen: (id, name) => capesSeen(id, name), skinName: () => settings.skinName || '' });
   // "Reverse drag direction": the 3D figure turns the other way when dragged sideways (cape-radar.html).
   const applyDrag = () => window.CapeWatchPage?.cape3d?.setInvertDrag?.(settings.invertDrag);
   const SETTING_FOR = { new: 'notifyNew', announced: 'notifyNew', available: 'notifyOpen', ending: 'notifyEnding' };
@@ -279,6 +279,92 @@ document.documentElement.classList.add('cw-title-wait');
     id = String(id ?? '').toLowerCase();
     if (!/^[0-9a-f]{32}$/.test(id)) return Promise.reject(playerError('invalid'));
     return remembered('id:' + id, () => askProfile(id, PLAYER_NAME.test(String(nameBefore || '')) ? nameBefore : null), nameBefore || id);
+  }
+  // ---------- capes seen on a player before (capes.me) ----------
+  // capes.me, a public cape database (https://capes.me/api), keeps the capes it has seen each account wear, so
+  // "Owned capes" asks it too, by the player's id (never for the skin in Settings). Its list of capes turns its own
+  // name for each cape into the cape's textures on Mojang's server, which is how the page knows a cape.
+  // The answer: { state: 'found', capes: [[texture addresses, the current one first], ...] }, or state 'unknown'
+  // (capes.me has not seen the account) or 'failed' (no answer within 6 s, an error, an odd answer), capes [].
+  // It never fails: without capes.me the page still shows what Mojang said. An answer is kept for a minute and
+  // shared by lookups at the same moment; the list of capes is kept for a day (in storage too, for when capes.me
+  // cannot be reached) and asked again when a player has a cape that is not on it.
+  const CAPES_ME = 'https://capes.me/api/';
+  const CAPES_ME_ASK = { headers: { 'User-Agent': 'CapeWatch (+https://github.com/Kayoiz/CapeWatch)' } };   // capes.me refuses requests without one
+  const SEEN_KEEP_MS = 60e3, SEEN_LIST_KEEP_MS = 24 * 3600e3, SEEN_LIST_AGAIN_MS = 10 * 60e3, SEEN_WAIT_MS = 6000;
+  const seenAnswers = new Map(), seenAsks = new Map();   // player id -> { at, value } / the request on its way
+  let seenList = null, seenListAsk = null;               // { at, map: capes.me's name for a cape -> its textures }
+  function cleanSeenList(list) {
+    const map = Object.create(null);
+    for (const c of Array.isArray(list) ? list : []) {
+      if (typeof c?.type !== 'string' || !/^[\w-]{1,40}$/.test(c.type)) continue;
+      const tex = [c.url, ...(Array.isArray(c.alts) ? c.alts : [])].map(textureUrl).filter(Boolean).slice(0, 8);
+      if (tex.length) map[c.type] = tex;
+    }
+    return Object.keys(map).length ? map : null;
+  }
+  async function capesMe(path) {
+    const http = T?.http?.fetch;
+    if (!http) throw new Error('http API missing');
+    const r = await http(CAPES_ME + path, CAPES_ME_ASK);
+    if (r.status === 404) return null;
+    if (!r.ok) throw new Error(r.status === 429 ? 'too many requests' : 'answer ' + r.status);
+    return r.json();
+  }
+  function seenCapeList(again) {
+    if (!seenList) {
+      const s = store.get('capesMe', null), map = cleanSeenList(s?.list);
+      if (map && Number.isFinite(s.at)) seenList = { at: s.at, map };
+    }
+    const age = seenList ? Date.now() - seenList.at : -1;
+    if (age >= 0 && age < (again ? SEEN_LIST_AGAIN_MS : SEEN_LIST_KEEP_MS)) return Promise.resolve(seenList.map);
+    return seenListAsk ||= capesMe('capes').then((list) => {
+      const map = cleanSeenList(list);
+      if (!map) throw new Error('unexpected list of capes');
+      seenList = { at: Date.now(), map };
+      store.set('capesMe', { at: seenList.at, list: Object.entries(map).map(([type, tex]) => ({ type, url: tex[0], alts: tex.slice(1) })) });
+      log('info', 'capes.me: list of ' + Object.keys(map).length + ' capes loaded');
+      return map;
+    }).catch((e) => {
+      if (!seenList) throw e;
+      log('warn', 'capes.me: list of capes not loaded (' + (e.message || e) + '), using the one kept ' + Math.max(0, Math.round((Date.now() - seenList.at) / 3600e3)) + ' h ago');
+      return seenList.map;
+    }).finally(() => { seenListAsk = null; });
+  }
+  async function askSeen(id, who) {
+    const [user, list] = await Promise.allSettled([capesMe('user/' + id), seenCapeList()]);
+    if (user.status === 'rejected') throw user.reason;
+    if (user.value === null) return { state: 'unknown', capes: [] };
+    const body = user.value;
+    if (!Array.isArray(body?.capes) || String(body.uuid ?? '').replace(/-/g, '').toLowerCase() !== id) throw new Error('unexpected answer');
+    if (list.status === 'rejected') throw list.reason;
+    // a cape taken off the account ("removed") is not one the player has
+    const types = [...new Set(body.capes.filter((c) => c?.removed !== true && typeof c?.type === 'string').map((c) => c.type))].slice(0, 200);
+    let map = list.value;
+    if (types.some((t) => !map[t])) map = await seenCapeList(true);   // a cape newer than the list kept
+    const capes = [];
+    for (const t of types) if (map[t]) capes.push([...map[t]]); else log('info', 'capes.me: ' + who + ': "' + t.slice(0, 40) + '" is not on its list of capes');
+    return { state: 'found', capes };
+  }
+  function capesSeen(id, nameNow) {
+    id = String(id ?? '').toLowerCase();
+    const who = PLAYER_NAME.test(String(nameNow || '')) ? nameNow : id;
+    if (!/^[0-9a-f]{32}$/.test(id)) return Promise.resolve({ state: 'failed', capes: [] });
+    const last = seenAnswers.get(id);
+    if (last && Date.now() - last.at < SEEN_KEEP_MS) return Promise.resolve(last.value);
+    if (seenAsks.has(id)) return seenAsks.get(id);
+    const ask = askSeen(id, who);
+    ask.catch(() => {});   // an answer that comes after the wait is dropped
+    let timer = 0;
+    const asking = Promise.race([ask, new Promise((r) => { timer = setTimeout(() => r(null), SEEN_WAIT_MS); })]).then((value) => {
+      if (!value) { log('warn', 'capes.me: ' + who + ': no answer within ' + SEEN_WAIT_MS / 1000 + ' s'); return { state: 'failed', capes: [] }; }
+      seenAnswers.set(id, { at: Date.now(), value });
+      log('info', 'capes.me: ' + who + ': ' + (value.state === 'found' ? value.capes.length + ' capes seen' : 'not seen there'));
+      return value;
+    }, (e) => { log('warn', 'capes.me: ' + who + ': ' + (e?.message || e)); return { state: 'failed', capes: [] }; })
+      .finally(() => { clearTimeout(timer); seenAsks.delete(id); });
+    seenAsks.set(id, asking);
+    return asking;
   }
   async function skinUrlFor(name) {
     const p = await player(name);

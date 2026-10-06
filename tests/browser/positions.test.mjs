@@ -14,8 +14,9 @@ import { testCape } from '../lib/png.mjs';
 const PAGE = fileUrl(fileURLToPath(new URL('../../app/dist/index.html', import.meta.url)));
 const DATA = JSON.parse(readFileSync(new URL('../../data/capewatch.json', import.meta.url), 'utf8'));
 const LANGS = ['en', 'he', 'es', 'pt', 'fr', 'de', 'ru'];
-// "Owned capes" with a made-up player on it: wearing one cape, two more ticked by hand
-const KAY = { id: '0123456789abcdef0123456789abcdef', name: 'Kayoiz', skin: '0', cape: DATA.capes['cherry-blossom'].textureId };
+// "Owned capes" with a made-up player on it: wearing one cape, two more ticked by hand, one more seen by capes.me
+// (with the line under the list that links to it)
+const KAY = { id: '0123456789abcdef0123456789abcdef', name: 'Kayoiz', skin: '0', cape: DATA.capes['cherry-blossom'].textureId, seen: ['cherry-blossom', 'vanilla'] };
 const SAVED = JSON.stringify({ current: KAY.id, players: { [KAY.id]: { name: 'Kayoiz', skin: null, worn: 'cherry-blossom', tex: {}, show: ['cherry-blossom', 'migrator', 'christmas-2010'], hide: [] } } });
 const skip = !EDGE && 'Microsoft Edge not found';
 let edge;
@@ -35,14 +36,14 @@ const BOXES = (root) => `(() => { const out = []; const root = ${root};
 async function places(lang, width) {
   const page = await edge.newPage();
   await page.viewport(width, 900, 1);
-  await page.block(['*mojang.com*']);
+  await page.block(['*mojang.com*', '*capes.me*']);
   await page.route('https://textures.minecraft.net/*', () => ({ body: testCape(), type: 'image/png' }));
   await page.init(`try { localStorage.setItem('caperadar:lang', ${JSON.stringify(lang)}); localStorage.setItem('caperadar:owned', ${JSON.stringify(SAVED)}); } catch {} Date.now = () => 1791100000000;`);
   await page.init(fakeTauri({ data: DATA, players: [KAY] }));
   await page.goto(PAGE);
   await page.waitFor(`document.querySelectorAll('#grid .tile img.gen').length > 10`, 30000).catch(() => {});
   await page.eval(`document.fonts.ready.then(() => 1)`);
-  await page.waitFor(`(__test.httpDone || []).some((u) => u.endsWith('${KAY.id}'))`, 15000);   // the player checked at start
+  await page.waitFor(`(__test.httpDone || []).includes('https://capes.me/api/user/${KAY.id}') && document.querySelector('#o-src a')`, 15000);   // the player checked at start
   await new Promise((r) => setTimeout(r, 900));   // the sizes are locked again once the pictures stop arriving
   const out = { page: await page.eval(BOXES(`document.getElementById('wrap')`)) };
   await page.click('#cw-open-settings'); await new Promise((r) => setTimeout(r, 300));

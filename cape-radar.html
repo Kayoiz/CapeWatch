@@ -239,12 +239,16 @@ button.slot { cursor: pointer; }
 .tile .date { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* Owned capes: a player's capes by Minecraft name (the installed app only). The same pieces as the rest of the
-   page: the filters row, the slots, the pills. The cape being worn comes from Mojang, the rest the player picks. */
+   page: the filters row, the slots, the pills. The cape being worn comes from Mojang, the capes worn before from
+   capes.me, the rest the player picks. */
 /* o-note: what just happened (looking up, or what went wrong); o-msg: whose capes these are and what they wear */
 .o-note, .o-msg { display: flex; align-items: center; gap: 10px; margin: -4px 0 0; font-size: var(--text-sm); color: var(--muted); }
 .o-note:empty, .o-msg:empty { display: none; }
 .o-note.bad { color: var(--soon); }
 .o-note.bad .o-text::before { content: "\26A0\FE0E\00A0"; }   /* a warning sign, not only a colour */
+/* o-src: under the list, where its capes come from (capes.me), or why some may be missing */
+.o-src { margin: -6px 0 0; font-size: var(--text-sm); color: var(--muted); }
+.o-src:empty { display: none; }
 .o-head { width: 32px; height: 32px; flex: none; image-rendering: pixelated; background: var(--slot); box-shadow: 0 0 0 2px var(--line); }
 .nm { unicode-bidi: isolate; }   /* a player's or a cape's name inside a sentence, in any language */
 .o-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
@@ -288,7 +292,7 @@ footer { font-size: var(--text-sm); color: var(--muted); border-top: 2px solid v
 
 /* Hebrew (the layout never mirrors): paragraphs run from the right of their box; short labels, numbers and headings
    sit on the left, next to what they belong to (the checkbox, the number, the value under them). */
-[dir="rtl"]:is(.cw-opt span, .o-text, .o-name, dt, dd, .stat b, .stat span, .countdown, .field label, legend, h2, h3, .eyebrow, .count-line, .lang-pick span, .cw-skin span, .cw-skin small) { text-align: left; }
+[dir="rtl"]:is(.cw-opt span, .o-text, .o-src, .o-name, dt, dd, .stat b, .stat span, .countdown, .field label, legend, h2, h3, .eyebrow, .count-line, .lang-pick span, .cw-skin span, .cw-skin small) { text-align: left; }
 
 /* ---------- Controls: one pixel feel for every button (approved on tools/buttons-demo.html) ----------
    Hover: a little brighter, soft green glow. Press: sinks 2px, darker, the bevel turns inward; back on release.
@@ -420,6 +424,7 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     <p class="o-msg" id="o-msg"></p>
     <p class="sr" id="o-live" aria-live="polite"></p>
     <div id="owned"></div>
+    <p class="o-src" id="o-src"></p>
   </section>
 
   <section aria-labelledby="h-log">
@@ -550,11 +555,13 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       noExact: 'No exact date. Estimate: {x}', fFrom: 'Starts', fUntil: 'Ends', est: 'estimate', more: 'Details', showElytra: 'Show elytra', showCape: 'Show cape', resetView: 'Reset view', unofficialTr: '', support: 'Support CapeWatch', contact: 'Contact', foot1App: 'Cape facts from {wiki} and official Mojang announcements. Pictures are drawn by CapeWatch from Minecraft textures.',
       free: 'Completely free', paid: 'Requires a purchase', freeTip: 'Only a Minecraft account is needed. Nothing else to buy.',
       fCost: 'Cost', costAll: 'Any cost', stFree: 'Free right now',
-      hOwned: 'Owned capes', ownedNote: 'Mojang only shares the cape a player is wearing. Add the others with “Choose capes”.', oName: 'Minecraft name', oShow: 'Show capes', oChoose: 'Choose capes',
+      hOwned: 'Owned capes', ownedNote: 'The cape worn now comes from Mojang, the ones worn before from capes.me. Add any others with “Choose capes”.', oName: 'Minecraft name', oShow: 'Show capes', oChoose: 'Choose capes',
       oStart: 'Type a Minecraft name and press “Show capes”.', oLooking: 'Looking up {name}…', oWearing: '{name} is wearing the {cape}.', oWearingUnknown: '{name} is wearing a cape CapeWatch doesn’t know yet.',
       oNoCape: '{name} isn’t wearing a cape right now.', oNotFound: 'There’s no Minecraft player called {name}.', oInvalid: 'A Minecraft name has up to 16 letters, numbers or _.',
       oOffline: 'Can’t reach Mojang right now. Try again in a moment.', oRate: 'Too many lookups for now. Try again in a minute.', oEmpty: 'Nothing to show yet. Use “Choose capes” to add the capes {name} owns.',
-      wearing: 'Wearing now', unknownCape: 'Unknown cape', pickTitle: 'Capes of {name}', pickIntro: 'Tick the capes to show. The cape being worn is added by itself.', done: 'Done', pickNone: 'No cape matches that name.',
+      wearing: 'Wearing now', unknownCape: 'Unknown cape', pickTitle: 'Capes of {name}', pickIntro: 'Tick the capes to show. Capes seen on the player are added by themselves.', done: 'Done', pickNone: 'No cape matches that name.',
+      oSeenFound: 'The capes {name} wore before come from {site}.', oSeenUnknown: '{site} has no record of {name} yet. Add their other capes with “Choose capes”.',
+      oSeenFailed: '{site} didn’t answer, so capes worn before may be missing. Try again later.',
       CAT: { ownership: 'Game ownership', staff: 'Mojang / Microsoft staff', 'event-physical': 'In-person event', 'event-virtual': 'Online event',
         personal: 'Personal cape', competition: 'Competition', volunteer: 'Volunteers', temporary: 'Temporary', other: 'Other' },
       AV: { available: 'Available now', permanent: 'Free for everyone', announced: 'Announced', ended: 'Promotion ended', exclusive: 'Exclusive' },
@@ -582,11 +589,13 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       noExact: 'אין תאריך מדויק. הערכה: {x}', fFrom: 'מתחיל', fUntil: 'מסתיים', est: 'הערכה', more: 'פירוט מלא', showElytra: 'הצג אליטרה', showCape: 'הצג גלימה', resetView: 'איפוס תצוגה', unofficialTr: 'זה לא מוצר רשמי של Minecraft. לא אושר על ידי Mojang או Microsoft ואין לו קשר אליהן.', support: 'תמיכה ב-CapeWatch', contact: 'יצירת קשר', foot1App: 'העובדות על הגלימות מ-{wiki} ומהודעות רשמיות של Mojang. התמונות מצוירות על ידי CapeWatch מהטקסטורות של Minecraft.',
       free: 'חינמי לחלוטין', paid: 'דורש רכישה', freeTip: 'צריך רק חשבון Minecraft, בלי לקנות שום דבר נוסף.',
       fCost: 'עלות', costAll: 'כל העלויות', stFree: 'חינמיות עכשיו',
-      hOwned: 'גלימות בבעלות', ownedNote: 'Mojang חושפת רק את הגלימה שהשחקן לובש עכשיו. את השאר מוסיפים ב"בחירת גלימות".', oName: 'שם ב-Minecraft', oShow: 'הצג גלימות', oChoose: 'בחירת גלימות',
+      hOwned: 'גלימות בבעלות', ownedNote: 'הגלימה שבשימוש עכשיו מגיעה מ-Mojang, ואלה שנלבשו בעבר מ-capes.me. את השאר מוסיפים ב"בחירת גלימות".', oName: 'שם ב-Minecraft', oShow: 'הצג גלימות', oChoose: 'בחירת גלימות',
       oStart: 'הקלידו שם ב-Minecraft ולחצו על "הצג גלימות".', oLooking: 'מחפש את {name}…', oWearing: 'על {name} עכשיו: {cape}.', oWearingUnknown: 'על {name} יש גלימה ש-CapeWatch עוד לא מכיר.',
       oNoCape: 'על {name} אין גלימה כרגע.', oNotFound: 'אין שחקן Minecraft בשם {name}.', oInvalid: 'שם ב-Minecraft הוא עד 16 אותיות באנגלית, ספרות או _.',
       oOffline: 'אין חיבור ל-Mojang כרגע. נסו שוב בעוד רגע.', oRate: 'יותר מדי חיפושים בבת אחת. נסו שוב בעוד דקה.', oEmpty: 'עוד אין מה להציג. ב"בחירת גלימות" מוסיפים את הגלימות של {name}.',
-      wearing: 'בשימוש עכשיו', unknownCape: 'גלימה לא מוכרת', pickTitle: 'הגלימות של {name}', pickIntro: 'סמנו את הגלימות שיוצגו. הגלימה שבשימוש נוספת לבד.', done: 'סיום', pickNone: 'אין גלימה בשם הזה.',
+      wearing: 'בשימוש עכשיו', unknownCape: 'גלימה לא מוכרת', pickTitle: 'הגלימות של {name}', pickIntro: 'סמנו את הגלימות שיוצגו. גלימות שנראו על השחקן נוספות לבד.', done: 'סיום', pickNone: 'אין גלימה בשם הזה.',
+      oSeenFound: 'הגלימות שנראו על {name} בעבר מגיעות מ-{site}.', oSeenUnknown: 'ל-{site} עדיין אין מידע על {name}. את שאר הגלימות מוסיפים ב"בחירת גלימות".',
+      oSeenFailed: '{site} לא ענה, אז ייתכן שחסרות גלימות שנלבשו בעבר. נסו שוב מאוחר יותר.',
       CAT: { ownership: 'בעלות על המשחק', staff: 'צוות Mojang / Microsoft', 'event-physical': 'אירוע פיזי', 'event-virtual': 'אירוע מקוון',
         personal: 'גלימה אישית', competition: 'תחרות', volunteer: 'מתנדבים', temporary: 'זמנית', other: 'אחר' },
       AV: { available: 'זמינה עכשיו', permanent: 'ניתנת לכולם', announced: 'הוכרזה', ended: 'המבצע הסתיים', exclusive: 'בלעדית' },
@@ -614,11 +623,13 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       noExact: 'Sin fecha exacta. Estimación: {x}', fFrom: 'Empieza', fUntil: 'Termina', est: 'estimación', more: 'Detalles', showElytra: 'Ver élitros', showCape: 'Ver capa', resetView: 'Restablecer vista', unofficialTr: 'No es un producto oficial de Minecraft. No está aprobado por Mojang ni Microsoft ni asociado con ellas.', support: 'Apoyar a CapeWatch', contact: 'Contacto', foot1App: 'Datos de las capas de {wiki} y de anuncios oficiales de Mojang. CapeWatch dibuja las imágenes a partir de las texturas de Minecraft.',
       free: 'Totalmente gratis', paid: 'Requiere una compra', freeTip: 'Solo necesitas una cuenta de Minecraft. Nada más que comprar.',
       fCost: 'Coste', costAll: 'Cualquier coste', stFree: 'Gratis ahora',
-      hOwned: 'Capas obtenidas', ownedNote: 'Mojang solo muestra la capa que lleva puesta el jugador. Añade las demás con «Elegir capas».', oName: 'Nombre en Minecraft', oShow: 'Ver capas', oChoose: 'Elegir capas',
+      hOwned: 'Capas obtenidas', ownedNote: 'La capa que lleva ahora viene de Mojang; las que llevó antes, de capes.me. Añade las demás con «Elegir capas».', oName: 'Nombre en Minecraft', oShow: 'Ver capas', oChoose: 'Elegir capas',
       oStart: 'Escribe un nombre de Minecraft y pulsa «Ver capas».', oLooking: 'Buscando a {name}…', oWearing: '{name} lleva puesta la {cape}.', oWearingUnknown: '{name} lleva una capa que CapeWatch aún no conoce.',
       oNoCape: '{name} no lleva ninguna capa ahora mismo.', oNotFound: 'No hay ningún jugador de Minecraft llamado {name}.', oInvalid: 'Un nombre de Minecraft tiene hasta 16 letras, números o _.',
       oOffline: 'No se puede conectar con Mojang ahora. Inténtalo de nuevo en un momento.', oRate: 'Demasiadas búsquedas por ahora. Inténtalo de nuevo en un minuto.', oEmpty: 'Aún no hay nada que mostrar. Usa «Elegir capas» para añadir las capas de {name}.',
-      wearing: 'Puesta ahora', unknownCape: 'Capa desconocida', pickTitle: 'Capas de {name}', pickIntro: 'Marca las capas que quieres mostrar. La que lleva puesta se añade sola.', done: 'Listo', pickNone: 'Ninguna capa coincide con ese nombre.',
+      wearing: 'Puesta ahora', unknownCape: 'Capa desconocida', pickTitle: 'Capas de {name}', pickIntro: 'Marca las capas que quieres mostrar. Las que se han visto en el jugador se añaden solas.', done: 'Listo', pickNone: 'Ninguna capa coincide con ese nombre.',
+      oSeenFound: 'Las capas que {name} llevó antes vienen de {site}.', oSeenUnknown: '{site} aún no tiene datos de {name}. Añade sus otras capas con «Elegir capas».',
+      oSeenFailed: '{site} no respondió, así que pueden faltar capas que llevó antes. Inténtalo más tarde.',
       CAT: { ownership: 'Propiedad del juego', staff: 'Personal de Mojang / Microsoft', 'event-physical': 'Evento presencial', 'event-virtual': 'Evento en línea',
         personal: 'Capa personal', competition: 'Competición', volunteer: 'Voluntarios', temporary: 'Temporal', other: 'Otro' },
       AV: { available: 'Disponible ahora', permanent: 'Gratis para todos', announced: 'Anunciada', ended: 'Promoción terminada', exclusive: 'Exclusiva' },
@@ -646,11 +657,13 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       noExact: 'Sem data exata. Estimativa: {x}', fFrom: 'Começa', fUntil: 'Termina', est: 'estimativa', more: 'Detalhes', showElytra: 'Ver élitros', showCape: 'Ver capa', resetView: 'Redefinir visualização', unofficialTr: 'Não é um produto oficial do Minecraft. Não é aprovado nem associado à Mojang ou à Microsoft.', support: 'Apoiar o CapeWatch', contact: 'Contato', foot1App: 'Dados das capas de {wiki} e de anúncios oficiais da Mojang. O CapeWatch desenha as imagens a partir das texturas do Minecraft.',
       free: 'Totalmente grátis', paid: 'Requer uma compra', freeTip: 'Só precisa de uma conta Minecraft. Nada mais para comprar.',
       fCost: 'Custo', costAll: 'Qualquer custo', stFree: 'Grátis agora',
-      hOwned: 'Capas obtidas', ownedNote: 'A Mojang só mostra a capa que o jogador está usando. Adicione as outras em “Escolher capas”.', oName: 'Nome no Minecraft', oShow: 'Ver capas', oChoose: 'Escolher capas',
+      hOwned: 'Capas obtidas', ownedNote: 'A capa em uso agora vem da Mojang; as usadas antes, do capes.me. Adicione as outras em “Escolher capas”.', oName: 'Nome no Minecraft', oShow: 'Ver capas', oChoose: 'Escolher capas',
       oStart: 'Digite um nome do Minecraft e clique em “Ver capas”.', oLooking: 'Procurando {name}…', oWearing: '{name} está usando a {cape}.', oWearingUnknown: '{name} está usando uma capa que o CapeWatch ainda não conhece.',
       oNoCape: '{name} não está usando nenhuma capa agora.', oNotFound: 'Não existe nenhum jogador de Minecraft chamado {name}.', oInvalid: 'Um nome do Minecraft tem até 16 letras, números ou _.',
       oOffline: 'Não foi possível falar com a Mojang agora. Tente de novo daqui a pouco.', oRate: 'Muitas buscas por enquanto. Tente de novo em um minuto.', oEmpty: 'Nada para mostrar ainda. Use “Escolher capas” para adicionar as capas de {name}.',
-      wearing: 'Em uso agora', unknownCape: 'Capa desconhecida', pickTitle: 'Capas de {name}', pickIntro: 'Marque as capas que quer mostrar. A que está em uso entra sozinha.', done: 'Pronto', pickNone: 'Nenhuma capa corresponde a esse nome.',
+      wearing: 'Em uso agora', unknownCape: 'Capa desconhecida', pickTitle: 'Capas de {name}', pickIntro: 'Marque as capas que quer mostrar. As que já foram vistas no jogador entram sozinhas.', done: 'Pronto', pickNone: 'Nenhuma capa corresponde a esse nome.',
+      oSeenFound: 'As capas que {name} usou antes vêm do {site}.', oSeenUnknown: 'O {site} ainda não tem dados de {name}. Adicione as outras capas em “Escolher capas”.',
+      oSeenFailed: 'O {site} não respondeu, então podem faltar capas usadas antes. Tente de novo mais tarde.',
       CAT: { ownership: 'Posse do jogo', staff: 'Equipe Mojang / Microsoft', 'event-physical': 'Evento presencial', 'event-virtual': 'Evento online',
         personal: 'Capa pessoal', competition: 'Competição', volunteer: 'Voluntários', temporary: 'Temporária', other: 'Outro' },
       AV: { available: 'Disponível agora', permanent: 'Grátis para todos', announced: 'Anunciada', ended: 'Promoção encerrada', exclusive: 'Exclusiva' },
@@ -678,11 +691,13 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       noExact: 'Pas de date exacte. Estimation : {x}', fFrom: 'Début', fUntil: 'Fin', est: 'estimation', more: 'Détails', showElytra: 'Voir les élytres', showCape: 'Voir la cape', resetView: 'Réinitialiser la vue', unofficialTr: 'Ce n’est pas un produit officiel Minecraft. Il n’est ni approuvé par Mojang ou Microsoft, ni associé à eux.', support: 'Soutenir CapeWatch', contact: 'Contact', foot1App: 'Infos sur les capes : {wiki} et annonces officielles de Mojang. Les images sont dessinées par CapeWatch à partir des textures de Minecraft.',
       free: 'Entièrement gratuite', paid: 'Achat nécessaire', freeTip: 'Un compte Minecraft suffit. Rien d’autre à acheter.',
       fCost: 'Coût', costAll: 'Tous les coûts', stFree: 'Gratuites maintenant',
-      hOwned: 'Capes possédées', ownedNote: 'Mojang ne montre que la cape que porte un joueur. Ajoutez les autres avec «\u00a0Choisir les capes\u00a0».', oName: 'Pseudo Minecraft', oShow: 'Voir les capes', oChoose: 'Choisir les capes',
+      hOwned: 'Capes possédées', ownedNote: 'La cape portée maintenant vient de Mojang, celles portées avant de capes.me. Ajoutez les autres avec «\u00a0Choisir les capes\u00a0».', oName: 'Pseudo Minecraft', oShow: 'Voir les capes', oChoose: 'Choisir les capes',
       oStart: 'Tapez un pseudo Minecraft et cliquez sur «\u00a0Voir les capes\u00a0».', oLooking: 'Recherche de {name}…', oWearing: '{name} porte la {cape}.', oWearingUnknown: '{name} porte une cape que CapeWatch ne connaît pas encore.',
       oNoCape: '{name} ne porte aucune cape en ce moment.', oNotFound: 'Aucun joueur Minecraft ne s’appelle {name}.', oInvalid: 'Un pseudo Minecraft compte jusqu’à 16 lettres, chiffres ou _.',
       oOffline: 'Impossible de joindre Mojang pour le moment. Réessayez dans un instant.', oRate: 'Trop de recherches pour le moment. Réessayez dans une minute.', oEmpty: 'Rien à afficher pour l’instant. Utilisez «\u00a0Choisir les capes\u00a0» pour ajouter les capes de {name}.',
-      wearing: 'Équipée', unknownCape: 'Cape inconnue', pickTitle: 'Capes de {name}', pickIntro: 'Cochez les capes à afficher. Celle qui est portée s’ajoute toute seule.', done: 'Terminé', pickNone: 'Aucune cape ne correspond à ce nom.',
+      wearing: 'Équipée', unknownCape: 'Cape inconnue', pickTitle: 'Capes de {name}', pickIntro: 'Cochez les capes à afficher. Celles vues sur le joueur s’ajoutent toutes seules.', done: 'Terminé', pickNone: 'Aucune cape ne correspond à ce nom.',
+      oSeenFound: 'Les capes que {name} a portées avant viennent de {site}.', oSeenUnknown: '{site} n’a encore aucune donnée sur {name}. Ajoutez ses autres capes avec «\u00a0Choisir les capes\u00a0».',
+      oSeenFailed: '{site} n’a pas répondu\u00a0: des capes portées avant peuvent manquer. Réessayez plus tard.',
       CAT: { ownership: 'Possession du jeu', staff: 'Équipe Mojang / Microsoft', 'event-physical': 'Événement physique', 'event-virtual': 'Événement en ligne',
         personal: 'Cape personnelle', competition: 'Compétition', volunteer: 'Bénévoles', temporary: 'Temporaire', other: 'Autre' },
       AV: { available: 'Disponible', permanent: 'Offerte à tous', announced: 'Annoncée', ended: 'Promotion terminée', exclusive: 'Exclusive' },
@@ -710,11 +725,13 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       noExact: 'Kein genaues Datum. Schätzung: {x}', fFrom: 'Beginn', fUntil: 'Ende', est: 'Schätzung', more: 'Details', showElytra: 'Elytren zeigen', showCape: 'Umhang zeigen', resetView: 'Ansicht zurücksetzen', unofficialTr: 'Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt und nicht mit ihnen verbunden.', support: 'CapeWatch unterstützen', contact: 'Kontakt', foot1App: 'Fakten zu den Umhängen von {wiki} und aus offiziellen Mojang-Ankündigungen. Die Bilder zeichnet CapeWatch aus Minecraft-Texturen.',
       free: 'Komplett kostenlos', paid: 'Kauf erforderlich', freeTip: 'Nur ein Minecraft-Konto nötig. Nichts extra zu kaufen.',
       fCost: 'Kosten', costAll: 'Alle', stFree: 'Jetzt gratis',
-      hOwned: 'Umhänge im Besitz', ownedNote: 'Mojang zeigt nur den Umhang, den ein Spieler gerade trägt. Füge die anderen über „Umhänge wählen“ hinzu.', oName: 'Minecraft-Name', oShow: 'Umhänge zeigen', oChoose: 'Umhänge wählen',
+      hOwned: 'Umhänge im Besitz', ownedNote: 'Der jetzt getragene Umhang kommt von Mojang, früher getragene von capes.me. Füge die anderen über „Umhänge wählen“ hinzu.', oName: 'Minecraft-Name', oShow: 'Umhänge zeigen', oChoose: 'Umhänge wählen',
       oStart: 'Gib einen Minecraft-Namen ein und klicke auf „Umhänge zeigen“.', oLooking: 'Suche {name}…', oWearing: '{name} trägt gerade: {cape}.', oWearingUnknown: '{name} trägt einen Umhang, den CapeWatch noch nicht kennt.',
       oNoCape: '{name} trägt gerade keinen Umhang.', oNotFound: 'Es gibt keinen Minecraft-Spieler namens {name}.', oInvalid: 'Ein Minecraft-Name hat bis zu 16 Buchstaben, Ziffern oder _.',
       oOffline: 'Mojang ist gerade nicht erreichbar. Versuch es gleich noch einmal.', oRate: 'Gerade zu viele Abfragen. Versuch es in einer Minute erneut.', oEmpty: 'Noch nichts zu zeigen. Füge über „Umhänge wählen“ die Umhänge von {name} hinzu.',
-      wearing: 'Wird getragen', unknownCape: 'Unbekannter Umhang', pickTitle: 'Umhänge von {name}', pickIntro: 'Wähle die Umhänge, die angezeigt werden. Der getragene kommt von selbst dazu.', done: 'Fertig', pickNone: 'Kein Umhang passt zu diesem Namen.',
+      wearing: 'Wird getragen', unknownCape: 'Unbekannter Umhang', pickTitle: 'Umhänge von {name}', pickIntro: 'Wähle die Umhänge, die angezeigt werden. Am Spieler gesehene kommen von selbst dazu.', done: 'Fertig', pickNone: 'Kein Umhang passt zu diesem Namen.',
+      oSeenFound: 'Die Umhänge, die {name} früher getragen hat, kommen von {site}.', oSeenUnknown: '{site} kennt {name} noch nicht. Füge die anderen Umhänge über „Umhänge wählen“ hinzu.',
+      oSeenFailed: '{site} hat nicht geantwortet, früher getragene Umhänge können fehlen. Versuch es später noch einmal.',
       CAT: { ownership: 'Spielbesitz', staff: 'Mojang-/Microsoft-Team', 'event-physical': 'Vor-Ort-Event', 'event-virtual': 'Online-Event',
         personal: 'Persönlicher Umhang', competition: 'Wettbewerb', volunteer: 'Freiwillige', temporary: 'Temporär', other: 'Sonstiges' },
       AV: { available: 'Jetzt verfügbar', permanent: 'Für alle', announced: 'Angekündigt', ended: 'Aktion beendet', exclusive: 'Exklusiv' },
@@ -742,11 +759,13 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       noExact: 'Точной даты нет. Оценка: {x}', fFrom: 'Начало', fUntil: 'Конец', est: 'оценка', more: 'Подробнее', showElytra: 'Показать элитры', showCape: 'Показать плащ', resetView: 'Сбросить вид', unofficialTr: 'Это не официальный продукт Minecraft. Не одобрен Mojang или Microsoft и не связан с ними.', support: 'Поддержать CapeWatch', contact: 'Связаться', foot1App: 'Сведения о плащах — {wiki} и официальные анонсы Mojang. Картинки рисует CapeWatch по текстурам Minecraft.',
       free: 'Полностью бесплатно', paid: 'Нужна покупка', freeTip: 'Нужен только аккаунт Minecraft. Больше ничего покупать не надо.',
       fCost: 'Стоимость', costAll: 'Любая', stFree: 'Бесплатно сейчас',
-      hOwned: 'Плащи игрока', ownedNote: 'Mojang показывает только плащ, который сейчас надет на игроке. Остальные добавьте через «Выбрать плащи».', oName: 'Ник в Minecraft', oShow: 'Показать плащи', oChoose: 'Выбрать плащи',
+      hOwned: 'Плащи игрока', ownedNote: 'Надетый сейчас плащ — от Mojang, надетые раньше — от capes.me. Остальные добавьте через «Выбрать плащи».', oName: 'Ник в Minecraft', oShow: 'Показать плащи', oChoose: 'Выбрать плащи',
       oStart: 'Введите ник в Minecraft и нажмите «Показать плащи».', oLooking: 'Ищем {name}…', oWearing: 'На {name} сейчас: {cape}.', oWearingUnknown: 'На {name} плащ, которого CapeWatch пока не знает.',
       oNoCape: 'На {name} сейчас нет плаща.', oNotFound: 'Игрока Minecraft с ником {name} нет.', oInvalid: 'Ник в Minecraft — до 16 латинских букв, цифр или _.',
       oOffline: 'Сейчас нет связи с Mojang. Попробуйте чуть позже.', oRate: 'Слишком много запросов. Попробуйте через минуту.', oEmpty: 'Пока нечего показать. Добавьте плащи {name} через «Выбрать плащи».',
-      wearing: 'Надет сейчас', unknownCape: 'Неизвестный плащ', pickTitle: 'Плащи {name}', pickIntro: 'Отметьте плащи, которые нужно показать. Надетый добавляется сам.', done: 'Готово', pickNone: 'Нет плаща с таким названием.',
+      wearing: 'Надет сейчас', unknownCape: 'Неизвестный плащ', pickTitle: 'Плащи {name}', pickIntro: 'Отметьте плащи, которые нужно показать. Замеченные на игроке добавляются сами.', done: 'Готово', pickNone: 'Нет плаща с таким названием.',
+      oSeenFound: 'Плащи, замеченные на {name} раньше, — от {site}.', oSeenUnknown: 'У {site} пока нет данных о {name}. Остальные плащи добавьте через «Выбрать плащи».',
+      oSeenFailed: '{site} не ответил, поэтому плащей, надетых раньше, может не хватать. Попробуйте позже.',
       CAT: { ownership: 'Владение игрой', staff: 'Сотрудники Mojang / Microsoft', 'event-physical': 'Офлайн-событие', 'event-virtual': 'Онлайн-событие',
         personal: 'Личный плащ', competition: 'Соревнование', volunteer: 'Волонтёры', temporary: 'Временный', other: 'Другое' },
       AV: { available: 'Доступен сейчас', permanent: 'Бесплатно для всех', announced: 'Анонсирован', ended: 'Акция завершена', exclusive: 'Эксклюзивный' },
@@ -1666,15 +1685,17 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
 
   // ---------- owned capes ----------
   // A player's capes by Minecraft name, in the installed app (the lookups go through app/shell.js; the web page
-  // cannot reach Mojang). Mojang tells only which cape a player is wearing right now. So the cape being worn is
-  // found by itself and kept (a cape someone wears is a cape they own), and the rest are ticked by hand in
-  // "Choose capes". Kept on this computer only, per player id (a name can change):
-  //   own = { current: id, players: { id: { name, skin, worn, tex: { 'tex:<hash>': url }, show: [keys], hide: [keys] } } }
+  // cannot reach Mojang). Mojang tells only which cape a player is wearing right now, and capes.me which capes it
+  // has seen them wear before. Those join the list by themselves (a cape someone wears is a cape they own), and the
+  // rest are ticked by hand in "Choose capes". Kept on this computer only, per player id (a name can change):
+  //   own = { current: id, players: { id: { name, skin, worn, tex: { 'tex:<hash>': url }, show: [keys], hide: [keys], seen, at } } }
   // A key is a cape id from the data file, or 'tex:<texture hash>' for a cape the data file does not know (yet).
-  // "hide" remembers the capes taken off the list by hand, so the one being worn does not come back by itself.
+  // "hide" remembers the capes taken off the list by hand, so a cape seen on the player does not come back by itself.
+  // "seen": what capes.me said last time (found, unknown or failed), for the line under the list.
   const ownShell = () => (typeof window.CapeWatchShell?.player === 'function' ? window.CapeWatchShell : null);
   const OWN_NAME = /^[A-Za-z0-9_]{1,16}$/;
   const TEX = 'https://textures.minecraft.net/texture/';
+  const SEEN_STATES = ['found', 'unknown', 'failed'];
   function loadOwn() {
     const out = { current: null, players: {} };
     let v = null; try { v = JSON.parse(store.get('owned', 'null')); } catch { v = null; }
@@ -1685,7 +1706,8 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
       const tex = {};
       for (const k of Object.keys(p.tex && typeof p.tex === 'object' ? p.tex : {})) if (/^tex:[0-9a-f]{1,64}$/.test(k)) tex[k] = TEX + k.slice(4);
       out.players[id] = { name: p.name, skin: typeof p.skin === 'string' && /^https:\/\/textures\.minecraft\.net\/texture\/[0-9a-f]{1,64}$/.test(p.skin) ? p.skin : null,
-        worn: typeof p.worn === 'string' && p.worn.length < 80 ? p.worn : null, tex, show: keys(p.show), hide: keys(p.hide), at: typeof p.at === 'number' ? p.at : 0 };
+        worn: typeof p.worn === 'string' && p.worn.length < 80 ? p.worn : null, tex, show: keys(p.show), hide: keys(p.hide),
+        seen: SEEN_STATES.includes(p.seen) ? p.seen : null, at: typeof p.at === 'number' ? p.at : 0 };
     }
     if (out.players[v.current]) out.current = v.current;
     return out;
@@ -1696,8 +1718,12 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   const capeByTexture = (hash) => { for (const [id, c] of S.capes) if (typeof c.textureId === 'string' && c.textureId.toLowerCase() === hash) return id; return null; };
   // A cape the data file did not know when it was seen, and knows now, is shown as that cape.
   const ownKey = (k) => (k.startsWith('tex:') ? capeByTexture(k.slice(4)) || k : k);
-  // A message with {name} / {cape} as separate pieces: a name stays left to right in every language.
-  const tNodes = (k, vars = {}) => t(k).split(/(\{\w+\})/).filter(Boolean).map((x) => { const m = /^\{(\w+)\}$/.exec(x); return m && vars[m[1]] != null ? h('bdi', { class: 'nm', text: String(vars[m[1]]) }) : x; });
+  // A message with {name} / {cape} as separate pieces: a name stays left to right in every language. A piece can
+  // also be an element of its own (a link).
+  const tNodes = (k, vars = {}) => t(k).split(/(\{\w+\})/).filter(Boolean).map((x) => {
+    const m = /^\{(\w+)\}$/.exec(x), v = m ? vars[m[1]] : null;
+    return v == null ? x : v instanceof Node ? v : h('bdi', { class: 'nm', text: String(v) });
+  });
 
   // The player's face from their skin: the front of the head, the hat layer over it. Drawn once per skin.
   const heads = new Map(), headsAsked = new Set();   // skin address -> picture (data URL) or null (could not be drawn)
@@ -1763,6 +1789,9 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     note.replaceChildren(...(ownNote ? [h('span', { class: 'o-text' }, tNodes(ownNote.key, ownNote.vars))] : []));
     // whose capes are on the list, and the one they are wearing (stays while another name is looked up or not found)
     $('o-msg').replaceChildren(...(p && S.loaded ? [headEl(p), h('span', { class: 'o-text' }, wornText(p))].filter(Boolean) : []));
+    // under the list: where its capes come from (with a link to the player on capes.me), or why some may be missing
+    const src = p && S.loaded ? { found: 'oSeenFound', unknown: 'oSeenUnknown', failed: 'oSeenFailed' }[p.seen] : null;
+    $('o-src').replaceChildren(...(src ? tNodes(src, { name: p.name, site: h('a', { class: 'nm', href: 'https://capes.me/' + encodeURIComponent(p.name), target: '_blank', rel: 'noopener', text: 'capes.me' }) }) : []));
     const box = $('owned');
     if (!p) { box.replaceChildren(h('div', { class: 'empty', text: t('oStart') })); return; }
     if (!S.loaded) { box.replaceChildren(h('div', { class: 'empty', text: t('loadingShort') })); return; }
@@ -1771,9 +1800,15 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   }
   // The result, said once to screen readers (the visible line is rebuilt on every layout pass, so it is not the live region).
   function announceOwn() {
-    const live = $('o-live'), said = ($('o-note').textContent || $('o-msg').textContent).trim();
+    const live = $('o-live'), said = $('o-note').textContent.trim() || [$('o-msg'), $('o-src')].map((e) => e.textContent.trim()).filter(Boolean).join(' ');
     live.textContent = '';
     if (said) setTimeout(() => { live.textContent = said; }, 60);
+  }
+  // A cape seen on a player joins their list, unless it is on it already or was taken off it by hand.
+  function addShown(p, k) {
+    k = ownKey(k);
+    if (p.show.some((x) => ownKey(x) === k) || p.hide.some((x) => ownKey(x) === k)) return false;
+    p.show.push(k); return true;
   }
   // What Mojang said about a player, kept: their name now, skin, and the cape being worn, which joins the list
   // unless it was taken off the list by hand. At most 100 players are kept (the ones looked at longest ago go first).
@@ -1784,12 +1819,29 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     const hash = r.cape ? r.cape.slice(r.cape.lastIndexOf('/') + 1).toLowerCase() : null, id = hash ? capeByTexture(hash) : null;
     p.worn = id || (hash ? 'tex:' + hash : null);
     if (p.worn && !id) p.tex[p.worn] = TEX + hash;
-    if (p.worn) { const k = ownKey(p.worn); if (!p.show.some((x) => ownKey(x) === k) && !p.hide.some((x) => ownKey(x) === k)) p.show.push(k); }
+    if (p.worn) addShown(p, p.worn);
     const ids = Object.keys(own.players);
     if (ids.length > 100) for (const old of ids.filter((x) => x !== r.id && x !== own.current).sort((a, b) => own.players[a].at - own.players[b].at).slice(0, ids.length - 100)) delete own.players[old];
     return { id, hash };
   }
-  // "Show capes": look a player up by name and show their capes.
+  // What capes.me said about a player, kept: every cape it has seen them wear joins the list like the one being worn
+  // (known by any of its textures; one the data file does not know is kept by its texture). quiet: the check at
+  // start, which keeps the last answer when capes.me does not answer. Returns how many capes joined.
+  function keepSeen(id, s, quiet) {
+    const p = own.players[id];
+    if (!p || !SEEN_STATES.includes(s?.state) || (quiet && s.state === 'failed')) return 0;
+    p.seen = s.state;
+    let added = 0;
+    for (const tex of Array.isArray(s.capes) ? s.capes : []) {
+      const hashes = (Array.isArray(tex) ? tex : []).map((u) => /^https:\/\/textures\.minecraft\.net\/texture\/([0-9a-f]{1,64})$/i.exec(String(u))?.[1].toLowerCase()).filter(Boolean);
+      if (!hashes.length) continue;
+      const cape = hashes.map(capeByTexture).find(Boolean), k = cape || 'tex:' + hashes[0];
+      if (!cape) p.tex[k] = TEX + hashes[0];
+      if (addShown(p, k)) added++;
+    }
+    return added;
+  }
+  // "Show capes": look a player up by name (Mojang, then capes.me) and show their capes.
   async function lookUp(name) {
     const shell = ownShell(), input = $('o-name');
     if (!shell || ownBusy) return;
@@ -1801,10 +1853,13 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     ownBusy = true; $('owned').setAttribute('aria-busy', 'true');
     ownNote = { key: 'oLooking', vars: { name } }; update();
     try {
-      const r = await shell.player(name), { id, hash } = keepPlayer(r);
+      const r = await shell.player(name);
+      const s = typeof shell.capesSeen === 'function' ? await shell.capesSeen(r.id, r.name) : null;
+      const { id, hash } = keepPlayer(r), added = keepSeen(r.id, s);
       own.current = r.id; saveOwn();
       ownNote = null; input.value = r.name; input.removeAttribute('aria-invalid');
-      console.info('[Owned] ' + r.name + ': ' + (id ? 'wearing ' + id : hash ? 'wearing a cape the data file does not know' : 'no cape on'));
+      console.info('[Owned] ' + r.name + ': ' + (id ? 'wearing ' + id : hash ? 'wearing a cape the data file does not know' : 'no cape on')
+        + (s ? '; capes.me: ' + s.state + (added ? ', ' + added + ' capes added' : '') : ''));
     } catch (e) {
       ownNote = { key: { notfound: 'oNotFound', invalid: 'oInvalid', rate: 'oRate' }[e?.code] || 'oOffline', vars: { name }, bad: true };
       if (e?.code === 'notfound' || e?.code === 'invalid') input.setAttribute('aria-invalid', 'true');
@@ -1812,16 +1867,20 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     } finally { ownBusy = false; $('owned').removeAttribute('aria-busy'); }
     update(); announceOwn();
   }
-  // At start: the player shown last time is checked once more, by id, since the cape they wear (or their name) may
-  // have changed. Quietly: no message, the player shown does not change, and "Show capes" never waits for it.
+  // At start: the player shown last time is checked once more, by id, since the cape they wear (or their name, or
+  // what capes.me has seen) may have changed. Quietly: no message, the player shown does not change, and
+  // "Show capes" never waits for it.
   function checkOwnedAgain() {
     const shell = ownShell(), id = own.current;
     if (ownChecked || typeof shell?.playerById !== 'function' || !own.players[id]) return;
     ownChecked = true;
     setTimeout(async () => {
       const before = own.players[id]?.name;
-      try { keepPlayer(await shell.playerById(id, before)); saveOwn(); }
-      catch (e) { console.info('[Owned] check at start: ' + (e?.message || e)); return; }
+      try {
+        const r = await shell.playerById(id, before);
+        const s = typeof shell.capesSeen === 'function' ? await shell.capesSeen(id, r.name) : null;
+        keepPlayer(r); keepSeen(id, s, true); saveOwn();
+      } catch (e) { console.info('[Owned] check at start: ' + (e?.message || e)); return; }
       const now = own.players[id]?.name;
       if (now !== before && $('o-name').value === before) $('o-name').value = now;   // a new name
       console.info('[Owned] ' + now + ': checked again at start');
@@ -1835,8 +1894,8 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
   });
 
   // ---------- choose capes ----------
-  // Every cape in the data file (and the unknown one being worn), with a box to tick. A change is kept at once;
-  // the list on the page is drawn again when the window closes.
+  // Every cape in the data file (and the ones seen on the player that it does not know), with a box to tick. A
+  // change is kept at once; the list on the page is drawn again when the window closes.
   let pickTimer = 0;
   function pickThumb(k, c, p) {
     const src = c ? (S.imgs.get(k) || art(k, 'cape')) : (p.tex[k] ? window.capeArt?.get(k, 'cape', p.tex[k]) : null);
@@ -1859,7 +1918,8 @@ label:has(> :disabled) { cursor: not-allowed; color: var(--muted); }
     $('pick-close').setAttribute('aria-label', t('close'));
     $('pick-title').replaceChildren(...tNodes('pickTitle', { name: p.name }));
     const q = $('pick-q').value.trim().toLowerCase(), shown = new Set(p.show.map(ownKey)), worn = p.worn ? ownKey(p.worn) : null;
-    const rows = [...(worn && !S.capes.has(worn) && p.tex[worn] ? [[worn, null]] : []), ...[...S.capes.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name))]
+    const unknown = [...new Set([worn, ...p.show.map(ownKey), ...p.hide.map(ownKey)])].filter((k) => k && !S.capes.has(k) && p.tex[k]);   // the one being worn first
+    const rows = [...unknown.map((k) => [k, null]), ...[...S.capes.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name))]
       .filter(([, c]) => !q || (c ? c.name : t('unknownCape')).toLowerCase().includes(q));
     $('pick-list').replaceChildren(...(rows.length ? rows.map(([k, c]) => pickRow(p, k, c, shown.has(k), k === worn)) : [h('li', { class: 'pick-none', text: t('pickNone') })]));
   }
