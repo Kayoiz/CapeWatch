@@ -1,11 +1,11 @@
 # Release notes
 
-The release notes of CapeWatch, newest first, written for users in English like the other release notes. 1.0.6 is
-as published on GitHub (Releases, v1.0.6) on 2026-10-06; the next version is not released yet.
+The release notes of CapeWatch, newest first, as published on GitHub (Releases): 1.0.7 on 2026-10-07, 1.0.6 on
+2026-10-06. Written for users, in English like the other release notes.
 
 ---
 
-## CapeWatch (next version, not released yet)
+## CapeWatch 1.0.7
 
 ### New
 - **CapeWatch keeps its own record of capes.** Under Owned capes, CapeWatch checks the player shown at start, every 10 minutes while it runs and when you open its window, and every cape it sees them wear joins the list by itself and stays there, also for players capes.me does not know. Wear each of your capes once and they are all listed. Kept on your computer, and removed by Delete my data.

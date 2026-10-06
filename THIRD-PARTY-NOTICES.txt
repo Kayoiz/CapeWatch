@@ -6,7 +6,7 @@ below. This file names every piece of it that is part of CapeWatch for Windows (
 and its installer and uninstaller) and gives each one’s license text, as those licenses ask. A number in
 brackets, like [1], leads to a license text in part 7.
 
-Made by tools/make-licenses.mjs from app/src-tauri/Cargo.lock and Rust 1.99.0 (inputs b32f62230e38760b). Not
+Made by tools/make-licenses.mjs from app/src-tauri/Cargo.lock and Rust 1.99.0 (inputs 33b19acc8c81d117). Not
 edited by hand.
 
 Contents
