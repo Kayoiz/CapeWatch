@@ -1,8 +1,8 @@
 {
  "schema": 1,
  "status": {
-  "lastCheckAt": "2026-10-07T22:47:55Z",
-  "lastResult": "0 new, 0 changed",
+  "lastCheckAt": "2026-10-08T12:53:54Z",
+  "lastResult": "0 new, 1 changed",
   "capeCount": 50
  },
  "capes": {
@@ -940,7 +940,7 @@
      "ru": "примерно через 30 дней после закрытия мероприятия в Сантьяго (около 30 декабря 2026 г.)"
     }
    },
-   "availability": "announced",
+   "availability": "available",
    "availableFrom": "2026-10-08",
    "availableUntil": "2026-11-30",
    "category": "event-physical",
@@ -1450,6 +1450,19 @@
    "textPt": "Aurora Cape: a Twitch ficou sem códigos por enquanto, então use o TikTok (3 min) para pegá-la.",
    "textRu": "Aurora Cape: у Twitch пока закончились коды, поэтому получайте плащ через TikTok (3 мин).",
    "type": "changed"
+  },
+  "20261008-1253-moonlight-trail-available": {
+   "at": "2026-10-08T12:53:54Z",
+   "type": "available",
+   "capeId": "moonlight-trail",
+   "capeName": "Moonlight Trail Cape",
+   "textEn": "Moonlight Trail Cape can be obtained now.",
+   "textHe": "אפשר להשיג עכשיו את Moonlight Trail Cape.",
+   "textEs": "Ya se puede conseguir Moonlight Trail Cape.",
+   "textPt": "Já dá para pegar a Moonlight Trail Cape.",
+   "textFr": "Moonlight Trail Cape peut être obtenue dès maintenant.",
+   "textDe": "Moonlight Trail Cape ist jetzt erhältlich.",
+   "textRu": "Moonlight Trail Cape уже можно получить."
   }
  }
 }
