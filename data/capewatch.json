@@ -1,8 +1,8 @@
 {
  "schema": 1,
  "status": {
-  "lastCheckAt": "2026-10-13T00:12:15Z",
-  "lastResult": "0 new, 0 changed",
+  "lastCheckAt": "2026-10-13T13:39:35Z",
+  "lastResult": "0 new, 1 changed",
   "capeCount": 50
  },
  "capes": {
@@ -63,7 +63,8 @@
    "shortRu": "**Посмотрите 3 мин** трансляции Dungeons II в TikTok (у Twitch пока нет кодов) и **активируйте код до 31 октября**.",
    "source": "baseline",
    "textureId": "7c418dfbd37412a55e9f1425c9807a591ad10cf71b1edb576a587be9114c277f",
-   "wikiTitle": "Aurora Cape"
+   "wikiTitle": "Aurora Cape",
+   "remindedAt": "2026-10-13T13:39:35Z"
   },
   "bacon": {
    "apiAlias": null,
@@ -1463,6 +1464,19 @@
    "textFr": "Moonlight Trail Cape peut être obtenue dès maintenant.",
    "textDe": "Moonlight Trail Cape ist jetzt erhältlich.",
    "textRu": "Moonlight Trail Cape уже можно получить."
+  },
+  "20261013-1339-aurora-ending": {
+   "at": "2026-10-13T13:39:35Z",
+   "type": "ending",
+   "capeId": "aurora",
+   "capeName": "Aurora Cape",
+   "textEn": "Aurora Cape: the promotion ends within 48 hours.",
+   "textHe": "Aurora Cape: המבצע נגמר בתוך 48 שעות.",
+   "textEs": "Aurora Cape: la promoción termina en menos de 48 horas.",
+   "textPt": "Aurora Cape: a promoção acaba em menos de 48 horas.",
+   "textFr": "Aurora Cape : la promotion se termine dans moins de 48 heures.",
+   "textDe": "Aurora Cape: die Aktion endet in weniger als 48 Stunden.",
+   "textRu": "Aurora Cape: акция закончится в течение 48 часов."
   }
  }
 }
