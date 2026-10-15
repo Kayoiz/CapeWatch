@@ -1,8 +1,8 @@
 {
  "schema": 1,
  "status": {
-  "lastCheckAt": "2026-10-14T21:19:30Z",
-  "lastResult": "0 new, 0 changed",
+  "lastCheckAt": "2026-10-15T10:56:26Z",
+  "lastResult": "0 new, 1 changed",
   "capeCount": 50
  },
  "capes": {
@@ -34,7 +34,7 @@
   },
   "aurora": {
    "apiAlias": "Aurora",
-   "availability": "available",
+   "availability": "ended",
    "availableFrom": "2026-09-29T07:00:00Z",
    "availableUntil": "2026-10-15T06:59:00Z",
    "category": "event-virtual",
@@ -1477,6 +1477,19 @@
    "textFr": "Aurora Cape : la promotion se termine dans moins de 48 heures.",
    "textDe": "Aurora Cape: die Aktion endet in weniger als 48 Stunden.",
    "textRu": "Aurora Cape: акция закончится в течение 48 часов."
+  },
+  "20261015-1056-aurora-ended": {
+   "at": "2026-10-15T10:56:26Z",
+   "type": "ended",
+   "capeId": "aurora",
+   "capeName": "Aurora Cape",
+   "textEn": "Aurora Cape: the promotion has ended.",
+   "textHe": "Aurora Cape: המבצע הסתיים.",
+   "textEs": "Aurora Cape: la promoción terminó.",
+   "textPt": "Aurora Cape: a promoção acabou.",
+   "textFr": "Aurora Cape : la promotion est terminée.",
+   "textDe": "Aurora Cape: die Aktion ist beendet.",
+   "textRu": "Aurora Cape: акция завершена."
   }
  }
 }
