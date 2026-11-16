@@ -1,9 +1,9 @@
 {
  "schema": 1,
  "status": {
-  "lastCheckAt": "2026-11-15T22:31:21Z",
-  "lastResult": "0 new, 0 changed",
-  "capeCount": 50
+  "lastCheckAt": "2026-11-16T14:56:11Z",
+  "lastResult": "1 new, 0 changed",
+  "capeCount": 51
  },
  "capes": {
   "15th-anniversary": {
@@ -1178,6 +1178,34 @@
    "textureId": "3efadf6510961830f9fcc077f19b4daf286d502b5f5aafbd807c7bbffcaca245",
    "wikiTitle": "Scrolls Champion Cape"
   },
+  "snow-golem": {
+   "name": "Snow Golem Cape",
+   "wikiTitle": "Snow Golem Cape",
+   "editions": [
+    "java"
+   ],
+   "category": "other",
+   "availability": "announced",
+   "availableFrom": null,
+   "availableUntil": null,
+   "releaseDate": "2026-11-16",
+   "source": "robot",
+   "detectedAt": "2026-11-16T14:56:11Z",
+   "obtainEn": "A new cape, **Snow Golem Cape**, was found on the Minecraft Wiki. **Check the official Minecraft news** for how to get it.",
+   "shortEn": "**New cape.** Check the official Minecraft news for how to get it.",
+   "obtainHe": "נמצאה גלימה חדשה, **Snow Golem Cape**, בוויקי של Minecraft. **בדקו בחדשות הרשמיות של Minecraft** איך משיגים אותה.",
+   "shortHe": "**גלימה חדשה.** בדקו בחדשות הרשמיות של Minecraft איך משיגים אותה.",
+   "obtainEs": "Se encontró una capa nueva, **Snow Golem Cape**, en la wiki de Minecraft. **Consulta las noticias oficiales de Minecraft** para saber cómo conseguirla.",
+   "shortEs": "**Capa nueva.** Consulta las noticias oficiales de Minecraft para conseguirla.",
+   "obtainPt": "Uma capa nova, **Snow Golem Cape**, foi encontrada na wiki do Minecraft. **Veja as notícias oficiais do Minecraft** para saber como conseguir.",
+   "shortPt": "**Capa nova.** Veja as notícias oficiais do Minecraft para conseguir.",
+   "obtainFr": "Une nouvelle cape, **Snow Golem Cape**, a été repérée sur le wiki Minecraft. **Consultez les actualités officielles de Minecraft** pour savoir comment l’obtenir.",
+   "shortFr": "**Nouvelle cape.** Consultez les actualités officielles de Minecraft pour l’obtenir.",
+   "obtainDe": "Ein neuer Umhang, **Snow Golem Cape**, wurde im Minecraft-Wiki gefunden. **Sieh in den offiziellen Minecraft-News nach**, wie du ihn bekommst.",
+   "shortDe": "**Neuer Umhang.** Sieh in den offiziellen Minecraft-News nach, wie du ihn bekommst.",
+   "obtainRu": "В вики Minecraft появился новый плащ — **Snow Golem Cape**. **Как его получить, смотрите в официальных новостях Minecraft**.",
+   "shortRu": "**Новый плащ.** Как получить — в официальных новостях Minecraft."
+  },
   "snowman": {
    "apiAlias": "JulianClark",
    "availability": "exclusive",
@@ -1490,6 +1518,19 @@
    "textFr": "Aurora Cape : la promotion est terminée.",
    "textDe": "Aurora Cape: die Aktion ist beendet.",
    "textRu": "Aurora Cape: акция завершена."
+  },
+  "20261116-1456-snow-golem-new": {
+   "at": "2026-11-16T14:56:11Z",
+   "type": "new",
+   "capeId": "snow-golem",
+   "capeName": "Snow Golem Cape",
+   "textEn": "Snow Golem Cape: a new cape was found.",
+   "textHe": "Snow Golem Cape: נמצאה גלימה חדשה.",
+   "textEs": "Snow Golem Cape: se encontró una capa nueva.",
+   "textPt": "Snow Golem Cape: uma capa nova foi encontrada.",
+   "textFr": "Snow Golem Cape : une nouvelle cape a été repérée.",
+   "textDe": "Snow Golem Cape: ein neuer Umhang wurde gefunden.",
+   "textRu": "Snow Golem Cape: найден новый плащ."
   }
  }
 }
